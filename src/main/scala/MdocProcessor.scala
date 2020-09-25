@@ -1,11 +1,7 @@
 package com.indoorvivants.subatomic
 
-import coursier._
-
-import scala.collection.JavaConverters._
-
 import ammonite.ops._
-
+import coursier._
 import coursier.parse.DependencyParser
 
 class MdocProcessor(
@@ -14,34 +10,11 @@ class MdocProcessor(
     extraCp: List[String] = Nil
 ) {
 
-  val mdocDep = DependencyParser
-    .dependency(s"org.scalameta::mdoc:$mdocVersion", scalaBinaryVersion)
-    .right
-    .get
-
-  lazy val mainCp = {
-
-    (Fetch()
-      .addDependencies(mdocDep)
-      .run()
-      .seq
-      .map(_.getAbsolutePath()) ++ extraCp)
-      .mkString(":")
-  }
-
-  private def fetchCp(deps: List[String])= {
-    Fetch()
-      .addDependencies(
-        deps
-          .map(DependencyParser.dependency(_, scalaBinaryVersion))
-          .map(_.right.get): _*
-      )
-      .run()
-      .map(_.getAbsolutePath())
-      .mkString(":")
-  }
-
-  def process(pwd: os.Path, file: os.Path, dependencies: List[String]) = {
+  def process(
+      pwd: os.Path,
+      file: os.Path,
+      dependencies: List[String]
+  ): os.Path = {
     val f = os.temp()
     %%(
       "java",
@@ -57,5 +30,30 @@ class MdocProcessor(
     )(pwd)
 
     f
+  }
+
+  private val mdocDep = DependencyParser
+    .dependency(s"org.scalameta::mdoc:$mdocVersion", scalaBinaryVersion)
+    .getOrElse(throw new Exception("Unspeakable has happened"))
+
+  private lazy val mainCp = {
+
+    (Fetch()
+      .addDependencies(mdocDep)
+      .run()
+      .map(_.getAbsolutePath()) ++ extraCp)
+      .mkString(":")
+  }
+
+  private def fetchCp(deps: List[String]) = {
+    Fetch()
+      .addDependencies(
+        deps
+          .map(DependencyParser.dependency(_, scalaBinaryVersion))
+          .map(_.left.map(new RuntimeException(_)).toTry.get): _*
+      )
+      .run()
+      .map(_.getAbsolutePath())
+      .mkString(":")
   }
 }

@@ -16,6 +16,6 @@ object Markdown {
   }
 
   def renderToScalatags(markdownFile: os.Path) = {
-      scalatags.Text.all.raw(renderToString(markdownFile))
+    scalatags.Text.all.raw(renderToString(markdownFile))
   }
 }

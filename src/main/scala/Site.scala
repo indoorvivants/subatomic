@@ -1,7 +1,7 @@
 package com.indoorvivants.subatomic
 
 sealed trait SiteAsset
-case class Page(content: String) extends SiteAsset
+case class Page(content: String)     extends SiteAsset
 case class CopyFile(source: os.Path) extends SiteAsset
 
 object Site {
@@ -11,13 +11,11 @@ object Site {
   )(assembler: Function3[os.RelPath, Content, A1, SiteAsset]) = {
     sitemap.foreach {
       case (relPath, content) =>
-
         val a1r = a1(relPath, content)
 
-
         handleAsset(
-            assembler(relPath, content, a1r),
-            os.Path(relPath, destination)
+          assembler(relPath, content, a1r),
+          os.Path(relPath, destination)
         )
     }
 
@@ -27,15 +25,16 @@ object Site {
       sitemap: Vector[(os.RelPath, Content)],
       a1: Function2[os.RelPath, Content, A1],
       a2: Function2[os.RelPath, Content, A2]
-  )(assembler: Function2[A1, A2, SiteAsset]) = {
+  )(assembler: Function4[os.RelPath, Content, A1, A2, SiteAsset]) = {
     sitemap.foreach {
       case (relPath, content) =>
         val a1r = a1(relPath, content)
         val a2r = a2(relPath, content)
 
-        val ct = assembler(a1r, a2r)
-
-        // write(ct, os.Path(relPath, destination))
+        handleAsset(
+          assembler(relPath, content, a1r, a2r),
+          os.Path(relPath, destination)
+        )
     }
 
   }
@@ -45,29 +44,52 @@ object Site {
       a1: Function2[os.RelPath, Content, A1],
       a2: Function2[os.RelPath, Content, A2],
       a3: Function2[os.RelPath, Content, A3]
-  )(assembler: Function3[A1, A2, A3, SiteAsset]) = {
+  )(assembler: Function5[os.RelPath, Content, A1, A2, A3, SiteAsset]) = {
     sitemap.foreach {
       case (relPath, content) =>
         val a1r = a1(relPath, content)
         val a2r = a2(relPath, content)
         val a3r = a3(relPath, content)
 
-        val ct = assembler(a1r, a2r, a3r)
-
-        // write(ct, os.Path(relPath, destination))
+        handleAsset(
+          assembler(relPath, content, a1r, a2r, a3r),
+          os.Path(relPath, destination)
+        )
     }
-
   }
 
-  private def handleAsset(ass: SiteAsset, destination: os.Path) = ass match {
+  def build4[Content, A1, A2, A3, A4](destination: os.Path)(
+      sitemap: Vector[(os.RelPath, Content)],
+      a1: Function2[os.RelPath, Content, A1],
+      a2: Function2[os.RelPath, Content, A2],
+      a3: Function2[os.RelPath, Content, A3],
+      a4: Function2[os.RelPath, Content, A4]
+  )(assembler: Function6[os.RelPath, Content, A1, A2, A3, A4, SiteAsset]) = {
+    sitemap.foreach {
+      case (relPath, content) =>
+        val a1r = a1(relPath, content)
+        val a2r = a2(relPath, content)
+        val a3r = a3(relPath, content)
+        val a4r = a4(relPath, content)
+
+        handleAsset(
+          assembler(relPath, content, a1r, a2r, a3r, a4r),
+          os.Path(relPath, destination)
+        )
+    }
+  }
+
+  private def handleAsset(ass: SiteAsset, destination: os.Path) =
+    ass match {
       case Page(content) => write(content, destination)
       case CopyFile(source) =>
-        val dirPath = os.makeDir.all(destination / os.up)
+        os.makeDir.all(destination / os.up)
+
         os.copy(from = source, to = destination, replaceExisting = true)
-  }
+    }
 
   private def write(ct: String, absPath: os.Path) = {
-    val dirPath = os.makeDir.all(absPath / os.up)
+    os.makeDir.all(absPath / os.up)
 
     os.write.over(absPath, ct)
   }
