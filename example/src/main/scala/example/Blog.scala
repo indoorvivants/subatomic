@@ -3,27 +3,43 @@ package example
 import com.indoorvivants.subatomic._
 
 object Blog {
-  import Navigation._
   // How sidebar navigation should behave depending on the page
   def NavigationState(
-      content: Vector[(os.RelPath, Content)]
+      content: Vector[(os.RelPath, Content)],
+      absoluteLinks: Map[Content, String]
   ): Function2[os.RelPath, Content, Navigation] = {
-    val titles = content.collect {
-      case (rp, bp: SlugBased) =>
-        rp.toString() -> bp.title
-      case (rp, MarkdownPage(title, _)) =>
-        rp.toString() -> title
+    val titles = content.flatMap {
+      case (_, _: TagPage) => None
+      case (_, ct: HasTitle) =>
+        Some(ct -> ct.title)
+      case _ => None
     }.toList
 
-    val titlePlusContent: List[((Title, URL), Content)] =
-      titles.zip(content.map(_._2))
+    val tags = content.collect {
+      case (_, ct @ TagPage(tg, _)) => tg -> absoluteLinks(ct)
+    }.toList
 
-    (_, content) => {
-      Navigation(titlePlusContent.map {
-        case ((rp, contentTitle), c) =>
-          (contentTitle, "/" + rp.toString, content == c)
-      })
+    (_, currentlyDisplayedContent) => {
+      Navigation(
+        titles.map {
+          case (content, title) =>
+            (
+              title,
+              absoluteLinks(content),
+              content == currentlyDisplayedContent
+            )
+        },
+        tags
+      )
     }
+  }
+
+  def LinksState(
+      content: Vector[(os.RelPath, Content)]
+  ): Function2[os.RelPath, Content, Map[Content, os.RelPath]] = {
+    val calced = content.map(_.swap).toMap
+
+    (_, _) => calced
   }
 
 // Actually putting everything together
@@ -32,14 +48,31 @@ object Blog {
     val mdocJsProc = new MdocJsProcessor()
 
     val content = Data.Content(SiteRoot = siteBase, ContentRoot = pwd)
+    val absoluteLinks = content
+      .map(_.swap)
+      .map {
+        case (cont, relative) =>
+          cont -> ("/" + (siteBase / relative).toString)
+      }
+      .toMap
 
     ammonite.ops.rm(destination)
     os.makeDir.all(destination)
 
-    Site.build1[Content, Navigation](destination)(
+    Site.build1(destination)(
       content,
-      NavigationState(content)
+      NavigationState(content, absoluteLinks)
     ) {
+      case (_, TagPage(tag, contents), nav) =>
+        val list = contents.toVector.collect {
+          case cont: HasTitle =>
+            cont.title -> absoluteLinks(cont)
+        }
+        Some(
+          Page(
+            Template.TagPage(tag, list, nav).render
+          )
+        )
       // Rendering a mdoc-based post is a bit more involved
       case (_, bp: ScalaBlogPost, navigation) =>
         Some(

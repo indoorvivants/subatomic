@@ -1,16 +1,21 @@
 package example
 
 // ----- Data models for content
-sealed trait Tag
-case object Scala                                extends Tag
-case class ScalaMdoc(dependencies: List[String]) extends Tag
-case class tg(s: String) extends Tag {
+case class Tag(s: String) {
   override def toString = s
+}
+
+object tg {
+  def apply(s: String) = new Tag(s)
 }
 
 sealed trait Content
 
-trait SlugBased {
+trait HasTitle {
+  def title: String
+}
+
+trait SlugBased extends HasTitle {
   def title: String
   def slug: String
   def file(wd: os.Path): os.Path = {
@@ -38,12 +43,22 @@ case class ScalaBlogPost(
     dependencies: List[String] = Nil
 ) extends Content
     with SlugBased
-case class MarkdownPage(title: String, file: os.Path) extends Content
-case class StaticFile(file: os.Path)                  extends Content
+case class MarkdownPage(title: String, file: os.Path)
+    extends Content
+    with HasTitle
+case class TagPage(tag: Tag, content: Iterable[Content])
+    extends Content
+    with HasTitle {
+  def title = s"Posts with tag $tag"
+}
+case class StaticFile(file: os.Path) extends Content
 
 //------- Data models for the site
 import Navigation._
-case class Navigation(links: List[(Title, URL, Selected)])
+case class Navigation(
+    links: List[(Title, URL, Selected)],
+    tags: List[(Tag, URL)]
+)
 
 object Navigation {
   type Title    = String
@@ -53,7 +68,7 @@ object Navigation {
 
 //------ Content itself
 object Data {
-  def blogs(SiteRoot: os.RelPath) =
+  private def blogs(SiteRoot: os.RelPath) =
     Vector[Content with SlugBased](
       BlogPost(
         "The perils of blogging",
@@ -80,7 +95,7 @@ object Data {
       SiteRoot / "blog" / s"${blogPost.slug}.html" -> blogPost
     }
 
-  def pages(SiteRoot: os.RelPath, ContentRoot: os.Path) =
+  private def pages(SiteRoot: os.RelPath, ContentRoot: os.Path) =
     Vector(
       SiteRoot / "index.html" -> MarkdownPage(
         "Home",
@@ -92,15 +107,35 @@ object Data {
       )
     )
 
-  def statics(SiteRoot: os.RelPath, ContentRoot: os.Path) = {
+  private def statics(SiteRoot: os.RelPath, ContentRoot: os.Path) = {
     os.walk(ContentRoot / "assets").filter(_.toIO.isFile()).map { path =>
       SiteRoot / path.relativeTo(ContentRoot) -> StaticFile(path)
     }
   }
 
-  def Content(SiteRoot: os.RelPath, ContentRoot: os.Path) =
-    blogs(SiteRoot) ++ pages(SiteRoot, ContentRoot) ++ statics(
+  private def tags(SiteRoot: os.RelPath, content: Vector[Content]) =
+    content
+      .flatMap[(Tag, Content)] {
+        case c @ BlogPost(_, _, tags) => tags.toVector.map { tag => tag -> c }
+        case c @ ScalaBlogPost(_, _, tags, _) =>
+          tags.toVector.map { tag => tag -> c }
+        case c @ ScalaJSBlogPost(_, _, tags, _) =>
+          tags.toVector.map { tag => tag -> c }
+        case _ => Vector.empty
+      }
+      .groupBy(_._1)
+      .map(c => c._1 -> c._2.map(_._2))
+      .map {
+        case (tag, contents) =>
+          SiteRoot / "tags" / s"$tag.html" -> TagPage(tag, contents)
+      }
+
+  def Content(SiteRoot: os.RelPath, ContentRoot: os.Path) = {
+    val raw = blogs(SiteRoot) ++ pages(SiteRoot, ContentRoot) ++ statics(
       SiteRoot,
       ContentRoot
     )
+
+    raw ++ tags(SiteRoot, raw.map(_._2))
+  }
 }

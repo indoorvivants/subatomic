@@ -70,6 +70,26 @@ object Site {
 
   }
 
+  def build2[Content, A1, A2](destination: os.Path)(
+      sitemap: Vector[(os.RelPath, Content)],
+      a1: Function2[os.RelPath, Content, A1],
+      a2: Function2[os.RelPath, Content, A2]
+  )(assembler: Function4[os.RelPath, Content, A1, A2, Iterable[SiteAsset]]) = {
+    ParVector(sitemap: _*).foreach {
+      case (relPath, content) =>
+        val a1r = a1(relPath, content)
+        val a2r = a2(relPath, content)
+
+        handleAssets(
+          relPath,
+          content,
+          assembler(relPath, content, a1r, a2r),
+          destination
+        )
+    }
+
+  }
+
   private def handleAssets[T](
       p: os.RelPath,
       orig: T,

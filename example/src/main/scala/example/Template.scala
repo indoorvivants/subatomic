@@ -7,12 +7,20 @@ object Template {
 
   def Nav(navigation: Navigation) = {
     div(
-      navigation.links.sortBy(_._1).map {
+      div(
+        navigation.links.sortBy(_._1).map {
 
-        case (title, _, selected) if selected =>
-          p(strong(title))
-        case (title, url, _) =>
-          p(a(href := url, title))
+          case (title, _, selected) if selected =>
+            p(strong(title))
+          case (title, url, _) =>
+            p(a(href := url, title))
+        }
+      ),
+      hr,
+      "Tags: ",
+      navigation.tags.map {
+        case (tg, url) =>
+          strong(a(href := url, tg.s), " ")
       }
     )
   }
@@ -66,6 +74,26 @@ object Template {
       content: TypedTag[_]
   ) = {
     Page(title, navigation, div(h1(title), p(tags.mkString(", ")), content))
+  }
+
+  def TagPage(
+      tag: example.Tag,
+      links: Vector[(String, String)],
+      nav: Navigation
+  ) = {
+    Page(
+      s"Posts with tag '$tag'",
+      navigation = nav,
+      div(
+        p("Content about ", strong(tag.s)),
+        ul(
+          links.map {
+            case (title, link) =>
+              li(a(href := link, title))
+          }
+        )
+      )
+    )
   }
 
 }
