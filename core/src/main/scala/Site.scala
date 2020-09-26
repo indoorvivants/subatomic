@@ -10,10 +10,11 @@ case class CreatedFile(at: os.Path, to: os.RelPath) extends SiteAsset
 object Site {
 
   object logger {
-    def blue(s: String)  = fansi.Color.Cyan(s).render
-    def red(s: String)   = fansi.Color.Red(s).render
-    def green(s: String) = fansi.Color.Green(s).render
-    def bold(s: String)  = fansi.Bold.On(s).render
+    import Console._
+    def blue(s: String)  = CYAN + s + RESET
+    def red(s: String)   = RED + s + RESET
+    def green(s: String) = GREEN + s + RESET
+    def bold(s: String)  = BOLD + s + RESET
   }
 
   def trim(content: String, len: Int = 50) =

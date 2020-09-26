@@ -11,6 +11,7 @@ case class tg(s: String) extends Tag {
 sealed trait Content
 
 trait SlugBased {
+  def title: String
   def slug: String
   def file(wd: os.Path): os.Path = {
     wd / "content" / "blog" / s"$slug.md"
@@ -23,14 +24,14 @@ case class BlogPost(
     val tags: Set[Tag] = Set.empty
 ) extends Content
     with SlugBased
-case class ScalaBlogPost(
+case class ScalaJSBlogPost(
     title: String,
     slug: String,
     tags: Set[Tag],
     dependencies: List[String] = Nil
 ) extends Content
     with SlugBased
-case class ScalaJSBlogPost(
+case class ScalaBlogPost(
     title: String,
     slug: String,
     tags: Set[Tag],
@@ -55,30 +56,25 @@ object Data {
   def blogs(SiteRoot: os.RelPath) =
     Vector[Content with SlugBased](
       BlogPost(
-        "Google search history analysis",
-        "google-search-history-analysis",
+        "The perils of blogging",
+        "the-perils-of-blogging",
         tags = Set(
-          tg("R"),
           tg("python"),
-          tg("data-analysis"),
-          tg("stocks"),
-          tg("ggplot2")
+          tg("blogging")
         )
       ),
-      BlogPost(
-        "Visualising timeseries: stocks data and global trends",
-        "visualising-real-world-time-series",
-        tags = Set(tg("R"), tg("python"), tg("data-analysis"))
+      ScalaJSBlogPost(
+        "Blog post using Scala.js",
+        "scala-js-blog-post",
+        tags = Set(tg("scala"))
       ),
       ScalaBlogPost(
-        "Test mdoc blog",
-        "test-mdoc",
-        tags = Set(tg("scala"))
-      ),
-      ScalaJSBlogPost(
-        "Test mdoc blog",
-        "test-mdoc-js",
-        tags = Set(tg("scala"))
+        "Blog post using Scala (with external dependencies)",
+        "scala-blog-post",
+        tags = Set(tg("scala")),
+        dependencies = List(
+          "org.typelevel::cats-effect:2.1.4"
+        )
       )
     ).map { blogPost =>
       SiteRoot / "blog" / s"${blogPost.slug}.html" -> blogPost

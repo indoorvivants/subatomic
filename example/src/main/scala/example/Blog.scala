@@ -9,13 +9,10 @@ object Blog {
       content: Vector[(os.RelPath, Content)]
   ): Function2[os.RelPath, Content, Navigation] = {
     val titles = content.collect {
-      case (rp, bp: BlogPost) =>
-        rp.toString() -> ("Blog: " + bp.title)
-      case (rp, bp: ScalaBlogPost) =>
-        rp.toString() -> ("Blog: " + bp.title)
-      case (rp, bp: ScalaJSBlogPost) =>
-        rp.toString() -> ("Blog: " + bp.title)
-      case (rp, MarkdownPage(title, _)) => rp.toString() -> title
+      case (rp, bp: SlugBased) =>
+        rp.toString() -> bp.title
+      case (rp, MarkdownPage(title, _)) =>
+        rp.toString() -> title
     }.toList
 
     val titlePlusContent: List[((Title, URL), Content)] =

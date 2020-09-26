@@ -14,8 +14,4 @@ object Markdown {
 
     renderer.render(document)
   }
-
-  def renderToScalatags(markdownFile: os.Path) = {
-    scalatags.Text.all.raw(renderToString(markdownFile))
-  }
 }

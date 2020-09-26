@@ -13,7 +13,6 @@ object Template {
           p(strong(title))
         case (title, url, _) =>
           p(a(href := url, title))
-
       }
     )
   }
@@ -40,9 +39,6 @@ object Template {
           src := "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.2.0/highlight.min.js"
         ),
         script(
-          src := "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.2.0/languages/r.min.js"
-        ),
-        script(
           src := "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.2.0/languages/scala.min.js"
         ),
         script(
@@ -52,12 +48,11 @@ object Template {
       body(
         div(
           cls := "container-fluid",
-          style := "margin: 50px",
-          h1("Indoor Vivants"),
+          h1("Subatomic"),
           hr,
           div(
             cls := "row",
-            div(cls := "col-2", Nav(navigation)),
+            div(cls := "col-3", Nav(navigation)),
             div(cls := "col-7", content)
           )
         )
