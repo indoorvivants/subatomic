@@ -1,5 +1,7 @@
 package com.indoorvivants.subatomic
 
+import scala.collection.parallel.CollectionConverters._
+
 sealed trait SiteAsset
 case class Page(content: String)     extends SiteAsset
 case class CopyFile(source: os.Path) extends SiteAsset
@@ -9,7 +11,7 @@ object Site {
       sitemap: Vector[(os.RelPath, Content)],
       a1: Function2[os.RelPath, Content, A1]
   )(assembler: Function3[os.RelPath, Content, A1, SiteAsset]) = {
-    sitemap.foreach {
+    sitemap.par.foreach {
       case (relPath, content) =>
         val a1r = a1(relPath, content)
 
@@ -26,7 +28,7 @@ object Site {
       a1: Function2[os.RelPath, Content, A1],
       a2: Function2[os.RelPath, Content, A2]
   )(assembler: Function4[os.RelPath, Content, A1, A2, SiteAsset]) = {
-    sitemap.foreach {
+    sitemap.par.foreach {
       case (relPath, content) =>
         val a1r = a1(relPath, content)
         val a2r = a2(relPath, content)
@@ -45,7 +47,7 @@ object Site {
       a2: Function2[os.RelPath, Content, A2],
       a3: Function2[os.RelPath, Content, A3]
   )(assembler: Function5[os.RelPath, Content, A1, A2, A3, SiteAsset]) = {
-    sitemap.foreach {
+    sitemap.par.foreach {
       case (relPath, content) =>
         val a1r = a1(relPath, content)
         val a2r = a2(relPath, content)
@@ -65,7 +67,7 @@ object Site {
       a3: Function2[os.RelPath, Content, A3],
       a4: Function2[os.RelPath, Content, A4]
   )(assembler: Function6[os.RelPath, Content, A1, A2, A3, A4, SiteAsset]) = {
-    sitemap.foreach {
+    sitemap.par.foreach {
       case (relPath, content) =>
         val a1r = a1(relPath, content)
         val a2r = a2(relPath, content)

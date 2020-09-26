@@ -1,7 +1,4 @@
-import $file.data
-import data._
-
-import $ivy.`com.indoorvivants::subatomic:0.1.0-SNAPSHOT`
+package example
 
 object Template {
 
@@ -50,7 +47,7 @@ object Template {
         ),
         script(
           raw("hljs.initHighlightingOnLoad();")
-        ),
+        )
       ),
       body(
         div(

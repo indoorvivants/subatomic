@@ -1,15 +1,29 @@
-scalaVersion := "2.13.3"
+lazy val root =
+  project.aggregate(core, example).settings(skip in publish := true)
 
-crossScalaVersions := Seq("2.13.3", "2.12.12")
+lazy val core = project
+  .in(file("core"))
+  .settings(
+    name := "subatomic",
+    scalaVersion := "2.13.3",
+    crossScalaVersions := Seq("2.13.3", "2.12.12"),
+    libraryDependencies ++= Seq(
+      "io.get-coursier"        %% "coursier"                   % "2.0.0-RC6-24",
+      "com.vladsch.flexmark"    % "flexmark-all"               % "0.62.2",
+      "com.lihaoyi"            %% "scalatags"                  % "0.9.1",
+      "com.lihaoyi"            %% "ammonite-ops"               % "2.2.0",
+      "org.scala-lang.modules" %% "scala-parallel-collections" % "0.2.0"
+    )
+  )
 
-libraryDependencies ++= Seq(
-  "io.get-coursier"     %% "coursier"     % "2.0.0-RC6-24",
-  "com.vladsch.flexmark" % "flexmark-all" % "0.62.2",
-  "com.lihaoyi"         %% "scalatags"    % "0.9.1",
-  "com.lihaoyi"         %% "ammonite-ops" % "2.2.0"
-)
-
-name := "subatomic"
+lazy val example = project
+  .in(file("example"))
+  .dependsOn(core)
+  .settings(
+    scalaVersion := "2.13.3",
+    crossScalaVersions := Seq("2.13.3", "2.12.12"),
+    skip in publish := true
+  )
 
 inThisBuild(
   List(
