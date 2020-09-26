@@ -12,7 +12,8 @@ lazy val core = project
       "com.vladsch.flexmark"    % "flexmark-all"               % "0.62.2",
       "com.lihaoyi"            %% "scalatags"                  % "0.9.1",
       "com.lihaoyi"            %% "ammonite-ops"               % "2.2.0",
-      "org.scala-lang.modules" %% "scala-parallel-collections" % "0.2.0"
+      "org.scala-lang.modules" %% "scala-parallel-collections" % "0.2.0",
+      "com.lihaoyi"            %% "fansi"                      % "0.2.7"
     )
   )
 

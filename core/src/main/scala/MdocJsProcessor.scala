@@ -1,11 +1,10 @@
 package com.indoorvivants
 package subatomic
 
-import coursier.parse.DependencyParser
-import coursier.core.Dependency
-import coursier.Fetch
-
 import ammonite.ops._
+import coursier.Fetch
+import coursier.core.Dependency
+import coursier.parse.DependencyParser
 
 case class ScalaJsConfiguration(
     version: String = "1.1.1",
@@ -15,6 +14,12 @@ case class ScalaJsConfiguration(
 object ScalaJsConfiguration {
   val default = ScalaJsConfiguration()
 }
+
+case class ScalaJSResult(
+    mdFile: os.Path,
+    mdjsFile: os.Path,
+    mdocFile: os.Path
+)
 
 class MdocJsProcessor(
     scalaBinaryVersion: String = "2.13",
@@ -77,7 +82,7 @@ class MdocJsProcessor(
       pwd: os.Path,
       file: os.Path,
       dependencies: List[String]
-  ): os.Path = {
+  ): ScalaJSResult = {
     val tempDir = os.temp.dir()
     %%(
       "java",
@@ -92,7 +97,11 @@ class MdocJsProcessor(
       (tempDir / file.last).toString()
     )(pwd)
 
-    tempDir / file.last
+    ScalaJSResult(
+      tempDir / file.last,
+      tempDir / (file.last + ".js"),
+      tempDir / "mdoc.js"
+    )
   }
 
   private def cp(dep: Dependency*) = {

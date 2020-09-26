@@ -45,60 +45,75 @@ object Blog {
     ) {
       // Rendering a mdoc-based post is a bit more involved
       case (_, bp: ScalaBlogPost, navigation) =>
-        Page(
-          Template
-            .BlogPage(
-              navigation,
-              bp.title,
-              bp.tags.map(_.toString()),
-              Template.RawHTML(
-                Markdown.renderToString(
-                  mdocProc.process(pwd, bp.file(pwd), bp.dependencies)
+        Some(
+          Page(
+            Template
+              .BlogPage(
+                navigation,
+                bp.title,
+                bp.tags.map(_.toString()),
+                Template.RawHTML(
+                  Markdown.renderToString(
+                    mdocProc.process(pwd, bp.file(pwd), bp.dependencies)
+                  )
                 )
               )
-            )
-            .render
+              .render
+          )
         )
 
-      case (_, bp: ScalaJSBlogPost, navigation) =>
-        Page(
-          Template
-            .BlogPage(
-              navigation,
-              bp.title,
-              bp.tags.map(_.toString()),
-              Template.RawHTML(
-                Markdown.renderToString(
-                  mdocJsProc.process(pwd, bp.file(pwd), bp.dependencies)
+      case (rp, bp: ScalaJSBlogPost, navigation) =>
+        val result = mdocJsProc.process(pwd, bp.file(pwd), bp.dependencies)
+        List(
+          Page(
+            Template
+              .BlogPage(
+                navigation,
+                bp.title,
+                bp.tags.map(_.toString()),
+                Template.RawHTML(
+                  Markdown.renderToString(
+                    result.mdFile
+                  )
                 )
               )
-            )
-            .render
+              .render
+          ),
+          CreatedFile(result.mdjsFile, rp / os.up / result.mdjsFile.last),
+          CreatedFile(result.mdocFile, rp / os.up / "mdoc.js")
         )
 
       // Rendering non-mdoc-based posts is simpler
       case (_, bp @ BlogPost(title, _, tags), navigation) =>
-        Page(
-          Template
-            .BlogPage(
-              navigation,
-              title,
-              tags.map(_.toString()),
-              Template.RawHTML(Markdown.renderToString(bp.file(pwd)))
-            )
-            .render
+        Some(
+          Page(
+            Template
+              .BlogPage(
+                navigation,
+                title,
+                tags.map(_.toString()),
+                Template.RawHTML(Markdown.renderToString(bp.file(pwd)))
+              )
+              .render
+          )
         )
 
       // Rendering regular pages is even simpler
-      case (_, MarkdownPage(_, file), navigation) =>
-        Page(
-          Template
-            .Page(navigation, Template.RawHTML(Markdown.renderToString(file)))
-            .render
+      case (_, MarkdownPage(title, file), navigation) =>
+        Some(
+          Page(
+            Template
+              .Page(
+                title,
+                navigation,
+                Template.RawHTML(Markdown.renderToString(file))
+              )
+              .render
+          )
         )
 
       case (_, sf: StaticFile, _) =>
-        CopyFile(sf.file)
+        Some(CopyOf(sf.file))
     }
   }
 

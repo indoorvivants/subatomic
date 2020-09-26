@@ -20,10 +20,10 @@ object Template {
 
   def RawHTML(rawHtml: String) = div(raw(rawHtml))
 
-  def Page(navigation: Navigation, content: TypedTag[_]) =
+  def Page(title: String, navigation: Navigation, content: TypedTag[_]) =
     html(
       head(
-        scalatags.Text.tags2.title("My blog"),
+        scalatags.Text.tags2.title(title),
         link(
           rel := "stylesheet",
           href := "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.2.0/styles/monokai-sublime.min.css"
@@ -70,7 +70,7 @@ object Template {
       tags: Iterable[String],
       content: TypedTag[_]
   ) = {
-    Page(navigation, div(h1(title), p(tags.mkString(", ")), content))
+    Page(title, navigation, div(h1(title), p(tags.mkString(", ")), content))
   }
 
 }

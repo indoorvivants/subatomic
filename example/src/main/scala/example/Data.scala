@@ -97,7 +97,7 @@ object Data {
     )
 
   def statics(SiteRoot: os.RelPath, ContentRoot: os.Path) = {
-    os.walk(ContentRoot / "assets").map { path =>
+    os.walk(ContentRoot / "assets").filter(_.toIO.isFile()).map { path =>
       SiteRoot / path.relativeTo(ContentRoot) -> StaticFile(path)
     }
   }
