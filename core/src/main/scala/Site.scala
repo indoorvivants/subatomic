@@ -1,6 +1,6 @@
 package com.indoorvivants.subatomic
 
-import scala.collection.parallel.CollectionConverters._
+import scala.collection.parallel.immutable.ParVector
 
 sealed trait SiteAsset
 case class Page(content: String)                    extends SiteAsset
@@ -14,7 +14,6 @@ object Site {
     def red(s: String)   = fansi.Color.Red(s).render
     def green(s: String) = fansi.Color.Green(s).render
     def bold(s: String)  = fansi.Bold.On(s).render
-
   }
 
   def trim(content: String, len: Int = 50) =
@@ -56,7 +55,7 @@ object Site {
       sitemap: Vector[(os.RelPath, Content)],
       a1: Function2[os.RelPath, Content, A1]
   )(assembler: Function3[os.RelPath, Content, A1, Iterable[SiteAsset]]) = {
-    sitemap.par.foreach {
+    ParVector(sitemap: _*).foreach {
       case (relPath, content) =>
         val a1r = a1(relPath, content)
 

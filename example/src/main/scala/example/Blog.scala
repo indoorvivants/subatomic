@@ -4,7 +4,7 @@ import com.indoorvivants.subatomic._
 
 object Blog {
   import Navigation._
-// How sidebar navigation should behave depending on the page
+  // How sidebar navigation should behave depending on the page
   def NavigationState(
       content: Vector[(os.RelPath, Content)]
   ): Function2[os.RelPath, Content, Navigation] = {
