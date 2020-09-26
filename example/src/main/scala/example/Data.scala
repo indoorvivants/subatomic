@@ -68,7 +68,7 @@ object Navigation {
 
 //------ Content itself
 object Data {
-  private def blogs(SiteRoot: os.RelPath) =
+  private def Blogs(SiteRoot: os.RelPath) =
     Vector[Content with SlugBased](
       BlogPost(
         "The perils of blogging",
@@ -95,7 +95,7 @@ object Data {
       SiteRoot / "blog" / s"${blogPost.slug}.html" -> blogPost
     }
 
-  private def pages(SiteRoot: os.RelPath, ContentRoot: os.Path) =
+  private def Pages(SiteRoot: os.RelPath, ContentRoot: os.Path) =
     Vector(
       SiteRoot / "index.html" -> MarkdownPage(
         "Home",
@@ -107,15 +107,15 @@ object Data {
       )
     )
 
-  private def statics(SiteRoot: os.RelPath, ContentRoot: os.Path) = {
+  private def Statics(SiteRoot: os.RelPath, ContentRoot: os.Path) = {
     os.walk(ContentRoot / "assets").filter(_.toIO.isFile()).map { path =>
       SiteRoot / path.relativeTo(ContentRoot) -> StaticFile(path)
     }
   }
 
-  private def tags(SiteRoot: os.RelPath, content: Vector[Content]) =
+  private def Tags(SiteRoot: os.RelPath, content: Vector[Content]) =
     content
-      .flatMap[(Tag, Content)] {
+      .flatMap {
         case c @ BlogPost(_, _, tags) => tags.toVector.map { tag => tag -> c }
         case c @ ScalaBlogPost(_, _, tags, _) =>
           tags.toVector.map { tag => tag -> c }
@@ -131,11 +131,11 @@ object Data {
       }
 
   def Content(SiteRoot: os.RelPath, ContentRoot: os.Path) = {
-    val raw = blogs(SiteRoot) ++ pages(SiteRoot, ContentRoot) ++ statics(
+    val raw = Blogs(SiteRoot) ++ Pages(SiteRoot, ContentRoot) ++ Statics(
       SiteRoot,
       ContentRoot
     )
 
-    raw ++ tags(SiteRoot, raw.map(_._2))
+    raw ++ Tags(SiteRoot, raw.map(_._2))
   }
 }
