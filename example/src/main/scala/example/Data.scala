@@ -95,7 +95,7 @@ object Data {
       SiteRoot / "blog" / s"${blogPost.slug}.html" -> blogPost
     }
 
-  private def Pages(SiteRoot: os.RelPath, ContentRoot: os.Path) =
+  private def Pages(SiteRoot: os.RelPath, ContentRoot: os.Path): Vector[(os.RelPath, Content)] =
     Vector(
       SiteRoot / "index.html" -> MarkdownPage(
         "Home",
