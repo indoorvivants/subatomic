@@ -4,7 +4,7 @@
 
 Are you a Scala developer, writing a Scala blog or maintaining a Scala project?
 
-If so, do you want a static stie generator that:
+If so, do you want a static site generator that:
 
 * Requires you to write a **lot** of Scala
 * Doesn't have a built-in theme
