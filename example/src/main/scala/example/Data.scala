@@ -71,8 +71,8 @@ object Data {
   private def Blogs(SiteRoot: os.RelPath) =
     Vector[Content with SlugBased](
       BlogPost(
-        "The perils of blogging",
-        "the-perils-of-blogging",
+        "Regular markdown document",
+        "markdown-document",
         tags = Set(
           tg("python"),
           tg("blogging")
@@ -95,7 +95,10 @@ object Data {
       SiteRoot / "blog" / s"${blogPost.slug}.html" -> blogPost
     }
 
-  private def Pages(SiteRoot: os.RelPath, ContentRoot: os.Path): Vector[(os.RelPath, Content)] =
+  private def Pages(
+      SiteRoot: os.RelPath,
+      ContentRoot: os.Path
+  ): Vector[(os.RelPath, Content)] =
     Vector(
       SiteRoot / "index.html" -> MarkdownPage(
         "Home",

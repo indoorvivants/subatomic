@@ -52,7 +52,7 @@ object Site {
     }
   }
 
- def build[Content](destination: os.Path)(
+  def build[Content](destination: os.Path)(
       sitemap: Vector[(os.RelPath, Content)]
   )(assembler: Function2[os.RelPath, Content, Iterable[SiteAsset]]) = {
     ParVector(sitemap: _*).foreach {
