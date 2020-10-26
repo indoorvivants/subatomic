@@ -1,0 +1,11 @@
+body {
+  font-size: 20px;
+  color: black;
+  background-color: rgba(101, 46, 117, 0.93);
+}
+
+div.container{
+    background-color: rgb(254, 255, 248);
+    border-radius: 0% 0% 0% 0%;
+    padding: 30px;
+}
