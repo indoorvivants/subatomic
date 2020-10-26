@@ -118,6 +118,11 @@ class Template(linker: Linker) {
           rel := "stylesheet",
           href := linker.rooted(_ / "assets" / "styles.css")
         ),
+        link(
+          rel := "shortcut icon",
+          `type` := "image/png",
+          href := linker.rooted(_ / "assets" / "logo.png")
+        ),
         script(src := linker.rooted(_ / "assets" / "highlight.js")),
         script(src := linker.rooted(_ / "assets" / "highlight-scala.js")),
         script(src := linker.rooted(_ / "assets" / "script.js")),
@@ -135,12 +140,14 @@ class Template(linker: Linker) {
               hr,
               a(
                 cls := "btn btn-dark",
-                href := linker.rooted(_ / "index.html"), "Home"
+                href := linker.rooted(_ / "index.html"),
+                "Home"
               ),
               " ",
               a(
                 cls := "btn btn-dark",
-                href := linker.rooted(_ / "example.html"), "Example"
+                href := linker.rooted(_ / "example.html"),
+                "Example"
               ),
               hr,
               h1(title),
@@ -156,12 +163,19 @@ class Template(linker: Linker) {
   val Header = div(
     cls := "row",
     div(
-      cls := "col-8",
-      h1(a(href := linker.root, "Subatomic")),
-      small("a tiny, horrible static site builder for Scala")
+      cls := "col-2",
+      img(src := linker.rooted(_ / "assets" / "logo.png"), cls := "img-fluid", height := "100")
     ),
     div(
-      cls := "col-4",
+      cls := "col-8",
+      div(
+        cls := "align-middle",
+        h1(a(href := linker.root, "Subatomic")),
+        small("a tiny, horrible static site builder for Scala")
+      )
+    ),
+    div(
+      cls := "col-2",
       p(
         a(
           href := "https://github.com/indoorvivants/subatomic",

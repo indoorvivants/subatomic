@@ -8,6 +8,10 @@ We will use
 
 ScalaTags is not mandated by Subatomic (neither is writing it using Ammonite), but if we're already writing everything in Scala, why not HTML, too :-)
 
+This document is copying the example outlined in the [repo](https://github.com/indoorvivants/subatomic/tree/master/docs/example)
+
+## Folder structure
+
 Our example folder structure will look like this:
 
 ```bash
