@@ -13,3 +13,5 @@ project/target
 target
 
 project/metals.sbt
+
+.bsp

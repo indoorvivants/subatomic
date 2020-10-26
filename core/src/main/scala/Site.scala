@@ -1,20 +1,22 @@
 package com.indoorvivants.subatomic
 
-import scala.collection.parallel.immutable.ParVector
-
 sealed trait SiteAsset
-case class Page(content: String)                    extends SiteAsset
-case class CopyOf(source: os.Path)                  extends SiteAsset
-case class CreatedFile(at: os.Path, to: os.RelPath) extends SiteAsset
+case class Page(content: String)                      extends SiteAsset
+case class CopyOf(source: os.Path)                    extends SiteAsset
+case class CreatedFile(source: os.Path, to: SitePath) extends SiteAsset
 
 object Site {
 
   object logger {
     import Console._
-    def blue(s: String)  = CYAN + s + RESET
-    def red(s: String)   = RED + s + RESET
-    def green(s: String) = GREEN + s + RESET
-    def bold(s: String)  = BOLD + s + RESET
+
+    private lazy val colors =
+      System.console() != null && System.getenv().get("TERM") != null
+
+    def blue(s: String)  = if (!colors) s else CYAN + s + RESET
+    def red(s: String)   = if (!colors) s else RED + s + RESET
+    def green(s: String) = if (!colors) s else GREEN + s + RESET
+    def bold(s: String)  = if (!colors) s else BOLD + s + RESET
   }
 
   def trim(content: String, len: Int = 50) =
@@ -23,9 +25,9 @@ object Site {
 
   def logHandling[T](original: T, p: os.RelPath, cont: SiteAsset) = {
     val arrow = cont match {
-      case _: Page        => logger.red("<--write--")
-      case _: CopyOf      => logger.red("<--copy-of--")
-      case _: CreatedFile => logger.red("<--created-from--")
+      case _: Page        => logger.red("^--content-->")
+      case _: CopyOf      => logger.red("^--copy-of-->")
+      case _: CreatedFile => logger.red("^--created-from-->")
     }
 
     val rightSide = cont match {
@@ -41,7 +43,7 @@ object Site {
     }
 
     val msg =
-      logger.blue(leftSide) + " " + arrow + " " + logger.green(rightSide)
+      logger.blue(leftSide) + "\n    " + arrow + " " + logger.green(rightSide)
 
     cont match {
       case _: Page =>
@@ -53,9 +55,9 @@ object Site {
   }
 
   def build[Content](destination: os.Path)(
-      sitemap: Vector[(os.RelPath, Content)]
-  )(assembler: Function2[os.RelPath, Content, Iterable[SiteAsset]]) = {
-    ParVector(sitemap: _*).foreach {
+      sitemap: Vector[(SitePath, Content)]
+  )(assembler: Function2[SitePath, Content, Iterable[SiteAsset]]) = {
+    sitemap.foreach {
       case (relPath, content) =>
         handleAssets(
           relPath,
@@ -68,10 +70,10 @@ object Site {
   }
 
   def build1[Content, A1](destination: os.Path)(
-      sitemap: Vector[(os.RelPath, Content)],
-      a1: Function2[os.RelPath, Content, A1]
-  )(assembler: Function3[os.RelPath, Content, A1, Iterable[SiteAsset]]) = {
-    ParVector(sitemap: _*).foreach {
+      sitemap: Vector[(SitePath, Content)],
+      a1: Function2[SitePath, Content, A1]
+  )(assembler: Function3[SitePath, Content, A1, Iterable[SiteAsset]]) = {
+    sitemap.foreach {
       case (relPath, content) =>
         val a1r = a1(relPath, content)
 
@@ -86,11 +88,11 @@ object Site {
   }
 
   def build2[Content, A1, A2](destination: os.Path)(
-      sitemap: Vector[(os.RelPath, Content)],
-      a1: Function2[os.RelPath, Content, A1],
-      a2: Function2[os.RelPath, Content, A2]
-  )(assembler: Function4[os.RelPath, Content, A1, A2, Iterable[SiteAsset]]) = {
-    ParVector(sitemap: _*).foreach {
+      sitemap: Vector[(SitePath, Content)],
+      a1: Function2[SitePath, Content, A1],
+      a2: Function2[SitePath, Content, A2]
+  )(assembler: Function4[SitePath, Content, A1, A2, Iterable[SiteAsset]]) = {
+    sitemap.foreach {
       case (relPath, content) =>
         val a1r = a1(relPath, content)
         val a2r = a2(relPath, content)
@@ -106,11 +108,12 @@ object Site {
   }
 
   private def handleAssets[T](
-      p: os.RelPath,
+      sp: SitePath,
       orig: T,
       assets: Iterable[SiteAsset],
       destinationFolder: os.Path
   ) = {
+    val p           = sp.toRelPath
     val destination = destinationFolder / p
 
     assets.foreach { ass =>
@@ -122,7 +125,7 @@ object Site {
 
           os.copy(from = source, to = destination, replaceExisting = true)
         case CreatedFile(from, to) =>
-          val destination = destinationFolder / to
+          val destination = destinationFolder / to.toRelPath
 
           os.makeDir.all(destination / os.up)
 
