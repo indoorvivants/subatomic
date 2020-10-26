@@ -1,0 +1,21 @@
+name: Publish site
+on:
+  push:
+    branches: [master]
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: yilinwei/setup-ammonite@master
+        with:
+          ammonite-version: 2.2.0
+          scala-version: 2.13
+      - run: git fetch --unshallow
+      - name: Build site
+        run: amm docs/build.sc --version 0.0.2 --destination ./_site --contentRoot ./docs --siteRoot subatomic
+      - name: Publish gh-pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./_site
