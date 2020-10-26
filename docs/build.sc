@@ -66,7 +66,10 @@ object Content {
 
   def assets(root: os.Path): Vector[(SitePath, Content)] = {
     os.walk(root / "assets").filter(_.toIO.isFile()).map { path =>
-      SiteRoot / path.relativeTo(root) -> StaticFile(path)
+      if (path.endsWith(os.RelPath("CNAME")))
+        SiteRoot / "CNAME" -> StaticFile(path)
+      else
+        SiteRoot / path.relativeTo(root) -> StaticFile(path)
     }
   }.toVector
 
