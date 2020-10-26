@@ -31,14 +31,9 @@ def createSite(
     contentRoot: os.Path,
     runMdoc: Boolean
 ) = {
-  val raw = Content(contentRoot, version)
+  val content = Content(contentRoot, version)
 
-  val content = raw.map {
-    case (rawLocation, content) =>
-      rawLocation.prepend(siteRoot) -> content
-  }
-
-  val linker = new Linker(raw, siteRoot)
+  val linker = new Linker(content, siteRoot)
 
   val mdocProc = new MdocProcessor()
   val markdown = Markdown(RelativizeLinksExtension(siteRoot.toRelPath))

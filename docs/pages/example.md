@@ -279,7 +279,7 @@ destination:
 // using temporary folder as destination
 createSite(
   destination = os.temp.dir(),
-  contentRoot = os.pwd / "example",
+  contentRoot = os.pwd / "docs" / "example",
   siteRoot    = SiteRoot / "subatomic-example"
 )
 ```
