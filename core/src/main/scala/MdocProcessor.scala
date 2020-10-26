@@ -1,6 +1,5 @@
 package com.indoorvivants.subatomic
 
-import ammonite.ops._
 import coursier._
 import coursier.parse.DependencyParser
 
@@ -16,18 +15,23 @@ class MdocProcessor(
       dependencies: List[String]
   ): os.Path = {
     val f = os.temp()
-    %%(
-      "java",
-      "-classpath",
-      mainCp,
-      "mdoc.Main",
-      "--classpath",
-      fetchCp(dependencies),
-      "--in",
-      file.toString(),
-      "--out",
-      f.toString()
-    )(pwd)
+
+    val x = os
+      .proc(
+        "java",
+        "-classpath",
+        mainCp,
+        "mdoc.Main",
+        "--classpath",
+        fetchCp(dependencies),
+        "--in",
+        file.toString(),
+        "--out",
+        f.toString()
+      )
+      .call(pwd, stderr = os.Inherit, stdout = os.Inherit)
+
+    val _ = x.exitCode
 
     f
   }
