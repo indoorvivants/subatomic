@@ -1,7 +1,6 @@
 package com.indoorvivants
 package subatomic
 
-import ammonite.ops._
 import coursier.Fetch
 import coursier.core.Dependency
 import coursier.parse.DependencyParser
@@ -29,44 +28,46 @@ class MdocJsProcessor(
 
   private lazy val runnerCp = cp(
     unsafeParse(s"org.scalameta::mdoc-js:$mdocVersion")
-  ) + ":" + optsFolder.toString
+  )
 
-  private lazy val optsFolder = {
-    val jsClasspath = cp(
-      unsafeParse(
-        s"org.scala-js::scalajs-library:${scalajsConfiguration.version}"
-      ),
-      unsafeParse(
-        s"org.scala-js::scalajs-dom_sjs1:${scalajsConfiguration.domVersion}"
-      )
+  private lazy val jsClasspath = cp(
+    unsafeParse(
+      s"org.scala-js::scalajs-library:${scalajsConfiguration.version}"
+    ),
+    unsafeParse(
+      s"org.scala-js::scalajs-dom_sjs1:${scalajsConfiguration.domVersion}"
     )
+  )
 
-    val fullScala = scalaBinaryVersion match {
-      case "2.12" => "2.12.12"
-      case "2.13" => "2.13.3"
-    }
+  val fullScala = scalaBinaryVersion match {
+    case "2.12" => "2.12.12"
+    case "2.13" => "2.13.3"
+  }
 
-    val compilerPlug = cp(
-      unsafeParse(
-        s"org.scala-js:scalajs-compiler_$fullScala:${scalajsConfiguration.version}",
-        transitive = false
-      )
+  private lazy val compilerPlug = cp(
+    unsafeParse(
+      s"org.scala-js:scalajs-compiler_$fullScala:${scalajsConfiguration.version}",
+      transitive = false
     )
+  )
 
+  def optsFolder(deps: List[String]) = {
     val tempDir = os.temp.dir()
+
+    val depsCp = if (deps.nonEmpty) ":" + fetchCp(deps) else ""
 
     val fileContent =
       List(
-        "js-classpath=" + jsClasspath,
+        "js-classpath=" + jsClasspath + depsCp,
         "js-scalac-options=-Xplugin:" + compilerPlug
       ).mkString("\n")
 
     os.write.over(tempDir / "mdoc.properties", fileContent)
 
-    tempDir
+    tempDir.toString
   }
 
-  private def fetchCp(deps: List[String]) = {
+  def fetchCp(deps: List[String]) = {
     Fetch()
       .addDependencies(
         deps
@@ -79,15 +80,17 @@ class MdocJsProcessor(
   }
 
   def process(
-      pwd: os.Path,
+      _pwd: os.Path,
       file: os.Path,
       dependencies: List[String]
   ): ScalaJSResult = {
     val tempDir = os.temp.dir()
-    %%(
+    val opts    = optsFolder(dependencies)
+
+    os.proc(
       "java",
       "-classpath",
-      runnerCp,
+      runnerCp + ":" + opts,
       "mdoc.Main",
       "--classpath",
       fetchCp(dependencies),
@@ -95,7 +98,7 @@ class MdocJsProcessor(
       file.toString(),
       "--out",
       (tempDir / file.last).toString()
-    )(pwd)
+    ).call(_pwd, stderr = os.Inherit, stdout = os.Inherit)
 
     ScalaJSResult(
       tempDir / file.last,
@@ -124,10 +127,4 @@ class MdocJsProcessor(
 
   }
 
-}
-
-object MdocJsProcessor extends App {
-  val mp = new MdocJsProcessor()
-
-  println(mp.process(os.pwd, os.pwd / "test.md", Nil))
 }
