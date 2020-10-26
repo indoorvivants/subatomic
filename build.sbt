@@ -1,5 +1,5 @@
 lazy val root =
-  project.aggregate(core, example).settings(skip in publish := true)
+  project.aggregate(core).settings(skip in publish := true)
 
 lazy val core = project
   .in(file("core"))
@@ -10,7 +10,8 @@ lazy val core = project
     libraryDependencies ++= Seq(
       "io.get-coursier"     %% "coursier"     % "2.0.0-RC6-24",
       "com.vladsch.flexmark" % "flexmark-all" % "0.62.2",
-      "com.lihaoyi"         %% "ammonite-ops" % "2.2.0"
+      "com.lihaoyi"         %% "ammonite-ops" % "2.2.0",
+      "io.lemonlabs"        %% "scala-uri"    % "3.0.0"
     ),
     libraryDependencies ++= {
       CrossVersion.partialVersion(scalaVersion.value) match {
@@ -22,19 +23,6 @@ lazy val core = project
           )
       }
     }
-  )
-
-lazy val example = project
-  .in(file("example"))
-  .dependsOn(core)
-  .settings(
-    scalaVersion := "2.13.3",
-    crossScalaVersions := Seq("2.13.3", "2.12.12"),
-    skip in publish := true,
-    libraryDependencies ++= Seq(
-      "com.lihaoyi" %% "scalatags" % "0.9.1",
-      "com.lihaoyi" %% "fansi"     % "0.2.7"
-    )
   )
 
 inThisBuild(
