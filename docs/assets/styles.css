@@ -9,3 +9,10 @@ div.container{
     border-radius: 0% 0% 0% 0%;
     padding: 30px;
 }
+
+div.footer {
+  width:100%;
+  text-align: center;
+  background-color: #c5c5c5;
+  padding:10px;
+}

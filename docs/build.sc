@@ -12,8 +12,8 @@ def main(
     runMdoc: Boolean = true
 ) = {
 
-  interp.watch(os.pwd / "pages")
-  interp.watch(os.pwd / "assets")
+  interp.watch(contentRoot / "pages")
+  interp.watch(contentRoot / "assets")
 
   createSite(
     version,
@@ -120,7 +120,8 @@ class Template(linker: Linker) {
         ),
         script(src := linker.rooted(_ / "assets" / "highlight.js")),
         script(src := linker.rooted(_ / "assets" / "highlight-scala.js")),
-        script(src := linker.rooted(_ / "assets" / "script.js"))
+        script(src := linker.rooted(_ / "assets" / "script.js")),
+        meta(charset := "UTF-8")
       ),
       body(
         div(
@@ -130,15 +131,54 @@ class Template(linker: Linker) {
             div(cls := "col-1"),
             div(
               cls := "col-9",
-              h1(a(href := linker.root, "Subatomic")),
-              small("a tiny, horrible static site builder for Scala"),
+              Header,
+              hr,
+              a(
+                cls := "btn btn-dark",
+                href := linker.rooted(_ / "index.html"), "Home"
+              ),
+              " ",
+              a(
+                cls := "btn btn-dark",
+                href := linker.rooted(_ / "example.html"), "Example"
+              ),
               hr,
               h1(title),
               content
             )
-          )
+          ),
+          div(cls := "row", div(cls := "col-12", Footer))
         )
       )
     ).render
   }
+
+  val Header = div(
+    cls := "row",
+    div(
+      cls := "col-8",
+      h1(a(href := linker.root, "Subatomic")),
+      small("a tiny, horrible static site builder for Scala")
+    ),
+    div(
+      cls := "col-4",
+      p(
+        a(
+          href := "https://github.com/indoorvivants/subatomic",
+          "Github"
+        )
+      ),
+      p(
+        a(
+          href := "https://index.scala-lang.org/indoorvivants/subatomic/subatomic",
+          "Versions"
+        )
+      )
+    )
+  )
+
+  val Footer = div(
+    cls := "footer",
+    "© 2020 Anton Sviridov"
+  )
 }

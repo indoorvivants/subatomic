@@ -1,6 +1,3 @@
-lazy val root =
-  project.aggregate(core).settings(skip in publish := true)
-
 lazy val core = project
   .in(file("core"))
   .settings(
@@ -32,7 +29,9 @@ inThisBuild(
     semanticdbVersion := scalafixSemanticdb.revision,
     scalafixScalaBinaryVersion := scalaBinaryVersion.value,
     organization := "com.indoorvivants",
+    organizationName := "Anton Sviridov",
     homepage := Some(url("https://github.com/indoorvivants/subatomic")),
+    startYear := Some(2020),
     licenses := List(
       "Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")
     ),
@@ -60,7 +59,9 @@ val CICommands = Seq(
   "compile",
   "test",
   "scalafmtCheckAll",
-  s"scalafix --check $scalafixRules"
+  s"scalafix --check $scalafixRules",
+  "missinglinkCheck",
+  "headerCheck"
 ).mkString(";")
 
 val PrepareCICommands = Seq(
@@ -68,7 +69,9 @@ val PrepareCICommands = Seq(
   s"test:scalafix --rules $scalafixRules",
   "test:scalafmtAll",
   "compile:scalafmtAll",
-  "scalafmtSbt"
+  "scalafmtSbt",
+  "missinglinkCheck",
+  "headerCreate"
 ).mkString(";")
 
 addCommandAlias("ci", CICommands)
