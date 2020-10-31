@@ -1,14 +1,14 @@
-lazy val core = project
+import scala.collection.mutable
+lazy val core = projectMatrix
   .in(file("core"))
   .settings(
     name := "subatomic",
-    scalaVersion := "2.13.3",
-    crossScalaVersions := Seq("2.13.3", "2.12.12"),
     libraryDependencies ++= Seq(
-      "io.get-coursier"     %% "coursier"     % "2.0.0-RC6-24",
-      "com.vladsch.flexmark" % "flexmark-all" % "0.62.2",
-      "com.lihaoyi"         %% "ammonite-ops" % "2.2.0",
-      "io.lemonlabs"        %% "scala-uri"    % "3.0.0"
+      "io.get-coursier"        %% "coursier"                % "2.0.0-RC6-24",
+      "com.vladsch.flexmark"    % "flexmark-all"            % "0.62.2",
+      "com.lihaoyi"            %% "ammonite-ops"            % "2.2.0",
+      "io.lemonlabs"           %% "scala-uri"               % "3.0.0",
+      "org.scala-lang.modules" %% "scala-collection-compat" % "2.2.0"
     ),
     libraryDependencies ++= {
       CrossVersion.partialVersion(scalaVersion.value) match {
@@ -19,6 +19,57 @@ lazy val core = project
             "org.scala-lang.modules" %% "scala-parallel-collections" % "0.2.0"
           )
       }
+    }
+  )
+  .jvmPlatform(
+    scalaVersions = Seq("2.13.3", "2.12.12")
+  )
+
+val site = inputKey[Unit](
+  "Generate subatomic site with version same as the current build"
+)
+
+lazy val docs = projectMatrix
+  .in(file("docs"))
+  .dependsOn(core)
+  .jvmPlatform(scalaVersions = Seq("2.13.3"))
+  .settings(
+    skip in publish := true,
+    unmanagedSourceDirectories in Compile +=
+      (baseDirectory in ThisBuild).value / "docs",
+    libraryDependencies += "com.lihaoyi"  %% "scalatags" % "0.9.1",
+    libraryDependencies += "com.monovore" %% "decline"   % "1.3.0",
+    site := Def.inputTaskDyn {
+      val parsed = sbt.complete.DefaultParsers.spaceDelimited("<arg>").parsed
+      val args = Iterator(
+        parsed
+      ).flatten.mkString(" ")
+
+      Def.taskDyn {
+        runMain.in(Compile).toTask(s" docs.Main $args")
+      }
+    }.evaluated,
+    resourceGenerators in Compile += Def.task {
+      val out =
+        managedResourceDirectories
+          .in(Compile)
+          .value
+          .head / "subatomic.properties"
+      val props     = new java.util.Properties()
+      val classpath = mutable.ListBuffer.empty[File]
+      // Can't use fullClasspath.value because it introduces cyclic dependency between
+      // compilation and resource generation.
+      classpath ++= dependencyClasspath.in(Compile).value.iterator.map(_.data)
+      classpath += classDirectory.in(Compile).value
+
+      props.setProperty(
+        "classpath",
+        classpath.mkString(java.io.File.pathSeparator)
+      )
+
+      IO.write(props, "subatomic properties", out)
+
+      List(out)
     }
   )
 

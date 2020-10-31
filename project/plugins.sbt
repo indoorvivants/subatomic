@@ -6,3 +6,4 @@ addSbtPlugin("com.geirsson"              % "sbt-ci-release"            % "1.5.3"
 addSbtPlugin("ch.epfl.scala"             % "sbt-scalafix"              % "0.9.19")
 addSbtPlugin("org.scalameta"             % "sbt-mdoc"                  % "2.2.9")
 addSbtPlugin("de.heikoseeberger"         % "sbt-header"                % "5.6.0")
+addSbtPlugin("com.eed3si9n"              % "sbt-projectmatrix"         % "0.6.0")
