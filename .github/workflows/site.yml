@@ -7,10 +7,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: yilinwei/setup-ammonite@master
-        with:
-          ammonite-version: 2.2.0
-          scala-version: 2.13
       - run: git fetch --unshallow
       - name: Build site
         run: sbt "docs/site --destination $(pwd)/_site"
