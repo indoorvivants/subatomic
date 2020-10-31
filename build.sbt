@@ -1,5 +1,3 @@
-import scala.collection.mutable
-
 lazy val core = projectMatrix
   .in(file("core"))
   .settings(
@@ -18,6 +16,7 @@ lazy val core = projectMatrix
   .jvmPlatform(
     scalaVersions = Seq("2.13.3", "2.12.12")
   )
+  .settings(sharedSettings)
 
 val site = inputKey[Unit](
   "Generate subatomic site with version same as the current build"
@@ -44,6 +43,7 @@ lazy val docs = projectMatrix
       }
     }.evaluated,
     resourceGenerators in Compile += Def.task {
+      import scala.collection.mutable
       val out =
         managedResourceDirectories
           .in(Compile)
@@ -66,6 +66,25 @@ lazy val docs = projectMatrix
       List(out)
     }
   )
+  .settings(sharedSettings)
+
+lazy val sharedSettings = {
+  import java.io.PrintStream
+  import sbt.internal.LogManager
+
+  Seq(
+    logManager := LogManager.defaultManager(
+      ConsoleOut.printStreamOut(new PrintStream(System.out) {
+        val project = thisProjectRef.value.project
+        override def println(str: String): Unit = {
+          val (lvl, msg) = str.span(_ != ']')
+          super.println(s"$lvl] [$project$msg")
+        }
+      })
+    ),
+    fork in Test := false
+  )
+}
 
 inThisBuild(
   List(
@@ -115,7 +134,6 @@ val PrepareCICommands = Seq(
   "core/test:scalafmtAll",
   "core/compile:scalafmtAll",
   "scalafmtSbt",
-  "missinglinkCheck",
   "headerCreate"
 ).mkString(";")
 

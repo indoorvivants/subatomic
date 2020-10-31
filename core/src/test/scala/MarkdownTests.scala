@@ -1,7 +1,7 @@
 package com.indoorvivants.subatomic
 
-import utest._
 import com.vladsch.flexmark.util.misc.Extension
+import utest._
 
 object HelloTests extends TestSuite {
   val tests = Tests {
