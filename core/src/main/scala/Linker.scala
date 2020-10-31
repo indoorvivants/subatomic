@@ -29,5 +29,16 @@ class Linker(content: Vector[(SitePath, _)], base: SitePath) {
 
   }
 
+  def resolve(piece: Any): String = {
+    content
+      .find(_._2 == piece)
+      .map(found => rooted(_ / found._1))
+      .getOrElse(
+        throw new IllegalArgumentException(
+          s"Could not resolve $piece content in the site"
+        )
+      )
+  }
+
   def root = base.toString()
 }

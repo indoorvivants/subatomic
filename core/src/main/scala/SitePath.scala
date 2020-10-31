@@ -25,6 +25,8 @@ case class SitePath(segments: Seq[String]) {
 
   def /(rp: RelPath) = new SitePath(segments ++ rp.segments)
 
+  def /(sp: SitePath) = new SitePath(segments ++ sp.segments)
+
   def up =
     if (segments.isEmpty)
       throw new IllegalStateException("Cannot go up on an empty path")
