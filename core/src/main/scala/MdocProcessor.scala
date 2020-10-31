@@ -16,38 +16,160 @@
 
 package com.indoorvivants.subatomic
 
+import scala.io.Source
+import scala.util.Try
+
 import coursier._
 import coursier.parse.DependencyParser
+
+case class MdocFile(
+    path: os.Path,
+    dependencies: Set[String] = Set.empty,
+    inheritedClasspath: Boolean = true
+)
 
 class MdocProcessor(
     scalaBinaryVersion: String = "2.13",
     mdocVersion: String = "2.2.9",
     extraCp: List[String] = Nil
-) {
+) { self =>
+
+  lazy val inheritedClasspath = {
+    val propsMaybe = Try(Source.fromResource("subatomic.properties")).toOption
+
+    val prop = new java.util.Properties()
+    propsMaybe.foreach { source =>
+      prop.load(source.reader())
+    }
+
+    Option(prop.getProperty("classpath"))
+  }
+
+  class PreparedMdoc[T](
+      processor: MdocProcessor,
+      mapping: Map[Set[String], Vector[(T, MdocFile)]],
+      pwd: Option[os.Path] = None
+  ) {
+    val processed = scala.collection.mutable.Map[T, os.Path]()
+    def get(content: T): os.Path = {
+      if (processed.contains(content)) processed(content)
+      else {
+        val similarOnes = mapping.filter(_._2.map(_._1).contains(content))
+
+        similarOnes.foreach {
+          case (dependencies, markdownFiles) =>
+            val paths = markdownFiles.map(_._2.path)
+
+            val result = processor.processAll(paths, dependencies, pwd)
+
+            result.map(_._2).zip(markdownFiles).map {
+              case (result, (content, _)) =>
+                processed.update(content, result)
+            }
+        }
+
+        processed(content)
+      }
+    }
+  }
+
+  def processAll(
+      files: Seq[os.Path],
+      dependencies: Set[String],
+      pwd: Option[os.Path]
+  ) = {
+    val tmpLocation = os.temp.dir()
+
+    val filesWithTargets = files.map { p =>
+      p -> os.temp(dir = tmpLocation, suffix = ".md")
+    }
+
+    logger.logLine(
+      "[MDOC batch]: " + files.mkString(", ")
+    )
+
+    if (dependencies.nonEmpty)
+      logger.logLine(
+        s"[MDOC batch]: dependencies ${dependencies.mkString(", ")}"
+      )
+
+    if (inheritedClasspath.nonEmpty)
+      logger.logLine(
+        "[MDOC batch]: inherited classpath from subatomic.properties resource"
+      )
+
+    val args = filesWithTargets.flatMap {
+      case (from, to) =>
+        Seq("--in", from.toString, "--out", to.toString)
+    }
+
+    val base = Seq(
+      "java",
+      "-classpath",
+      mainCp,
+      "mdoc.Main",
+      "--classpath",
+      fetchCp(dependencies) + inheritedClasspath.map(":" + _).getOrElse("")
+    )
+
+    os
+      .proc(base ++ args)
+      .call(
+        pwd.getOrElse(tmpLocation),
+        stderr = os.Inherit,
+        stdout = os.Inherit
+      )
+
+    filesWithTargets
+  }
+
+  def prepare[T](
+      files: Iterable[(T, MdocFile)],
+      pwd: Option[os.Path] = None
+  ) = {
+    val groupedByDependencies = files
+      .groupBy { mf =>
+        mf._2.dependencies
+      }
+      .map { case (deps, values) => deps -> values.toVector }
+
+    new PreparedMdoc[T](self, groupedByDependencies.toMap, pwd)
+  }
 
   def process(
-      pwd: os.Path,
       file: os.Path,
-      dependencies: List[String]
+      dependencies: Set[String]
   ): os.Path = {
     val f = os.temp()
 
-    val x = os
+    val pwd = f / os.up
+
+    logger.logLine(
+      "[MDOC]: " + file
+    )
+
+    if (dependencies.nonEmpty)
+      logger.logLine(s"[MDOC]: dependencies ${dependencies.mkString(", ")}")
+
+    if (inheritedClasspath.nonEmpty)
+      logger.logLine(
+        "[MDOC]: inherited classpath from subatomic.properties resource"
+      )
+
+    os
       .proc(
         "java",
         "-classpath",
         mainCp,
         "mdoc.Main",
         "--classpath",
-        fetchCp(dependencies),
+        fetchCp(dependencies) + inheritedClasspath.map(":" + _).getOrElse(""),
         "--in",
         file.toString(),
         "--out",
         f.toString()
       )
       .call(pwd, stderr = os.Inherit, stdout = os.Inherit)
-
-    val _ = x.exitCode
 
     f
   }
@@ -65,10 +187,10 @@ class MdocProcessor(
       .mkString(":")
   }
 
-  private def fetchCp(deps: List[String]) = {
+  private def fetchCp(deps: Iterable[String]) = {
     Fetch()
       .addDependencies(
-        deps
+        deps.toSeq
           .map(DependencyParser.dependency(_, scalaBinaryVersion))
           .map(_.left.map(new RuntimeException(_)).toTry.get): _*
       )

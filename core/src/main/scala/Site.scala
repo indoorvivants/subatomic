@@ -23,56 +23,59 @@ case class CreatedFile(source: os.Path, to: SitePath) extends SiteAsset
 
 object Site {
 
-  object logger {
-    import Console._
-
-    private lazy val colors =
-      System.console() != null && System.getenv().get("TERM") != null
-
-    def blue(s: String)  = if (!colors) s else CYAN + s + RESET
-    def red(s: String)   = if (!colors) s else RED + s + RESET
-    def green(s: String) = if (!colors) s else GREEN + s + RESET
-    def bold(s: String)  = if (!colors) s else BOLD + s + RESET
-  }
-
   def trim(content: String, len: Int = 50) =
     if (content.length > len) content.take(len - 3) + "..."
     else content
 
-  def logHandling[T](original: T, p: os.RelPath, cont: SiteAsset) = {
-    val arrow = cont match {
-      case _: Page        => logger.red("^--content-->")
-      case _: CopyOf      => logger.red("^--copy-of-->")
-      case _: CreatedFile => logger.red("^--created-from-->")
+  def logHandling[T](original: T, p: os.RelPath, asset: => SiteAsset) = {
+    import logger._
+
+    val arrow = asset match {
+      case _: Page        => _red("^--content-->")
+      case _: CopyOf      => _red("^--copy-of-->")
+      case _: CreatedFile => _red("^--created-from-->")
     }
 
-    val rightSide = cont match {
+    val rightSide = asset match {
       case Page(content) => trim(content, 50)
 
       case CopyOf(source)     => source.toString
       case CreatedFile(at, _) => at.toString()
     }
 
-    val leftSide = cont match {
+    val leftSide = asset match {
       case CreatedFile(_, to) => to.toString()
       case _                  => p.toString()
     }
 
-    val msg =
-      logger.blue(leftSide) + "\n    " + arrow + " " + logger.green(rightSide)
-
-    cont match {
+    val origMsg = asset match {
       case _: Page =>
-        println(
-          msg + "\n" + "    " + logger.bold(trim(original.toString(), 70))
-        )
-      case _ => println(msg)
+        List("\n    ", _bold(trim(original.toString(), 70)))
+      case _ => List.empty
     }
+
+    val msg = List(
+      _blue(leftSide),
+      "\n    ",
+      arrow,
+      " ",
+      _green(
+        rightSide
+      )
+    )
+
+    log(msg ++ origMsg ++ List("\n"))
   }
 
   def build[Content](destination: os.Path)(
       sitemap: Vector[(SitePath, Content)]
   )(assembler: Function2[SitePath, Content, Iterable[SiteAsset]]) = {
+    logger.logLine(
+      "\nCreating site in " + logger._green(
+        destination.toIO.getAbsolutePath()
+      ) + "\n"
+    )
+
     sitemap.foreach {
       case (relPath, content) =>
         handleAssets(
@@ -89,6 +92,13 @@ object Site {
       sitemap: Vector[(SitePath, Content)],
       a1: Function2[SitePath, Content, A1]
   )(assembler: Function3[SitePath, Content, A1, Iterable[SiteAsset]]) = {
+
+    logger.logLine(
+      "\nCreating site in " + logger._green(
+        destination.toIO.getAbsolutePath()
+      ) + "\n"
+    )
+
     sitemap.foreach {
       case (relPath, content) =>
         val a1r = a1(relPath, content)
@@ -108,6 +118,12 @@ object Site {
       a1: Function2[SitePath, Content, A1],
       a2: Function2[SitePath, Content, A2]
   )(assembler: Function4[SitePath, Content, A1, A2, Iterable[SiteAsset]]) = {
+    logger.logLine(
+      "\nCreating site in " + logger._green(
+        destination.toIO.getAbsolutePath()
+      ) + "\n"
+    )
+
     sitemap.foreach {
       case (relPath, content) =>
         val a1r = a1(relPath, content)

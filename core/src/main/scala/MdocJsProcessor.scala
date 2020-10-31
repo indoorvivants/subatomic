@@ -102,6 +102,13 @@ class MdocJsProcessor(
     val tempDir = os.temp.dir()
     val opts    = optsFolder(dependencies)
 
+    val deps =
+      if (dependencies.nonEmpty) s" [${dependencies.mkString(", ")}]" else ""
+
+    logger.logLine(
+      "MDOC.JS: " + file + deps
+    )
+
     os.proc(
       "java",
       "-classpath",
