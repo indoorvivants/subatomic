@@ -124,7 +124,6 @@ val CICommands = Seq(
   "test",
   "scalafmtCheckAll",
   s"scalafix --check $scalafixRules",
-  "missinglinkCheck",
   "headerCheck"
 ).mkString(";")
 
