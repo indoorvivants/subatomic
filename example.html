@@ -252,7 +252,7 @@ understanding.</p>
     case (sitePath, ScalaJSPage(title, mdFile, deps)) =&gt;
       val result = mdocJs.process(pwd, mdFile, deps)
 
-      List[SiteAsset](
+      List(
         Page(
           template.main(title, markdown.renderToString(result.mdFile))
         ),
@@ -271,7 +271,7 @@ createSite(
   siteRoot    = SiteRoot / &quot;subatomic-example&quot;
 )
 // 
-// Creating site in /tmp/6957404527511891967
+// Creating site in /tmp/423644077495756499
 // 
 // subatomic-example/assets/styles.css
 //     ^--copy-of--&gt; /home/runner/work/subatomic/subatomic/docs/example/assets/styles.css
@@ -298,8 +298,8 @@ createSite(
 //     ^--content--&gt; &lt;html&gt;&lt;head&gt;&lt;title&gt;Scala.js usage&lt;/title&gt;&lt;link ...
 //     ScalaJSPage(Scala.js usage,/home/runner/work/subatomic/subatomic/do...
 // /subatomic-example/scala-js-usage.md.js
-//     ^--created-from--&gt; /tmp/1618081273288902482/scala-js-usage.md.js
+//     ^--created-from--&gt; /tmp/4520733587867053470/scala-js-usage.md.js
 // /subatomic-example/mdoc.js
-//     ^--created-from--&gt; /tmp/1618081273288902482/mdoc.js
+//     ^--created-from--&gt; /tmp/4520733587867053470/mdoc.js
 </code></pre>
 </div></div></div><div class="row"><div class="col-12"><div class="footer">© 2020 Anton Sviridov</div></div></div></div></body></html>
