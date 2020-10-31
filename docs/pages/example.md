@@ -69,7 +69,7 @@ sealed trait Content
 case class ScalaPage(
     title: String,
     path: os.Path,
-    dependencies: List[String]
+    dependencies: Set[String]
 ) extends Content
 
 case class ScalaJSPage(
@@ -115,7 +115,7 @@ object Content {
       SiteRoot / "scala-usage.html" -> ScalaPage(
         "Scala usage",
         root / "pages" / "scala-usage.md",
-        List("org.typelevel::cats-effect:2.2.0")
+        Set("org.typelevel::cats-effect:2.2.0")
       ),
       SiteRoot / "scala-js-usage.html" -> ScalaJSPage(
         "Scala.js usage",
@@ -250,7 +250,7 @@ def createSite(
 
     // Processing Scala markdown pages with mdoc
     case (_, ScalaPage(title, mdFile, deps)) =>
-      val processed = mdoc.process(os.pwd, mdFile, deps)
+      val processed = mdoc.process(mdFile, deps)
       Some(
         Page(
           template.main(title, markdown.renderToString(processed))
