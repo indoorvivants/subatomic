@@ -265,7 +265,7 @@ def createSite(
     case (sitePath, ScalaJSPage(title, mdFile, deps)) =>
       val result = mdocJs.process(pwd, mdFile, deps)
 
-      List[SiteAsset](
+      List(
         Page(
           template.main(title, markdown.renderToString(result.mdFile))
         ),

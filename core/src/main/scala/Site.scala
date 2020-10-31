@@ -16,7 +16,7 @@
 
 package com.indoorvivants.subatomic
 
-sealed trait SiteAsset
+sealed trait SiteAsset extends Product with Serializable
 case class Page(content: String)                      extends SiteAsset
 case class CopyOf(source: os.Path)                    extends SiteAsset
 case class CreatedFile(source: os.Path, to: SitePath) extends SiteAsset
