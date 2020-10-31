@@ -59,7 +59,7 @@ import ammonite.ops._
 case class ScalaPage(
     title: String,
     path: os.Path,
-    dependencies: List[String]
+    dependencies: Set[String]
 ) extends Content
 
 case class ScalaJSPage(
@@ -108,7 +108,7 @@ case class MarkdownPage(title: String, path: os.Path) extends Content
       SiteRoot / &quot;scala-usage.html&quot; -&gt; ScalaPage(
         &quot;Scala usage&quot;,
         root / &quot;pages&quot; / &quot;scala-usage.md&quot;,
-        List(&quot;org.typelevel::cats-effect:2.2.0&quot;)
+        Set(&quot;org.typelevel::cats-effect:2.2.0&quot;)
       ),
       SiteRoot / &quot;scala-js-usage.html&quot; -&gt; ScalaJSPage(
         &quot;Scala.js usage&quot;,
@@ -237,7 +237,7 @@ understanding.</p>
 
     // Processing Scala markdown pages with mdoc
     case (_, ScalaPage(title, mdFile, deps)) =&gt;
-      val processed = mdoc.process(os.pwd, mdFile, deps)
+      val processed = mdoc.process(mdFile, deps)
       Some(
         Page(
           template.main(title, markdown.renderToString(processed))
@@ -270,6 +270,9 @@ createSite(
   contentRoot = os.pwd / &quot;docs&quot; / &quot;example&quot;,
   siteRoot    = SiteRoot / &quot;subatomic-example&quot;
 )
+// 
+// Creating site in /tmp/2880546385697436304
+// 
 // subatomic-example/assets/styles.css
 //     ^--copy-of--&gt; /home/runner/work/subatomic/subatomic/docs/example/assets/styles.css
 // subatomic-example/assets/highlight.js
@@ -285,15 +288,18 @@ createSite(
 // subatomic-example/index.html
 //     ^--content--&gt; &lt;html&gt;&lt;head&gt;&lt;title&gt;Home&lt;/title&gt;&lt;link rel=&quot;style...
 //     MarkdownPage(Home,/home/runner/work/subatomic/subatomic/docs/exampl...
+// [MDOC]: /home/runner/work/subatomic/subatomic/docs/example/pages/scala-usage.md
+// [MDOC]: dependencies org.typelevel::cats-effect:2.2.0
 // subatomic-example/scala-usage.html
 //     ^--content--&gt; &lt;html&gt;&lt;head&gt;&lt;title&gt;Scala usage&lt;/title&gt;&lt;link rel...
 //     ScalaPage(Scala usage,/home/runner/work/subatomic/subatomic/docs/ex...
+// MDOC.JS: /home/runner/work/subatomic/subatomic/docs/example/pages/scala-js-usage.md [com.raquo::laminar_sjs1:0.11.0]
 // subatomic-example/scala-js-usage.html
 //     ^--content--&gt; &lt;html&gt;&lt;head&gt;&lt;title&gt;Scala.js usage&lt;/title&gt;&lt;link ...
 //     ScalaJSPage(Scala.js usage,/home/runner/work/subatomic/subatomic/do...
 // /subatomic-example/scala-js-usage.md.js
-//     ^--created-from--&gt; /tmp/2918080182851104432/scala-js-usage.md.js
+//     ^--created-from--&gt; /tmp/134062688968003112/scala-js-usage.md.js
 // /subatomic-example/mdoc.js
-//     ^--created-from--&gt; /tmp/2918080182851104432/mdoc.js
+//     ^--created-from--&gt; /tmp/134062688968003112/mdoc.js
 </code></pre>
 </div></div></div><div class="row"><div class="col-12"><div class="footer">© 2020 Anton Sviridov</div></div></div></div></body></html>
