@@ -1,4 +1,5 @@
 import scala.collection.mutable
+
 lazy val core = projectMatrix
   .in(file("core"))
   .settings(
@@ -8,18 +9,11 @@ lazy val core = projectMatrix
       "com.vladsch.flexmark"    % "flexmark-all"            % "0.62.2",
       "com.lihaoyi"            %% "ammonite-ops"            % "2.2.0",
       "io.lemonlabs"           %% "scala-uri"               % "3.0.0",
-      "org.scala-lang.modules" %% "scala-collection-compat" % "2.2.0"
+      "org.scala-lang.modules" %% "scala-collection-compat" % "2.2.0",
+      "com.lihaoyi"            %% "utest"                   % "0.7.2" % Test
     ),
-    libraryDependencies ++= {
-      CrossVersion.partialVersion(scalaVersion.value) match {
-        case Some((2, major)) if major <= 12 =>
-          Seq()
-        case _ =>
-          Seq(
-            "org.scala-lang.modules" %% "scala-parallel-collections" % "0.2.0"
-          )
-      }
-    }
+    testFrameworks += new TestFramework("utest.runner.Framework"),
+    scalacOptions.in(Test) ~= filterConsoleScalacOptions
   )
   .jvmPlatform(
     scalaVersions = Seq("2.13.3", "2.12.12")
@@ -116,10 +110,10 @@ val CICommands = Seq(
 ).mkString(";")
 
 val PrepareCICommands = Seq(
-  s"compile:scalafix --rules $scalafixRules",
-  s"test:scalafix --rules $scalafixRules",
-  "test:scalafmtAll",
-  "compile:scalafmtAll",
+  s"core/compile:scalafix --rules $scalafixRules",
+  s"core/test:scalafix --rules $scalafixRules",
+  "core/test:scalafmtAll",
+  "core/compile:scalafmtAll",
   "scalafmtSbt",
   "missinglinkCheck",
   "headerCreate"

@@ -44,6 +44,12 @@ class Markdown(extensions: List[Extension]) {
     renderer.render(document)
   }
 
+  def renderToString(content: String) = {
+    val document = parser.parse(content)
+
+    renderer.render(document)
+  }
+
 }
 
 object Markdown {

@@ -109,7 +109,9 @@ object RelativizeLinksExtension {
 
   }
 
-  def apply(base: os.RelPath) = {
+  def apply(base: os.RelPath): Extension = {
     new Extension(base)
   }
+
+  def apply(sp: SitePath): Extension = apply(sp.toRelPath)
 }
