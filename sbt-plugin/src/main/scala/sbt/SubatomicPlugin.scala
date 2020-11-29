@@ -16,17 +16,18 @@
 
 package com.indoorvivants.subatomic
 
+import java.util.Properties
+
 import sbt.Keys._
 import sbt._
-import java.util.Properties
 
 object Props {
   def version: String =
     props.getProperty("subatomic.version", "0.8.0-SNAPSHOT")
 
   private lazy val props: Properties = {
-    val props = new Properties()
-    val path = "subatomic-plugin.properties"
+    val props       = new Properties()
+    val path        = "subatomic-plugin.properties"
     val classloader = this.getClass.getClassLoader
     Option(classloader.getResourceAsStream(path)) match {
       case Some(stream) =>
