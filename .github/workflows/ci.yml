@@ -12,4 +12,4 @@ jobs:
       - name: Test
         run: sbt ci
       - name: Check site build
-        run: sbt docs/run
+        run: sbt buildSite

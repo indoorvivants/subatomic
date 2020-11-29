@@ -1,3 +1,11 @@
+lazy val root = project
+  .aggregate(
+    (Seq(docs, plugin) ++ core.projectRefs): _*
+  )
+  .settings(
+    skip in publish := true
+  )
+
 lazy val core = projectMatrix
   .in(file("core"))
   .settings(
@@ -14,75 +22,97 @@ lazy val core = projectMatrix
     scalacOptions.in(Test) ~= filterConsoleScalacOptions
   )
   .jvmPlatform(
-    scalaVersions = Seq("2.13.3", "2.12.12")
+    scalaVersions = Seq(Scala_213, Scala_212)
   )
   .settings(sharedSettings)
+  .enablePlugins(BuildInfoPlugin)
+  .settings(buildInfoSettings)
 
-val site = inputKey[Unit](
-  "Generate subatomic site with version same as the current build"
-)
-
-lazy val docs = projectMatrix
+lazy val docsMatrix = projectMatrix
   .in(file("docs"))
-  .dependsOn(core)
-  .jvmPlatform(scalaVersions = Seq("2.13.3"))
+  .withId("docs")
+  .dependsOn(core, pluginMatrix)
+  .jvmPlatform(scalaVersions = Seq(Scala_212))
+  .enablePlugins(SubatomicPlugin)
   .settings(
     skip in publish := true,
     unmanagedSourceDirectories in Compile +=
       (baseDirectory in ThisBuild).value / "docs",
     libraryDependencies += "com.lihaoyi"  %% "scalatags" % "0.9.1",
     libraryDependencies += "com.monovore" %% "decline"   % "1.3.0",
-    site := Def.inputTaskDyn {
-      val parsed = sbt.complete.DefaultParsers.spaceDelimited("<arg>").parsed
-      val args = Iterator(
-        parsed
-      ).flatten.mkString(" ")
+    subatomicAddDependency := false,
+    subatomicInheritClasspath := true
+  )
+  .settings(sharedSettings)
+  .settings(buildInfoSettings)
 
-      Def.taskDyn {
-        runMain.in(Compile).toTask(s" docs.Main $args")
-      }
-    }.evaluated,
+lazy val docs = docsMatrix.jvm(Scala_212).project
+
+lazy val pluginMatrix = projectMatrix
+  .in(file("sbt-plugin"))
+  .withId("plugin")
+  .settings(
+    sbtPlugin := true,
+    sbtVersion in pluginCrossBuild := "1.4.4"
+  )
+  .jvmPlatform(scalaVersions = Seq(Scala_212))
+  .settings(
+    moduleName := "subatomic-plugin",
+    scriptedLaunchOpts := {
+      scriptedLaunchOpts.value ++
+        Seq("-Xmx1024M", "-Dplugin.version=" + version.value)
+    },
+    scriptedBufferLog := false
+  )
+  .settings(
+    publishLocal := publishLocal
+      .dependsOn(
+        publishLocal in core.jvm(Scala_212)
+      )
+      .value
+  )
+  .settings(
     resourceGenerators in Compile += Def.task {
-      import scala.collection.mutable
       val out =
         managedResourceDirectories
           .in(Compile)
           .value
-          .head / "subatomic.properties"
-      val props     = new java.util.Properties()
-      val classpath = mutable.ListBuffer.empty[File]
-      // Can't use fullClasspath.value because it introduces cyclic dependency between
-      // compilation and resource generation.
-      classpath ++= dependencyClasspath.in(Compile).value.iterator.map(_.data)
-      classpath += classDirectory.in(Compile).value
+          .head / "subatomic-plugin.properties"
 
-      props.setProperty(
-        "classpath",
-        classpath.mkString(java.io.File.pathSeparator)
-      )
+      val props = new java.util.Properties()
 
-      IO.write(props, "subatomic properties", out)
+      props.setProperty("subatomic.version", version.value)
+
+      IO.write(props, "subatomic plugin properties", out)
 
       List(out)
     }
   )
-  .settings(sharedSettings)
+  .enablePlugins(ScriptedPlugin, SbtPlugin)
+
+lazy val plugin = pluginMatrix.jvm(Scala_212).project
+
+/**
+  * Settings
+  */
+
+val Scala_213 = "2.13.3"
+val Scala_212 = "2.12.12"
 
 lazy val sharedSettings = {
-  import java.io.PrintStream
-  import sbt.internal.LogManager
-
   Seq(
-    logManager := LogManager.defaultManager(
-      ConsoleOut.printStreamOut(new PrintStream(System.out) {
-        val project = thisProjectRef.value.project
-        override def println(str: String): Unit = {
-          val (lvl, msg) = str.span(_ != ']')
-          super.println(s"$lvl] [$project$msg")
-        }
-      })
-    ),
     fork in Test := false
+  )
+}
+
+lazy val buildInfoSettings = {
+  Seq(
+    buildInfoPackage := "subatomic.internal",
+    buildInfoKeys := Seq[BuildInfoKey](
+      version,
+      scalaVersion,
+      scalaBinaryVersion
+    )
   )
 }
 
@@ -122,6 +152,7 @@ val CICommands = Seq(
   "clean",
   "compile",
   "test",
+  "scripted",
   "scalafmtCheckAll",
   s"scalafix --check $scalafixRules",
   "headerCheck"
@@ -130,8 +161,11 @@ val CICommands = Seq(
 val PrepareCICommands = Seq(
   s"core/compile:scalafix --rules $scalafixRules",
   s"core/test:scalafix --rules $scalafixRules",
+  s"plugin/compile:scalafix --rules $scalafixRules",
   "core/test:scalafmtAll",
   "core/compile:scalafmtAll",
+  "docs/compile:scalafmtAll",
+  "plugin/compile:scalafmtAll",
   "scalafmtSbt",
   "headerCreate"
 ).mkString(";")
@@ -139,3 +173,5 @@ val PrepareCICommands = Seq(
 addCommandAlias("ci", CICommands)
 
 addCommandAlias("preCI", PrepareCICommands)
+
+addCommandAlias("buildSite", "docs2_12/run")
