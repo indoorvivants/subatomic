@@ -16,11 +16,11 @@
 
 package com.indoorvivants.subatomic
 
-import scala.io.Source
-import scala.util.Try
+import java.util.Properties
 
 import coursier._
 import coursier.parse.DependencyParser
+import subatomic.internal.BuildInfo
 
 case class MdocFile(
     path: os.Path,
@@ -29,20 +29,24 @@ case class MdocFile(
 )
 
 class MdocProcessor(
-    scalaBinaryVersion: String = "2.13",
+    scalaBinaryVersion: String = BuildInfo.scalaBinaryVersion,
     mdocVersion: String = "2.2.9",
     extraCp: List[String] = Nil
 ) { self =>
 
   lazy val inheritedClasspath = {
-    val propsMaybe = Try(Source.fromResource("subatomic.properties")).toOption
+    val path        = "subatomic.properties"
+    val classloader = this.getClass.getClassLoader
+    val props       = new Properties()
 
-    val prop = new java.util.Properties()
-    propsMaybe.foreach { source =>
-      prop.load(source.reader())
+    Option(classloader.getResourceAsStream(path)) match {
+      case Some(stream) =>
+        props.load(stream)
+      case None =>
+        println(s"error: failed to load $path")
     }
 
-    Option(prop.getProperty("classpath"))
+    Option(props.getProperty("classpath"))
   }
 
   class PreparedMdoc[T](
