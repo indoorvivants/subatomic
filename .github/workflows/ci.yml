@@ -8,8 +8,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
-      - uses: olafurpg/setup-scala@v7
+      - uses: olafurpg/setup-scala@v10
       - name: Test
         run: sbt ci
       - name: Check site build
-        run: sbt docs/site
+        run: sbt docs/run
