@@ -1,4 +1,4 @@
-package com.indoorvivants.subatomic
+package subatomic
 
 import com.vladsch.flexmark.util.misc.Extension
 import utest._

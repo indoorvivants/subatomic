@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.indoorvivants.subatomic
+package subatomic
 
 import coursier.Fetch
 import coursier.core.Dependency

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.indoorvivants.subatomic
+package subatomic
 
 sealed trait SiteAsset                                extends Product with Serializable
 case class Page(content: String)                      extends SiteAsset

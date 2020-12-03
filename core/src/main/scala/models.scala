@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.indoorvivants.subatomic
+package subatomic
 
 sealed trait ScalaVersion extends Product with Serializable
 object ScalaVersion {

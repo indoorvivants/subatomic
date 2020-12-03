@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.indoorvivants.subatomic
+package subatomic
 
 object logger {
   import Console._

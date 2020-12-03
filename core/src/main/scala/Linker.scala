@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.indoorvivants.subatomic
+package subatomic
 
 class Linker(content: Vector[(SitePath, _)], base: SitePath) {
   private val mp = content.map(_._1).toSet;

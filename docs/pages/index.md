@@ -31,7 +31,7 @@ Apart from that - there's no built-in theme, there's no JSON configs, there's no
 Here's a super-short example:
 
 ```scala mdoc
-import com.indoorvivants.subatomic._
+import subatomic._
 
 type Content = Either[String, Int]
 

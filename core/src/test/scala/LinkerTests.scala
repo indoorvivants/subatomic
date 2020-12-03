@@ -1,4 +1,4 @@
-package com.indoorvivants.subatomic
+package subatomic
 
 import utest._
 
