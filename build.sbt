@@ -1,6 +1,17 @@
+import BuildSettings._
+
 lazy val root = project
   .aggregate(
-    (Seq(docs, plugin) ++ core.projectRefs): _*
+    Seq(
+      docs.projectRefs,
+      plugin.projectRefs,
+      core.projectRefs,
+      searchIndex.projectRefs,
+      searchShared.projectRefs,
+      searchFrontend.projectRefs,
+      searchFrontendPack.projectRefs,
+      searchRetrieve.projectRefs
+    ).flatten: _*
   )
   .settings(
     skip in publish := true
@@ -15,23 +26,95 @@ lazy val core = projectMatrix
       "com.vladsch.flexmark"    % "flexmark-all"            % "0.62.2",
       "com.lihaoyi"            %% "ammonite-ops"            % "2.2.0",
       "io.lemonlabs"           %% "scala-uri"               % "3.0.0",
-      "org.scala-lang.modules" %% "scala-collection-compat" % "2.2.0",
-      "com.lihaoyi"            %% "utest"                   % "0.7.2" % Test
-    ),
-    testFrameworks += new TestFramework("utest.runner.Framework"),
-    scalacOptions.in(Test) ~= filterConsoleScalacOptions
+      "org.scala-lang.modules" %% "scala-collection-compat" % "2.2.0"
+    )
   )
-  .jvmPlatform(
-    scalaVersions = Seq(Scala_213, Scala_212)
-  )
+  .jvmPlatform(scalaVersions = AllScalaVersions)
   .settings(sharedSettings)
+  .settings(testSettings)
   .enablePlugins(BuildInfoPlugin)
   .settings(buildInfoSettings)
 
-lazy val docsMatrix = projectMatrix
+lazy val searchIndex =
+  projectMatrix
+    .in(file("search/indexer"))
+    .dependsOn(searchShared)
+    .settings(name := "subatomic-search-indexer")
+    .jvmPlatform(AllScalaVersions)
+    .jsPlatform(AllScalaVersions)
+    .settings(sharedSettings)
+    .settings(testSettings)
+
+lazy val searchIndexAll = project.aggregate(
+  searchIndex.projectRefs:_*
+).settings(
+  skip in publish := true
+)
+
+lazy val searchFrontendPack = projectMatrix
+  .in(file("search/pack"))
+  .settings(name := "subatomic-search-frontend-pack")
+  .jvmPlatform(AllScalaVersions)
+  .settings(sharedSettings)
+  .settings(
+    resourceGenerators in Compile += Def.task {
+      val out =
+        managedResourceDirectories
+          .in(Compile)
+          .value
+          .head / "search.js"
+
+      // doesn't matter which Scala version we use, it's compiled to JS anyways
+      val fullOpt =
+        (searchFrontend.js(Scala_213) / Compile / fastOptJS).value.data
+
+      IO.copyFile(fullOpt, out)
+
+      List(out)
+    }
+  )
+
+lazy val searchFrontend =
+  projectMatrix
+    .in(file("search/frontend"))
+    .dependsOn(searchRetrieve, searchIndex % "compile->test")
+    .settings(name := "subatomic-search-frontend")
+    .settings(
+      libraryDependencies += "com.raquo" %%% "laminar" % "0.11.0",
+      scalaJSUseMainModuleInitializer := true
+    )
+    .jsPlatform(AllScalaVersions)
+    .settings(sharedSettings)
+    .settings(testSettings)
+
+lazy val searchRetrieve =
+  projectMatrix
+    .in(file("search/retrieve"))
+    .dependsOn(searchIndex % "compile->test")
+    .settings(
+      name := "subatomic-search-retrieve"
+    )
+    .jvmPlatform(AllScalaVersions)
+    .jsPlatform(AllScalaVersions)
+    .settings(sharedSettings)
+    .settings(testSettings)
+
+lazy val searchShared =
+  projectMatrix
+    .in(file("search/shared"))
+    .settings(
+      name := "subatomic-search-shared",
+      libraryDependencies += "com.lihaoyi" %%% "upickle" % "1.2.2"
+    )
+    .jvmPlatform(AllScalaVersions)
+    .jsPlatform(AllScalaVersions)
+    .settings(sharedSettings)
+    .settings(testSettings)
+
+lazy val docs = projectMatrix
   .in(file("docs"))
   .withId("docs")
-  .dependsOn(core, pluginMatrix)
+  .dependsOn(core, plugin, searchIndex, searchFrontendPack)
   .jvmPlatform(scalaVersions = Seq(Scala_212))
   .enablePlugins(SubatomicPlugin)
   .settings(
@@ -46,9 +129,7 @@ lazy val docsMatrix = projectMatrix
   .settings(sharedSettings)
   .settings(buildInfoSettings)
 
-lazy val docs = docsMatrix.jvm(Scala_212).project
-
-lazy val pluginMatrix = projectMatrix
+lazy val plugin = projectMatrix
   .in(file("sbt-plugin"))
   .withId("plugin")
   .settings(
@@ -90,20 +171,17 @@ lazy val pluginMatrix = projectMatrix
   )
   .enablePlugins(ScriptedPlugin, SbtPlugin)
 
-lazy val plugin = pluginMatrix.jvm(Scala_212).project
+def testSettings =
+  Seq(
+    testFrameworks += new TestFramework("utest.runner.Framework"),
+    scalacOptions.in(Test) ~= filterConsoleScalacOptions,
+    libraryDependencies += "com.lihaoyi" %%% "utest" % "0.7.5" % Test
+  )
 
-/**
-  * Settings
-  */
-
-val Scala_213 = "2.13.3"
-val Scala_212 = "2.12.12"
-
-lazy val sharedSettings = {
+lazy val sharedSettings =
   Seq(
     fork in Test := false
   )
-}
 
 lazy val buildInfoSettings = {
   Seq(
@@ -159,13 +237,10 @@ val CICommands = Seq(
 ).mkString(";")
 
 val PrepareCICommands = Seq(
-  s"core/compile:scalafix --rules $scalafixRules",
-  s"core/test:scalafix --rules $scalafixRules",
-  s"plugin2_12/compile:scalafix --rules $scalafixRules",
-  "core/test:scalafmtAll",
-  "core/compile:scalafmtAll",
-  "docs2_12/compile:scalafmtAll",
-  "plugin2_12/compile:scalafmtAll",
+  s"compile:scalafix --rules $scalafixRules",
+  s"test:scalafix --rules $scalafixRules",
+  "test:scalafmtAll",
+  "compile:scalafmtAll",
   "scalafmtSbt",
   "headerCreate"
 ).mkString(";")
@@ -173,5 +248,3 @@ val PrepareCICommands = Seq(
 addCommandAlias("ci", CICommands)
 
 addCommandAlias("preCI", PrepareCICommands)
-
-addCommandAlias("buildSite", "docs2_12/run")

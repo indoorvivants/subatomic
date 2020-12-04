@@ -17,8 +17,8 @@
 package docs
 
 import cats.implicits._
-import com.indoorvivants.subatomic._
 import com.monovore.decline._
+import subatomic._
 
 object Main {
   object cli {
@@ -78,12 +78,39 @@ object Main {
       contentRoot: os.Path,
       runMdoc: Boolean
   ) = {
-    val content = Content(contentRoot)
+    val rawContent = Content(contentRoot)
 
-    val linker = new Linker(content, siteRoot)
+    val rawLinker = new Linker(rawContent, siteRoot)
+
+    val jsonIndex = search.Indexer
+      .default[SitePath, Content](rawContent)
+      .processSome {
+        case Doc(title, path, _) => title + os.read(path)
+      }
+      .asJson(contentPath => rawLinker.rooted(_ / contentPath))
+
+    val tmpFile = os.temp {
+      s"""
+      var SearchIndexText = '${jsonIndex
+        .render()
+        .replaceAllLiterally("'", "\'")}';
+      var SearchIndexJson = JSON.parse(SearchIndexText);
+      """
+    }
+
+    val searchIndexContent =
+      SiteRoot / "assets" / "search-index.js" -> StaticFile(tmpFile)
+
+    val tmpFileJS = os.temp(search.SearchFrontendPack.fullJS)
+
+    val searchJSContent =
+      SiteRoot / "assets" / "search.js" -> StaticFile(tmpFileJS)
 
     val mdocProc = new MdocProcessor()
     val markdown = Markdown(RelativizeLinksExtension(siteRoot.toRelPath))
+
+    val content = searchIndexContent +: searchJSContent +: rawContent
+    val linker  = new Linker(content, siteRoot)
 
     val template = new Template(linker)
 
@@ -179,9 +206,11 @@ class Template(linker: Linker) {
         script(src := linker.rooted(_ / "assets" / "highlight.js")),
         script(src := linker.rooted(_ / "assets" / "highlight-scala.js")),
         script(src := linker.rooted(_ / "assets" / "script.js")),
+        script(src := linker.rooted(_ / "assets" / "search-index.js")),
         meta(charset := "UTF-8")
       ),
       body(
+        div(id := "searchContainer"),
         div(
           cls := "container",
           div(
@@ -208,7 +237,8 @@ class Template(linker: Linker) {
             )
           ),
           div(cls := "row", div(cls := "col-12", Footer))
-        )
+        ),
+        script(src := linker.rooted(_ / "assets" / "search.js"))
       )
     ).render
   }

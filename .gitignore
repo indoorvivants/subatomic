@@ -15,3 +15,13 @@ target
 project/metals.sbt
 
 .bsp
+
+example
+
+site
+
+docs/assets/search.js
+
+.sbt
+
+sbt-plugin/**/build.properties
