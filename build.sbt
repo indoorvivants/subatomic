@@ -13,9 +13,7 @@ lazy val root = project
       searchRetrieve.projectRefs
     ).flatten: _*
   )
-  .settings(
-    skip in publish := true
-  )
+  .settings(skipPublish)
 
 lazy val core = projectMatrix
   .in(file("core"))
@@ -30,7 +28,6 @@ lazy val core = projectMatrix
     )
   )
   .jvmPlatform(scalaVersions = AllScalaVersions)
-  .settings(sharedSettings)
   .settings(testSettings)
   .enablePlugins(BuildInfoPlugin)
   .settings(buildInfoSettings)
@@ -42,20 +39,25 @@ lazy val searchIndex =
     .settings(name := "subatomic-search-indexer")
     .jvmPlatform(AllScalaVersions)
     .jsPlatform(AllScalaVersions)
-    .settings(sharedSettings)
     .settings(testSettings)
+    .settings(buildInfoSettings)
 
-lazy val searchIndexAll = project.aggregate(
-  searchIndex.projectRefs:_*
-).settings(
-  skip in publish := true
-)
+lazy val searchAll = project
+  .aggregate(
+    (searchIndex.projectRefs ++
+      searchShared.projectRefs ++
+      searchRetrieve.projectRefs ++
+      searchFrontendPack.projectRefs): _*
+  )
+  .settings(
+    skip in publish := true,
+    skip in publishLocal := true
+  )
 
 lazy val searchFrontendPack = projectMatrix
   .in(file("search/pack"))
   .settings(name := "subatomic-search-frontend-pack")
   .jvmPlatform(AllScalaVersions)
-  .settings(sharedSettings)
   .settings(
     resourceGenerators in Compile += Def.task {
       val out =
@@ -84,8 +86,8 @@ lazy val searchFrontend =
       scalaJSUseMainModuleInitializer := true
     )
     .jsPlatform(AllScalaVersions)
-    .settings(sharedSettings)
     .settings(testSettings)
+    .settings(buildInfoSettings)
 
 lazy val searchRetrieve =
   projectMatrix
@@ -96,8 +98,8 @@ lazy val searchRetrieve =
     )
     .jvmPlatform(AllScalaVersions)
     .jsPlatform(AllScalaVersions)
-    .settings(sharedSettings)
     .settings(testSettings)
+    .settings(buildInfoSettings)
 
 lazy val searchShared =
   projectMatrix
@@ -108,8 +110,9 @@ lazy val searchShared =
     )
     .jvmPlatform(AllScalaVersions)
     .jsPlatform(AllScalaVersions)
-    .settings(sharedSettings)
     .settings(testSettings)
+    .settings(buildInfoSettings)
+    .enablePlugins(BuildInfoPlugin)
 
 lazy val docs = projectMatrix
   .in(file("docs"))
@@ -126,7 +129,6 @@ lazy val docs = projectMatrix
     subatomicAddDependency := false,
     subatomicInheritClasspath := true
   )
-  .settings(sharedSettings)
   .settings(buildInfoSettings)
 
 lazy val plugin = projectMatrix
@@ -171,25 +173,36 @@ lazy val plugin = projectMatrix
   )
   .enablePlugins(ScriptedPlugin, SbtPlugin)
 
-def testSettings =
+lazy val testSettings =
   Seq(
-    testFrameworks += new TestFramework("utest.runner.Framework"),
+    libraryDependencies += "com.disneystreaming" %%% "weaver-framework"  % "0.5.0+22-ea8513a0+20201205-1403" % Test,
+    libraryDependencies += "com.disneystreaming" %%% "weaver-scalacheck" % "0.5.0+22-ea8513a0+20201205-1403" % Test,
+    testFrameworks += new TestFramework("weaver.framework.TestFramework"),
     scalacOptions.in(Test) ~= filterConsoleScalacOptions,
-    libraryDependencies += "com.lihaoyi" %%% "utest" % "0.7.5" % Test
-  )
-
-lazy val sharedSettings =
-  Seq(
     fork in Test := false
   )
 
+lazy val skipPublish = Seq(
+  skip in publish := true
+)
+
+val platform = settingKey[String]("")
+
 lazy val buildInfoSettings = {
   Seq(
-    buildInfoPackage := "subatomic.internal",
-    buildInfoKeys := Seq[BuildInfoKey](
+    platform.withRank(KeyRanks.Invisible) := {
+      val axes = virtualAxes.value
+
+      if (axes.contains(VirtualAxis.jvm)) "jvm"
+      else if (axes.contains(VirtualAxis.js)) "js"
+      else "native"
+    },
+    buildInfoPackage.withRank(KeyRanks.Invisible) := "subatomic.internal",
+    buildInfoKeys.withRank(KeyRanks.Invisible) := Seq[BuildInfoKey](
       version,
       scalaVersion,
-      scalaBinaryVersion
+      scalaBinaryVersion,
+      platform
     )
   )
 }

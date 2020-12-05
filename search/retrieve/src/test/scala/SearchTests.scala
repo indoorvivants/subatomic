@@ -1,49 +1,43 @@
 package subatomic
 package search
 
-import utest._
+import weaver.SimpleMutableIOSuite
 
-object SearchTests extends TestSuite {
-  val tests = Tests {
+object SearchTests extends SimpleMutableIOSuite {
+  val content = Vector(
+    "/"            -> "lorem ipsum dolor amet lorem",
+    "/hello"       -> "lorem dolor",
+    "/hello/world" -> "amet ipsum amet dolor"
+  )
 
-    test("basic") {
+  val idx    = Indexer.default[String, String](content).processAll(identity)
+  val search = new Search(idx)
 
-      val content = Vector(
-        "/"            -> "lorem ipsum dolor amet lorem",
-        "/hello"       -> "lorem dolor",
-        "/hello/world" -> "amet ipsum amet dolor"
+  def ranking(query: String, document: String) =
+    search.string(query).toMap.getOrElse(document, -1.0)
+
+  pureTest("search by one word") {
+    expect(
+      search.string("lorem").map(_._1).toSet == Set(
+        "/",
+        "/hello"
       )
-
-      val idx    = Indexer.default[String, String](content).processAll(identity)
-      val search = new Search(idx)
-
-      def ranking(query: String, document: String) =
-        search.string(query).toMap.getOrElse(document, -1.0)
-
-      test("search by one word") {
-        assert(
-          search.string("lorem").map(_._1).toSet == Set(
-            "/",
-            "/hello"
-          )
-        )
-      }
-
-      test("search by two words") {
-        assert(
-          search.string("ipsum amet").map(_._1).toSet == Set(
-            "/",
-            "/hello/world"
-          )
-        )
-      }
-
-      test("ranking") {
-        assert(
-          ranking("amet", "/") > ranking("amet", "/hello")
-        )
-      }
-
-    }
+    )
   }
+
+  pureTest("search by two words") {
+    expect(
+      search.string("ipsum amet").map(_._1).toSet == Set(
+        "/",
+        "/hello/world"
+      )
+    )
+  }
+
+  pureTest("ranking") {
+    expect(
+      ranking("amet", "/") > ranking("amet", "/hello")
+    )
+  }
+
 }

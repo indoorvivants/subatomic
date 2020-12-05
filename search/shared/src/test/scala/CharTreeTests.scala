@@ -1,52 +1,56 @@
 package subatomic
 package search
 
-import utest._
+import cats.Show
+import org.scalacheck.Gen
+import weaver.PureIOSuite
+import weaver.SimpleMutableIOSuite
+import weaver.scalacheck.IOCheckers
 
-object CharTreeTests extends TestSuite {
-
+object CharTreeTests extends SimpleMutableIOSuite with IOCheckers {
   val MostCommonEnglishBigrams =
-    "th,en,ng,he,ed,of,in,to,al,er,it,de,an,ou,se," +
+    ("th,en,ng,he,ed,of,in,to,al,er,it,de,an,ou,se," +
       "re,ea,le,nd,hi,sa,at,is,si,on,or,ar,nt,ti,ve," +
-      "ha,as,ra,es,te,ld,st,et,ur"
-        .split(",")
-        .toVector
+      "ha,as,ra,es,te,ld,st,et,ur")
+      .split(",")
+      .toVector
 
-  def runTest() = {
-    def size       = 100 + scala.util.Random.nextInt(100000)
-    def numBigrams = scala.util.Random.nextInt(10) + 1
-    def randomBigram =
-      MostCommonEnglishBigrams(
-        scala.util.Random.nextInt(MostCommonEnglishBigrams.size)
-      )
-    def randomWord = List.fill(numBigrams)(randomBigram).mkString
+  val wordGen: Gen[String] = for {
+    wordSize <- Gen.choose(1, 10)
+    bigram = Gen.oneOf(MostCommonEnglishBigrams)
+    randomWord <- Gen.listOfN(wordSize, bigram)
+  } yield randomWord.mkString
 
-    val words =
-      List.fill(size)(randomWord).distinct
+  val MaxSize =
+    if (subatomic.internal.BuildInfo.platform == "js") 100 else 10000
 
-    val dataset = words.zipWithIndex.map {
+  val gen = for {
+    size  <- Gen.choose(10, MaxSize)
+    words <- Gen.listOfN(size, wordGen)
+    dataset = words.distinct.zipWithIndex.map {
       case (n, idx) => TermName(n) -> TermIdx(idx)
     }
-
-    val tree = CharTree.build(dataset)
-
-    dataset.foreach {
-      case (tn, tidx) =>
-        val foundIdx = tree.find(tn)
-        assert(foundIdx == Some(tidx))
-    }
-  }
+  } yield (CharTree.build(dataset), dataset)
 
   val seed = scala.util.Random.nextLong()
 
-  val tests = Tests {
-    test("basic") {
-      println(s"Seed: $seed")
-      scala.util.Random.setSeed(seed)
-      test("probably") { runTest() }
-      test("should've") { runTest() }
-      test("used") { runTest() }
-      test("scalacheck") { runTest() }
+  implicit val showDs: Show[(CharTree, List[(TermName, TermIdx)])] =
+    Show.fromToString
+
+  simpleTest("CharTree build and retrieval") {
+    forall(gen) {
+      case ((chartree, dataset)) =>
+        val resolutions = dataset.map {
+          case (tn, tidx) =>
+            (tidx, chartree.find(tn))
+        }
+
+        val (_, notFound) = resolutions.partition {
+          case (expected, result) =>
+            result.contains(expected)
+        }
+
+        expect(notFound.isEmpty)
     }
   }
 }

@@ -17,14 +17,16 @@
 package subatomic
 package search
 
-case class TermIdx(value: Int)       extends AnyVal
-case class TermName(value: String)   extends AnyVal
-case class DocumentIdx(value: Int)   extends AnyVal
-case class TermFrequency(value: Int) extends AnyVal
-case class GlobalTermFrequency(value: Int) extends AnyVal {
+trait Primitive[T]
+
+case class TermIdx(value: Int)       extends Primitive[Int]
+case class TermName(value: String)   extends Primitive[String]
+case class DocumentIdx(value: Int)   extends Primitive[Int]
+case class TermFrequency(value: Int) extends Primitive[Int]
+case class GlobalTermFrequency(value: Int) extends Primitive[Int] {
   def inc = copy(value + 1)
 }
-case class CollectionSize(value: Int) extends AnyVal
+case class CollectionSize(value: Int) extends Primitive[Int]
 
 /**
   * There she is. The wholy grail. What we want to achieve in the end.

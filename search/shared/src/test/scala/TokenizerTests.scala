@@ -1,45 +1,45 @@
 package subatomic
 package search
 
-import utest._
+import weaver.PureIOSuite
+import weaver.SimpleMutableIOSuite
 
-object TokenizerTests extends TestSuite {
+object TokenizerTests extends SimpleMutableIOSuite {
+
+  override def maxParallelism: Int = 1
+
   val tokens = DefaultTokenizer
 
-  val tests = Tests {
-    test("DefaultTokenizer") {
-      test("handles spaces") {
-        assert(
-          tokens("lorem ipsum dolor amet") ==
-            Vector("lorem", "ipsum", "dolor", "amet")
-        )
-      }
+  pureTest("handles spaces") {
+    assert(
+      tokens("lorem ipsum dolor amet") ==
+        Vector("lorem", "ipsum", "dolor", "amet")
+    )
+  }
 
-      test("handles punctuation") {
-        assert(
-          tokens("lorem,ipsum-dolor;amet") ==
-            Vector("lorem", "ipsum", "dolor", "amet")
-        )
-      }
+  pureTest("handles punctuation") {
+    assert(
+      tokens("lorem,ipsum-dolor;amet") ==
+        Vector("lorem", "ipsum", "dolor", "amet")
+    )
+  }
 
-      test("handles empty string") {
-        assert(tokens("") == Vector.empty)
-      }
+  pureTest("handles empty string") {
+    assert(tokens("") == Vector.empty)
+  }
 
-      test("handles one single token") {
-        assert(tokens("loremipsumdoloramet") == Vector("loremipsumdoloramet"))
-      }
+  pureTest("handles one single token") {
+    assert(tokens("loremipsumdoloramet") == Vector("loremipsumdoloramet"))
+  }
 
-      test("ignores stopwords") {
-        val tokenized = tokens(Stopwords.list.mkString(" "))
-        assert(tokenized == Vector.empty)
-      }
+  pureTest("ignores stopwords") {
+    val tokenized = tokens(Stopwords.list.mkString(" "))
+    assert(tokenized == Vector.empty)
+  }
 
-      test("handles possessive") {
-        assert(
-          tokens("subatomic's Scala's") == Vector("subatomic's", "scala's")
-        )
-      }
-    }
+  pureTest("handles possessive") {
+    assert(
+      tokens("subatomic's Scala's") == Vector("subatomic's", "scala's")
+    )
   }
 }
