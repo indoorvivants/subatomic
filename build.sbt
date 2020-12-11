@@ -59,21 +59,23 @@ lazy val searchFrontendPack = projectMatrix
   .settings(name := "subatomic-search-frontend-pack")
   .jvmPlatform(AllScalaVersions)
   .settings(
-    resourceGenerators in Compile += Def.task {
-      val out =
-        managedResourceDirectories
-          .in(Compile)
-          .value
-          .head / "search.js"
+    compile := {
+      val _ = (searchFrontend.js(Scala_213) / Compile / fullOptJS).value
 
-      // doesn't matter which Scala version we use, it's compiled to JS anyways
-      val fullOpt =
-        (searchFrontend.js(Scala_213) / Compile / fastOptJS).value.data
+      (compile in Compile).value
+    },
+    resourceGenerators in Compile += 
+      Def.task {
+        val out = (Compile / resourceManaged).value / "search.js"
 
-      IO.copyFile(fullOpt, out)
+        // doesn't matter which Scala version we use, it's compiled to JS anyways
+        val fullOpt =
+          (searchFrontend.js(Scala_213) / Compile / fastOptJS).value.data
 
-      List(out)
-    }
+        IO.copyFile(fullOpt, out)
+
+        List(out)
+      }.taskValue
   )
 
 lazy val searchFrontend =
@@ -122,6 +124,12 @@ lazy val docs = projectMatrix
   .enablePlugins(SubatomicPlugin)
   .settings(
     skip in publish := true,
+
+    // To react to asset changes
+    fileInputs += (baseDirectory in ThisBuild).value.toGlob / "docs" / "assets" / "*",
+    fileInputs += (baseDirectory in ThisBuild).value.toGlob / "docs" / "pages" / "*.md",
+    
+    // To pick up Main.scala in docs/ (without the src/main/scala/ stuff)
     unmanagedSourceDirectories in Compile +=
       (baseDirectory in ThisBuild).value / "docs",
     libraryDependencies += "com.lihaoyi"  %% "scalatags" % "0.9.1",

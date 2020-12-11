@@ -19,96 +19,205 @@ package search
 
 import scala.collection.mutable
 
-class Indexer[ContentId, ContentType](
-    content: Iterable[(ContentId, ContentType)],
+case class Document(
+    title: String,
+    url: String,
+    sections: Vector[Section]
+)
+
+case class Section(
+    title: String,
+    url: Option[String],
+    content: String
+)
+
+object Document {
+  def section(title: String, url: String, content: String) = {
+    Document(
+      title,
+      url,
+      Vector(
+        Section(title, Some(url), content)
+      )
+    )
+  }
+}
+
+class Indexer[ContentType](
+    content: Iterable[ContentType],
     tokenizer: String => Vector[String] = DefaultTokenizer
 ) {
   def processSome(
-      extract: PartialFunction[ContentType, String]
-  ): SearchIndex[ContentId] = {
+      extract: PartialFunction[ContentType, Document]
+  ): SearchIndex = {
     val total  = extract.lift
-    val tf_idf = new TF_IDF[ContentId](content.size)
+    val tf_idf = new TF_IDF(content.size, tokenizer)
     content.foreach {
-      case (contentId, content) =>
-        total(content).foreach { contentAsString =>
-          val tokens = tokenizer(contentAsString)
-
-          tf_idf.add(contentId, tokens)
-        }
+      case cnt =>
+        total(cnt).foreach { tf_idf.add }
     }
 
     tf_idf.buildIndex
   }
 
   def processAll(
-      extract: ContentType => String
+      extract: ContentType => Document
   ) = processSome { case c => extract(c) }
 }
 
 object Indexer {
-  def default[ContentId, ContentType](
-      content: Iterable[(ContentId, ContentType)]
-  ): Indexer[ContentId, ContentType] = new Indexer(content)
+  def default[ContentType](
+      content: Iterable[ContentType]
+  ): Indexer[ContentType] = new Indexer(content)
 }
 
-private[subatomic] class TF_IDF[ContentId](collectionSize: Int) {
-  private val documentIndexes     = mutable.Map[ContentId, DocumentIdx]()
+private[subatomic] class TF_IDF(
+    collectionSize: Int,
+    tokenizer: String => Vector[String]
+) {
+  private val documentIndexes     = mutable.Map[Document, DocumentIdx]()
   private val globalTermFrequency = mutable.Map[TermIdx, GlobalTermFrequency]()
   private val termsMapping        = mutable.Map[TermName, TermIdx]()
   private val termsInDocuments =
-    mutable.Map[TermIdx, mutable.Map[DocumentIdx, TermFrequency]]()
+    mutable
+      .Map[TermIdx, mutable.Map[DocumentIdx, TermDocumentOccurence]]()
+  // .withDefault(_ => mutable.Map[DocumentIdx, TermDocumentOccurence]())
 
-  def add(contentId: ContentId, tokens: Vector[String]) = {
-    val docIdx = documentIndexes.getOrElseUpdate(
-      contentId,
+  private val documentEntries = mutable.Map[DocumentIdx, DocumentEntry]()
+
+  private val ZeroTermFreq = TermFrequency(0)
+
+  private def getDocumentId(document: Document) = {
+    documentIndexes.getOrElseUpdate(
+      document,
       DocumentIdx(documentIndexes.size)
     )
+  }
 
-    tokens
-      .groupBy(identity)
-      .map { case (tok, occs) => tok -> occs.size }
+  private def addDocumentEntry(docIdx: DocumentIdx, entry: DocumentEntry) = {
+    documentEntries.update(docIdx, entry)
+  }
+
+  def increaseGlobalTermFrequency(termIdx: TermIdx, by: TermFrequency) = {
+    val current = globalTermFrequency
+      .getOrElse(termIdx, GlobalTermFrequency(0))
+
+    globalTermFrequency.update(termIdx, current.add(by.value))
+  }
+
+  def getTermId(token: String) = {
+    termsMapping.getOrElseUpdate(
+      TermName(token),
+      TermIdx(termsMapping.size)
+    )
+  }
+
+  def getTermDocumentOccurennce(
+      termId: TermIdx,
+      docId: DocumentIdx
+  ): TermDocumentOccurence = {
+    // value.getOrElse(
+    //                   docIdx,
+    //                   TermDocumentOccurence(ZeroTermFreq, Map.empty)
+    //                 )
+
+    termsInDocuments.get(termId) match {
+      case Some(value) =>
+        value.getOrElseUpdate(
+          docId,
+          TermDocumentOccurence(ZeroTermFreq, Map.empty)
+        )
+      case None =>
+        val zerofreq = TermDocumentOccurence(ZeroTermFreq, Map.empty)
+        val base     = mutable.Map(docId -> zerofreq)
+
+        termsInDocuments.update(termId, base)
+
+        zerofreq
+    }
+
+  }
+
+  def updateTermDocumentOccurrence(
+      termId: TermIdx,
+      docIdx: DocumentIdx,
+      tdo: TermDocumentOccurence
+  ) = {
+    termsInDocuments(termId).update(docIdx, tdo)
+  }
+
+  def add(document: Document) = {
+    val docIdx = getDocumentId(document)
+
+    val documentEntry = DocumentEntry(
+      document.title,
+      document.url,
+      document.sections.zipWithIndex.map {
+        case (section, idx) =>
+          SectionIdx(idx) -> SectionEntry(
+            title = section.title,
+            url = section.url.getOrElse(document.url)
+          )
+      }.toMap
+    )
+
+    addDocumentEntry(docIdx, documentEntry)
+
+    document.sections.zipWithIndex
+      .map { case (s, i) => s -> SectionIdx(i) }
       .foreach {
-        case (tok, occurrences) =>
-          val termIdx = termsMapping.getOrElseUpdate(
-            TermName(tok),
-            TermIdx(termsMapping.size)
-          )
+        case (Section(_, _, text), sectionIdx) =>
+          val tokens = tokenizer(text)
 
-          globalTermFrequency.update(
-            termIdx,
-            globalTermFrequency.getOrElse(termIdx, GlobalTermFrequency(0)).inc
-          )
+          tokens
+            .groupBy(identity)
+            .map { case (tok, occs) => tok -> TermFrequency(occs.size) }
+            .foreach {
+              case (tok, termFrequency) =>
+                val termIdx = getTermId(tok)
 
-          termsInDocuments.get(termIdx) match {
-            case Some(value) => value.update(docIdx, TermFrequency(occurrences))
-            case None =>
-              termsInDocuments.update(
-                termIdx,
-                mutable.Map(docIdx -> TermFrequency(occurrences))
-              )
-          }
+                increaseGlobalTermFrequency(termIdx, termFrequency)
+
+                val currentStats = getTermDocumentOccurennce(termIdx, docIdx)
+
+                val newStats = currentStats.copy(
+                  frequencyInDocument = currentStats.frequencyInDocument + termFrequency,
+                  sectionOccurences = currentStats.sectionOccurences
+                    .updated(sectionIdx, termFrequency)
+                )
+
+                updateTermDocumentOccurrence(termIdx, docIdx, newStats)
+            }
       }
   }
 
-  def invertTermsToDocuments: Map[DocumentIdx, Map[TermIdx, TermFrequency]] = {
-    val acc = mutable.Map[DocumentIdx, mutable.Map[TermIdx, TermFrequency]]()
+  implicit class TermFrequencyOpts(tf: TermFrequency) {
+    def +(other: TermFrequency) = TermFrequency(tf.value + other.value)
+  }
+
+  lazy val invertTermsToDocuments: Map[DocumentIdx, Map[TermIdx, TermDocumentOccurence]] = {
+    val acc =
+      mutable.Map[DocumentIdx, mutable.Map[TermIdx, TermDocumentOccurence]]()
 
     termsInDocuments.foreach {
       case (termIdx, frequenceInDocuments) =>
         frequenceInDocuments.foreach {
           case (docIdx, termFrequency) =>
-            acc
-              .getOrElseUpdate(docIdx, mutable.Map.empty)
-              .update(termIdx, termFrequency)
+            acc.get(docIdx) match {
+              case Some(value) =>
+                value.update(termIdx, termFrequency)
+              case None =>
+                acc.update(docIdx, mutable.Map(termIdx -> termFrequency))
+            }
         }
     }
 
     acc.map { case (k, v) => k -> v.toMap }.toMap
   }
 
-  def buildIndex: SearchIndex[ContentId] = {
+  def buildIndex: SearchIndex = {
     SearchIndex(
-      documentIndexes.map(_.swap).toMap,
+      documentEntries.toMap,
       termsInDocuments.map { case (k, v) => k -> v.toMap }.toMap,
       globalTermFrequency.toMap,
       termsMapping.toMap,

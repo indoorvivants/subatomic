@@ -8,7 +8,7 @@ import weaver.SimpleMutableIOSuite
 import SearchIndex._
 
 object SearchFrontendTests extends SimpleMutableIOSuite {
-  pureTest("SearchIndex[String] roundtrip") {
+  pureTest("SearchIndex roundtrip") {
 
     val content = Vector(
       "/"            -> "lorem ipsum dolor amet lorem",
@@ -16,9 +16,16 @@ object SearchFrontendTests extends SimpleMutableIOSuite {
       "/hello/world" -> "amet ipsum amet dolor"
     )
 
-    val idx = Indexer.default[String, String](content).processAll(identity)
+    val idx = Indexer.default[(String, String)](content).processAll {
+    case (path, text) =>
+      Document.section(
+        s"Document at $path",
+        path,
+        text
+      )
+  }
 
-    val o = read[SearchIndex[String]](writeJs(idx).render())
+    val o = read[SearchIndex](writeJs(idx).render())
 
     expect(o == idx)
   }

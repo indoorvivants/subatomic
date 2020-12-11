@@ -21,12 +21,30 @@ trait Primitive[T]
 
 case class TermIdx(value: Int)       extends Primitive[Int]
 case class TermName(value: String)   extends Primitive[String]
+case class SectionIdx(value: Int)    extends Primitive[Int]
 case class DocumentIdx(value: Int)   extends Primitive[Int]
 case class TermFrequency(value: Int) extends Primitive[Int]
 case class GlobalTermFrequency(value: Int) extends Primitive[Int] {
   def inc = copy(value + 1)
+  def add(more: Int) = copy(value + more)
 }
 case class CollectionSize(value: Int) extends Primitive[Int]
+
+case class TermDocumentOccurence(
+    frequencyInDocument: TermFrequency,
+    sectionOccurences: Map[SectionIdx, TermFrequency]
+)
+
+case class DocumentEntry(
+    title: String,
+    url: String,
+    sections: Map[SectionIdx, SectionEntry]
+)
+
+case class SectionEntry(
+    title: String,
+    url: String
+)
 
 /**
   * There she is. The wholy grail. What we want to achieve in the end.
@@ -37,12 +55,12 @@ case class CollectionSize(value: Int) extends Primitive[Int]
   * @param termMapping
   * @param collectionSize
   */
-case class SearchIndex[ContentId] private (
-    documentsMapping: Map[DocumentIdx, ContentId],
-    termsInDocuments: Map[TermIdx, Map[DocumentIdx, TermFrequency]],
+case class SearchIndex private (
+    documentsMapping: Map[DocumentIdx, DocumentEntry],
+    termsInDocuments: Map[TermIdx, Map[DocumentIdx, TermDocumentOccurence]],
     globalTermFrequency: Map[TermIdx, GlobalTermFrequency],
     termMapping: Map[TermName, TermIdx],
-    documentTerms: Map[DocumentIdx, Map[TermIdx, TermFrequency]],
+    documentTerms: Map[DocumentIdx, Map[TermIdx, TermDocumentOccurence]],
     collectionSize: CollectionSize,
     charTree: CharTree
 ) {
@@ -52,17 +70,13 @@ case class SearchIndex[ContentId] private (
   def resolveTerm(s: String): Option[Found[TermIdx]] =
     termMapping.get(TermName(s)).map(Found(_))
 
-  def asJson(mapId: ContentId => String): ujson.Value = {
+  def asJson: ujson.Value = {
     import upickle.default._
 
-    val idx = copy[String](
-      documentsMapping = this.documentsMapping.map {
-        case (idx, v) => idx -> mapId(v)
-      }
-    )
-
-    writeJs(idx)
+    writeJs(this)
   }
+
+  def asJsonString = asJson.render()
 }
 
 import upickle.default._
@@ -74,11 +88,14 @@ object SearchIndex {
   implicit val tfReader       = IntReader.map(TermFrequency)
   implicit val gtfReader      = IntReader.map(GlobalTermFrequency)
   implicit val csReader       = IntReader.map(CollectionSize)
+  implicit val sectIdxR       = IntReader.map(SectionIdx)
 
   implicit val termIdxWriter: Writer[TermIdx]    = IntWriter.comap(_.value)
   implicit val termNameWriter: Writer[TermName]  = StringWriter.comap(_.value)
   implicit val docIdxWriter: Writer[DocumentIdx] = IntWriter.comap(_.value)
   implicit val tfWriter: Writer[TermFrequency]   = IntWriter.comap(_.value)
+  implicit val sectIdxW: Writer[SectionIdx]      = IntWriter.comap(_.value)
+
   implicit val gtfWriter: Writer[GlobalTermFrequency] =
     IntWriter.comap(_.value)
   implicit val csWriter: Writer[CollectionSize] =
@@ -87,6 +104,10 @@ object SearchIndex {
   implicit val wct: Writer[CharTree] = macroW[CharTree]
   implicit val rct: Reader[CharTree] = macroR[CharTree]
 
-  implicit val w: Writer[SearchIndex[String]] = macroW[SearchIndex[String]]
-  implicit val r: Reader[SearchIndex[String]] = macroR[SearchIndex[String]]
+  implicit val tdo = macroRW[TermDocumentOccurence]
+  implicit val sec = macroRW[SectionEntry]
+  implicit val doc = macroRW[DocumentEntry]
+
+  implicit val w: Writer[SearchIndex] = macroW[SearchIndex]
+  implicit val r: Reader[SearchIndex] = macroR[SearchIndex]
 }

@@ -19,7 +19,7 @@ package subatomic
 class Linker(content: Vector[(SitePath, _)], base: SitePath) {
   private val mp = content.map(_._1).toSet;
 
-  def rooted(f: (SiteRoot with SitePath => SitePath)): String = {
+  def resolve(f: (SiteRoot with SitePath => SitePath)): String = {
     val rawLocation = f(SiteRoot)
     if (mp(rawLocation)) rawLocation.prepend(base).toString
     else
@@ -29,10 +29,10 @@ class Linker(content: Vector[(SitePath, _)], base: SitePath) {
 
   }
 
-  def resolve(piece: Any): String = {
+  def find(piece: Any): String = {
     content
       .find(_._2 == piece)
-      .map(found => rooted(_ / found._1))
+      .map(found => resolve(_ / found._1))
       .getOrElse(
         throw new IllegalArgumentException(
           s"Could not resolve $piece content in the site"

@@ -19,6 +19,7 @@ package docs
 import cats.implicits._
 import com.monovore.decline._
 import subatomic._
+import subatomic.search.Document
 
 object Main {
   object cli {
@@ -83,18 +84,22 @@ object Main {
     val rawLinker = new Linker(rawContent, siteRoot)
 
     val jsonIndex = search.Indexer
-      .default[SitePath, Content](rawContent)
+      .default(rawContent)
       .processSome {
-        case Doc(title, path, _) => title + os.read(path)
+        case (sitePath, Doc(title, mdPath, _)) =>
+          Document.section(
+            title,
+            rawLinker.resolve(_ / sitePath),
+            os.read(mdPath)
+          )
       }
-      .asJson(contentPath => rawLinker.rooted(_ / contentPath))
+      .asJsonString
+
+    val lines = jsonIndex.grouped(100).map(_.replaceAllLiterally("'", "\\'")).map(str => s"'${str}'").mkString(",\n")
 
     val tmpFile = os.temp {
       s"""
-      var SearchIndexText = '${jsonIndex
-        .render()
-        .replaceAllLiterally("'", "\'")}';
-      var SearchIndexJson = JSON.parse(SearchIndexText);
+      var ln = [$lines];var SearchIndexText = ln.join('')
       """
     }
 
@@ -188,81 +193,66 @@ class Template(linker: Linker) {
         scalatags.Text.tags2.title(s"Subatomic: $title"),
         link(
           rel := "stylesheet",
-          href := linker.rooted(_ / "assets" / "highlight-theme.css")
+          href := linker.resolve(_ / "assets" / "highlight-theme.css")
         ),
         link(
           rel := "stylesheet",
-          href := linker.rooted(_ / "assets" / "bootstrap.css")
-        ),
-        link(
-          rel := "stylesheet",
-          href := linker.rooted(_ / "assets" / "styles.css")
+          href := linker.resolve(_ / "assets" / "styles.css")
         ),
         link(
           rel := "shortcut icon",
           `type` := "image/png",
-          href := linker.rooted(_ / "assets" / "logo.png")
+          href := linker.resolve(_ / "assets" / "logo.png")
         ),
-        script(src := linker.rooted(_ / "assets" / "highlight.js")),
-        script(src := linker.rooted(_ / "assets" / "highlight-scala.js")),
-        script(src := linker.rooted(_ / "assets" / "script.js")),
-        script(src := linker.rooted(_ / "assets" / "search-index.js")),
+        script(src := linker.resolve(_ / "assets" / "highlight.js")),
+        script(src := linker.resolve(_ / "assets" / "highlight-scala.js")),
+        script(src := linker.resolve(_ / "assets" / "script.js")),
+        script(src := linker.resolve(_ / "assets" / "search-index.js")),
         meta(charset := "UTF-8")
       ),
       body(
-        div(id := "searchContainer"),
         div(
           cls := "container",
-          div(
-            cls := "row",
-            div(cls := "col-1"),
-            div(
-              cls := "col-9",
-              Header,
-              hr,
-              a(
-                cls := "btn btn-dark",
-                href := linker.rooted(_ / "index.html"),
-                "Home"
-              ),
-              " ",
-              a(
-                cls := "btn btn-dark",
-                href := linker.rooted(_ / "example.html"),
-                "Example"
-              ),
-              hr,
-              h1(title),
-              content
-            )
-          ),
-          div(cls := "row", div(cls := "col-12", Footer))
+          Header,
+          NavigationBar,
+          h1(title),
+          content
         ),
-        script(src := linker.rooted(_ / "assets" / "search.js"))
+        Footer,
+        script(src := linker.resolve(_ / "assets" / "search.js"))
       )
     ).render
   }
 
-  val Header = div(
-    cls := "row",
+  val NavigationBar = div(
+    a(
+      cls := "nav-btn",
+      href := linker.resolve(_ / "index.html"),
+      "Home"
+    ),
+    a(
+      cls := "nav-btn",
+      href := linker.resolve(_ / "example.html"),
+      "Example"
+    )
+  )
+
+  val Header = header(
+    cls := "main-header",
     div(
-      cls := "col-2",
+      cls := "logo",
       img(
-        src := linker.rooted(_ / "assets" / "logo.png"),
-        cls := "img-fluid",
-        height := "100"
+        src := linker.resolve(_ / "assets" / "logo.png")
       )
     ),
     div(
-      cls := "col-8",
-      div(
-        cls := "align-middle",
-        h1(a(href := linker.root, "Subatomic")),
-        small("a tiny, horrible static site builder for Scala")
-      )
+      cls := "site-title",
+      h1(a(href := linker.root, "Subatomic")),
+      small("a tiny, horrible static site builder for Scala")
     ),
+    div(id := "searchContainer"),
     div(
-      cls := "col-2",
+      cls := "site-links",
       p(
         a(
           href := "https://github.com/indoorvivants/subatomic",

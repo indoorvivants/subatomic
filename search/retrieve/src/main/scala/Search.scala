@@ -17,8 +17,8 @@
 package subatomic
 package search
 
-class Search[T](index: SearchIndex[T]) {
-  def string(s: String): Vector[(T, Double)] = {
+class Search(index: SearchIndex) {
+  def string(s: String): Vector[(DocumentEntry, Double)] = {
     val tokens = DefaultTokenizer(s)
 
     val terms = tokens.flatMap { tok =>
@@ -38,7 +38,7 @@ class Search[T](index: SearchIndex[T]) {
         if (documentTerms.contains(termId)) {
           val TF = Algorithms.augmented_Term_Frequency(
             termId,
-            documentTerms
+            documentTerms.map{case (k, v) => k -> v.frequencyInDocument}
           )
 
           val IDF = Algorithms.inverse_Document_Frequency(

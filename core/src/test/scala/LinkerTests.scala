@@ -19,16 +19,16 @@ object LinkerTests extends SimpleMutableIOSuite {
   pureTest("rooted") {
 
     expect.all(
-      linker.rooted(_ / "hello") == "/test/hello",
-      linker.rooted(_ / "hello" / "world") == "/test/hello/world",
-      linker.rooted(identity) == "/test",
+      linker.resolve(_ / "hello") == "/test/hello",
+      linker.resolve(_ / "hello" / "world") == "/test/hello/world",
+      linker.resolve(identity) == "/test",
       linker.root == "/test"
     )
   }
 
   pureTest("missing") {
     expect(
-      Try(linker.rooted(_ / "I-dont-exist")).failed.get
+      Try(linker.resolve(_ / "I-dont-exist")).failed.get
         .isInstanceOf[IllegalArgumentException]
     )
   }

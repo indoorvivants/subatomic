@@ -8,11 +8,48 @@ div.container{
     background-color: rgb(254, 255, 248);
     border-radius: 0% 0% 0% 0%;
     padding: 30px;
+    width: 80%;
+    margin:30px;
 }
 
 div.footer {
   width:100%;
   text-align: center;
-  background-color: #c5c5c5;
   padding:10px;
+  font-weight: bold;
+}
+
+
+header.main-header div.logo img {
+  width: 74px;
+}
+
+header.main-header {
+  display: flex;
+  width: 100%;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  justify-content: space-between;
+}
+
+a.nav-btn {
+  background-color: darkslategrey;
+  color: whitesmoke;
+  padding: 5px;
+  margin: 5px;
+  border-radius: 3px;
+  display: inline-block;
+  text-decoration: none;
+}
+
+div.site-title {
+  align-self: flex-start;
+}
+
+div {
+  border: 1px solid blue;
+}
+
+div#searchContainer {
+  width: 200px;
 }

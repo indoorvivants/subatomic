@@ -12,11 +12,13 @@ object IndexerTests extends SimpleMutableIOSuite {
     "/hello/world" -> "amet ipsum amet dolor"
   )
 
-  val idx = Indexer.default[String, String](content).processAll(identity)
+  val idx = Indexer.default(content).processAll {
+    case (path, text) => Document.section(s"Document at $path", path, text)
+  }
 
   pureTest("all documents have entry in the index") {
     expect(
-      idx.documentsMapping.values.toSet == content
+      idx.documentsMapping.values.map(_.url).toSet == content
         .map(_._1)
         .toSet
     )
@@ -55,11 +57,13 @@ object IndexerTests extends SimpleMutableIOSuite {
   }
 
   pureTest("in document frequency is correctly calculated") {
-    def getInDocumentFrequency(term: String, document: String) = {
+    def getInDocumentFrequency(term: String, url: String) = {
       val termIdx = idx.termMapping(TermName(term))
-      val docIdx  = idx.documentsMapping.map(_.swap).apply(document)
+      val docIdx = idx
+        .documentByUrl(url)
+        .getOrElse(err(s"Document with $url not found in the index"))
 
-      idx.termsInDocuments(termIdx)(docIdx).value
+      idx.termsInDocuments(termIdx)(docIdx).frequencyInDocument.value
     }
 
     expect.all(
@@ -76,12 +80,17 @@ object IndexerTests extends SimpleMutableIOSuite {
   }
 
   pureTest("document index is correct") {
-    def getDocumentTerms(id: String) = {
-      val docIdx             = idx.documentsMapping.map(_.swap).apply(id)
+    def getDocumentTerms(url: String) = {
+      val docIdx = idx
+        .documentByUrl(url)
+        .getOrElse(err(s"Document with $url not found in the index"))
       val reverseTermMapping = idx.termMapping.map(_.swap)
+
       idx.documentTerms(docIdx).map {
         case (termIdx, termFreq) =>
-          reverseTermMapping(termIdx).value -> termFreq.value
+          reverseTermMapping(
+            termIdx
+          ).value -> termFreq.frequencyInDocument.value
       }
     }
 
@@ -102,5 +111,16 @@ object IndexerTests extends SimpleMutableIOSuite {
         "amet"  -> 2
       )
     )
+  }
+
+  def err(msg: String): Nothing = throw new Exception(msg)
+
+  implicit class SearchIndexOps(idx: SearchIndex) {
+    def documentByUrl(url: String): Option[DocumentIdx] = {
+      val entry = idx.documentsMapping.find(_._2.url == url)
+
+      entry.map(_._1)
+    }
+
   }
 }

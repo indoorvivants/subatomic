@@ -10,15 +10,26 @@ object SearchTests extends SimpleMutableIOSuite {
     "/hello/world" -> "amet ipsum amet dolor"
   )
 
-  val idx    = Indexer.default[String, String](content).processAll(identity)
+  val idx = Indexer.default[(String, String)](content).processAll {
+    case (path, text) =>
+      Document.section(
+        s"Document at $path",
+        path,
+        text
+      )
+  }
+  
   val search = new Search(idx)
 
-  def ranking(query: String, document: String) =
-    search.string(query).toMap.getOrElse(document, -1.0)
+  def foundUrls(query: String) = search.string(query).map(_._1.url).toSet
+
+  def ranking(query: String, documentUrl: String) ={
+    search.string(query).toMap.find(_._1.url == documentUrl).map(_._2).getOrElse(-1.0)
+  }
 
   pureTest("search by one word") {
     expect(
-      search.string("lorem").map(_._1).toSet == Set(
+      foundUrls("lorem") == Set(
         "/",
         "/hello"
       )
@@ -27,7 +38,7 @@ object SearchTests extends SimpleMutableIOSuite {
 
   pureTest("search by two words") {
     expect(
-      search.string("ipsum amet").map(_._1).toSet == Set(
+      foundUrls("ipsum amet") == Set(
         "/",
         "/hello/world"
       )

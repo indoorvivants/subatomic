@@ -24,7 +24,7 @@ import upickle.default._
 
 import SearchIndex._
 
-class SearchFrontend private (idx: SearchIndex[String]) {
+class SearchFrontend private (idx: SearchIndex) {
   val search           = new Search(idx)
   def query(s: String) = search.string(s)
 
@@ -35,21 +35,39 @@ class SearchFrontend private (idx: SearchIndex[String]) {
       .mapTo(ip.ref.value.trim())
       .startWith("")
 
-    val results = stream.map(query)
+    val $results = stream.map(query)
 
     div(
       ip,
-      ul(
-        child.text <-- results.map(_.toString)
+      span(
+        // position := "absolute",
+        // top := "100%",
+        // zIndex := "100",
+        // left := "0px",
+        // right := "auto",
+        display <-- $results.map(_.nonEmpty).map(if (_) "block" else "none"),
+        ul(
+          children <-- $results.map { results =>
+            results.map {
+              case (document, score) =>
+                li(
+                  a(href := document.url, document.title),
+                  " ",
+                  small(score.formatted("%.2f").toString())
+                )
+            }
+          }
+        )
       )
     )
   }
 }
 
 object SearchFrontend extends LaminarApp("searchContainer") {
-  def load(s: String) = new SearchFrontend(read[SearchIndex[String]](s))
+  def load(s: String) = new SearchFrontend(read[SearchIndex](s))
 
   def app = {
+
     val frontend = load(js.Dynamic.global.SearchIndexText.asInstanceOf[String])
 
     div(
