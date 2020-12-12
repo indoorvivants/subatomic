@@ -17,10 +17,12 @@
 package subatomic
 
 import java.util.Properties
+import java.util.concurrent.ConcurrentHashMap
+
+import subatomic.internal.BuildInfo
 
 import coursier._
 import coursier.parse.DependencyParser
-import subatomic.internal.BuildInfo
 
 case class MdocFile(
     path: os.Path,
@@ -28,7 +30,7 @@ case class MdocFile(
     inheritedClasspath: Boolean = true
 )
 
-class MdocProcessor(
+class Mdoc(
     scalaBinaryVersion: String = BuildInfo.scalaBinaryVersion,
     mdocVersion: String = "2.2.9",
     extraCp: List[String] = Nil
@@ -49,31 +51,36 @@ class MdocProcessor(
     Option(props.getProperty("classpath"))
   }
 
+  case class MdocSettings(
+      dependencies: Set[String]
+  )
+
   class PreparedMdoc[T](
-      processor: MdocProcessor,
-      mapping: Map[Set[String], Vector[(T, MdocFile)]],
+      processor: Mdoc,
+      mapping: Map[MdocSettings, Vector[(T, MdocFile)]],
       pwd: Option[os.Path] = None
   ) {
-    val processed = scala.collection.mutable.Map[T, os.Path]()
+    val processed = new ConcurrentHashMap[MdocSettings, Map[T, os.Path]]
+
     def get(content: T): os.Path = {
-      if (processed.contains(content)) processed(content)
-      else {
-        val similarOnes = mapping.filter(_._2.map(_._1).contains(content))
+      val similarOnes = mapping.filter(_._2.map(_._1).contains(content))
 
-        similarOnes.foreach {
-          case (dependencies, markdownFiles) =>
-            val paths = markdownFiles.map(_._2.path)
+      similarOnes.foreach {
+        case (settings, pieces) =>
+          processed.computeIfAbsent(
+            settings,
+            _ => {
+              println(s"Computing for $settings (on ${Thread.currentThread.getName})")
+              val paths = pieces.map(_._2.path)
 
-            val result = processor.processAll(paths, dependencies, pwd)
+              val result = processor.processAll(paths, settings.dependencies, pwd)
 
-            result.map(_._2).zip(markdownFiles).map {
-              case (result, (content, _)) =>
-                processed.update(content, result)
+              result.map(_._2).zip(pieces.map(_._1)).map(_.swap).toMap
             }
-        }
-
-        processed(content)
+          )
       }
+
+      processed.get(similarOnes.head._1).apply(content)
     }
   }
 
@@ -135,7 +142,7 @@ class MdocProcessor(
       .groupBy { mf =>
         mf._2.dependencies
       }
-      .map { case (deps, values) => deps -> values.toVector }
+      .map { case (deps, values) => MdocSettings(deps) -> values.toVector }
 
     new PreparedMdoc[T](self, groupedByDependencies.toMap, pwd)
   }

@@ -17,13 +17,13 @@ object SearchFrontendTests extends SimpleMutableIOSuite {
     )
 
     val idx = Indexer.default[(String, String)](content).processAll {
-    case (path, text) =>
-      Document.section(
-        s"Document at $path",
-        path,
-        text
-      )
-  }
+      case (path, text) =>
+        Document.section(
+          s"Document at $path",
+          path,
+          text
+        )
+    }
 
     val o = read[SearchIndex](writeJs(idx).render())
 

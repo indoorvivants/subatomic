@@ -16,18 +16,142 @@
 
 package subatomic
 
+import scala.concurrent.Await
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
+import scala.concurrent.duration.Duration
+
 sealed trait SiteAsset                                extends Product with Serializable
 case class Page(content: String)                      extends SiteAsset
 case class CopyOf(source: os.Path)                    extends SiteAsset
 case class CreatedFile(source: os.Path, to: SitePath) extends SiteAsset
 
+sealed trait Entry                                                                  extends Product with Serializable
+case class Ready(path: SitePath, content: SiteAsset)                                extends Entry
+case class Delayed(path: SitePath, processor: () => SiteAsset, original: String)    extends Entry
+case class DelayedMany(processor: () => Map[SitePath, SiteAsset], original: String) extends Entry
+
+case class Site[Content] private (pages: Vector[Entry], content: Iterable[(SitePath, Content)]) {
+  private[subatomic] def addReadyAsset(path: SitePath, asset: SiteAsset) =
+    copy(pages = pages :+ Ready(path, asset))
+
+  private[subatomic] def addDelayedAsset(path: SitePath, asset: () => SiteAsset, original: String) =
+    copy(pages = pages :+ Delayed(path, asset, original))
+
+  private[subatomic] def addDelayedAssets(assets: () => Map[SitePath, SiteAsset], original: String) =
+    copy(pages = pages :+ DelayedMany(assets, original))
+
+  def add(path: SitePath, asset: SiteAsset): Site[Content] = addReadyAsset(path, asset)
+
+  def addPage(path: SitePath, page: String): Site[Content]      = addReadyAsset(path, Page(page))
+  def addCopyOf(path: SitePath, source: os.Path): Site[Content] = addReadyAsset(path, CopyOf(source))
+
+  def addProcessed[C1 <: Content](path: SitePath, processor: Processor[C1, SiteAsset], content: C1) = {
+    processor.register(content)
+
+    addDelayedAsset(path, () => processor.retrieve(content), content.toString())
+  }
+
+  def addProcessed[C1 <: Content](processor: Processor[C1, Map[SitePath, SiteAsset]], content: C1) = {
+    addDelayedAssets(() => processor.retrieve(content), content.toString())
+  }
+
+  def copyAll(root: os.Path, siteBase: SitePath): Site[Content] = {
+    os.walk(root).filter(_.toIO.isFile()).foldLeft(this) {
+      case (site, file) =>
+        val relativePath = file.relativeTo(root)
+
+        site.addCopyOf(siteBase / relativePath, file)
+    }
+  }
+
+  def populate(f: (Site[Content], (SitePath, Content)) => Site[Content]) = {
+    content.foldLeft(this)(f)
+  }
+
+  def buildAt(destination: os.Path): Unit = {
+    logger.logLine(
+      "\nCreating site in " + logger._green(
+        destination.toIO.getAbsolutePath()
+      ) + "\n"
+    )
+
+    val ready = pages.collect {
+      case r: Ready => r
+    }
+
+    ready.foreach {
+      case Ready(sitePath, asset) =>
+        Site.logEntry(sitePath.toRelPath, asset)
+
+        writeAsset(sitePath, asset, destination)
+    }
+
+    val delayed = Await.result(
+      Future.sequence(pages.collect {
+        case d @ Delayed(_, asset, _) =>
+          Future { Left(d -> asset()) }
+        case d @ DelayedMany(assets, _) =>
+          Future { Right(d -> assets()) }
+      }),
+      Duration.Inf
+    )
+
+    delayed.foreach {
+      case Left((Delayed(sitePath, _, original), assetResult)) =>
+        Site.logEntry(sitePath.toRelPath, assetResult, Some(original))
+        writeAsset(sitePath, assetResult, destination)
+
+      case Right((DelayedMany(_, original), results)) =>
+        results.foreach {
+          case (sitePath, asset) =>
+            Site.logEntry(sitePath.toRelPath, asset, Some(original))
+            writeAsset(sitePath, asset, destination)
+        }
+    }
+
+  }
+
+  private def writeAsset(
+      sp: SitePath,
+      ass: SiteAsset,
+      destinationFolder: os.Path
+  ) = {
+    val p           = sp.toRelPath
+    val destination = destinationFolder / p
+
+    ass match {
+      case Page(content) => write(content, destination)
+      case CopyOf(source) =>
+        os.makeDir.all(destination / os.up)
+
+        os.copy(from = source, to = destination, replaceExisting = true)
+      case CreatedFile(from, to) =>
+        val destination = destinationFolder / to.toRelPath
+
+        os.makeDir.all(destination / os.up)
+
+        os.copy(from = from, to = destination, replaceExisting = true)
+    }
+  }
+
+  private def write(ct: String, absPath: os.Path) = {
+    os.makeDir.all(absPath / os.up)
+
+    os.write.over(absPath, ct)
+  }
+
+}
+
 object Site {
+
+  def init[Content](c: Iterable[(SitePath, Content)]) = new Site[Content](Vector.empty, c)
 
   def trim(content: String, len: Int = 50) =
     if (content.length > len) content.take(len - 3) + "..."
     else content
 
-  def logHandling[T](original: T, p: os.RelPath, asset: => SiteAsset) = {
+  def logEntry(path: os.RelPath, asset: SiteAsset, from: Option[String] = None) = {
     import logger._
 
     val arrow = asset match {
@@ -45,18 +169,14 @@ object Site {
 
     val leftSide = asset match {
       case CreatedFile(_, to) => to.toString()
-      case _                  => p.toString()
+      case _                  => path.toString()
     }
 
-    val origMsg = asset match {
-      case _: Page =>
-        List("\n    ", _bold(trim(original.toString(), 70)))
-      case _ => List.empty
-    }
+    val indentBreak = "\n    "
 
     val msg = List(
       _blue(leftSide),
-      "\n    ",
+      indentBreak,
       arrow,
       " ",
       _green(
@@ -64,112 +184,10 @@ object Site {
       )
     )
 
-    log(msg ++ origMsg ++ List("\n"))
-  }
-
-  def build[Content](destination: os.Path)(
-      sitemap: Vector[(SitePath, Content)]
-  )(assembler: Function2[SitePath, Content, Iterable[SiteAsset]]) = {
-    logger.logLine(
-      "\nCreating site in " + logger._green(
-        destination.toIO.getAbsolutePath()
-      ) + "\n"
-    )
-
-    sitemap.foreach {
-      case (relPath, content) =>
-        handleAssets(
-          relPath,
-          content,
-          assembler(relPath, content),
-          destination
-        )
+    val fromMsg = from.toList.flatMap { original =>
+      List(indentBreak, _red("^--processed-from-->"), " ", _bold(trim(original, 80)))
     }
 
+    log(msg ++ fromMsg ++ List("\n"))
   }
-
-  def build1[Content, A1](destination: os.Path)(
-      sitemap: Vector[(SitePath, Content)],
-      a1: Function2[SitePath, Content, A1]
-  )(assembler: Function3[SitePath, Content, A1, Iterable[SiteAsset]]) = {
-
-    logger.logLine(
-      "\nCreating site in " + logger._green(
-        destination.toIO.getAbsolutePath()
-      ) + "\n"
-    )
-
-    sitemap.foreach {
-      case (relPath, content) =>
-        val a1r = a1(relPath, content)
-
-        handleAssets(
-          relPath,
-          content,
-          assembler(relPath, content, a1r),
-          destination
-        )
-    }
-
-  }
-
-  def build2[Content, A1, A2](destination: os.Path)(
-      sitemap: Vector[(SitePath, Content)],
-      a1: Function2[SitePath, Content, A1],
-      a2: Function2[SitePath, Content, A2]
-  )(assembler: Function4[SitePath, Content, A1, A2, Iterable[SiteAsset]]) = {
-    logger.logLine(
-      "\nCreating site in " + logger._green(
-        destination.toIO.getAbsolutePath()
-      ) + "\n"
-    )
-
-    sitemap.foreach {
-      case (relPath, content) =>
-        val a1r = a1(relPath, content)
-        val a2r = a2(relPath, content)
-
-        handleAssets(
-          relPath,
-          content,
-          assembler(relPath, content, a1r, a2r),
-          destination
-        )
-    }
-
-  }
-
-  private def handleAssets[T](
-      sp: SitePath,
-      orig: T,
-      assets: Iterable[SiteAsset],
-      destinationFolder: os.Path
-  ) = {
-    val p           = sp.toRelPath
-    val destination = destinationFolder / p
-
-    assets.foreach { ass =>
-      logHandling(orig, p, ass)
-      ass match {
-        case Page(content) => write(content, destination)
-        case CopyOf(source) =>
-          os.makeDir.all(destination / os.up)
-
-          os.copy(from = source, to = destination, replaceExisting = true)
-        case CreatedFile(from, to) =>
-          val destination = destinationFolder / to.toRelPath
-
-          os.makeDir.all(destination / os.up)
-
-          os.copy(from = from, to = destination, replaceExisting = true)
-      }
-    }
-  }
-
-  private def write(ct: String, absPath: os.Path) = {
-    os.makeDir.all(absPath / os.up)
-
-    os.write.over(absPath, ct)
-  }
-
 }

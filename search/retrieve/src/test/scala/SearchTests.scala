@@ -18,12 +18,12 @@ object SearchTests extends SimpleMutableIOSuite {
         text
       )
   }
-  
+
   val search = new Search(idx)
 
   def foundUrls(query: String) = search.string(query).map(_._1.url).toSet
 
-  def ranking(query: String, documentUrl: String) ={
+  def ranking(query: String, documentUrl: String) = {
     search.string(query).toMap.find(_._1.url == documentUrl).map(_._2).getOrElse(-1.0)
   }
 

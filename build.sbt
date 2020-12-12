@@ -64,7 +64,7 @@ lazy val searchFrontendPack = projectMatrix
 
       (compile in Compile).value
     },
-    resourceGenerators in Compile += 
+    resourceGenerators in Compile +=
       Def.task {
         val out = (Compile / resourceManaged).value / "search.js"
 
@@ -124,11 +124,9 @@ lazy val docs = projectMatrix
   .enablePlugins(SubatomicPlugin)
   .settings(
     skip in publish := true,
-
     // To react to asset changes
-    fileInputs += (baseDirectory in ThisBuild).value.toGlob / "docs" / "assets" / "*",
-    fileInputs += (baseDirectory in ThisBuild).value.toGlob / "docs" / "pages" / "*.md",
-    
+    watchSources += WatchSource((baseDirectory in ThisBuild).value / "docs" / "assets"),
+    watchSources += WatchSource((baseDirectory in ThisBuild).value / "docs" / "pages"),
     // To pick up Main.scala in docs/ (without the src/main/scala/ stuff)
     unmanagedSourceDirectories in Compile +=
       (baseDirectory in ThisBuild).value / "docs",
@@ -258,8 +256,7 @@ val CICommands = Seq(
 ).mkString(";")
 
 val PrepareCICommands = Seq(
-  s"compile:scalafix --rules $scalafixRules",
-  s"test:scalafix --rules $scalafixRules",
+  s"scalafix --rules $scalafixRules",
   "test:scalafmtAll",
   "compile:scalafmtAll",
   "scalafmtSbt",
@@ -269,3 +266,5 @@ val PrepareCICommands = Seq(
 addCommandAlias("ci", CICommands)
 
 addCommandAlias("preCI", PrepareCICommands)
+
+addCommandAlias("buildSite", "docs2_12/run")

@@ -25,7 +25,7 @@ case class SectionIdx(value: Int)    extends Primitive[Int]
 case class DocumentIdx(value: Int)   extends Primitive[Int]
 case class TermFrequency(value: Int) extends Primitive[Int]
 case class GlobalTermFrequency(value: Int) extends Primitive[Int] {
-  def inc = copy(value + 1)
+  def inc            = copy(value + 1)
   def add(more: Int) = copy(value + more)
 }
 case class CollectionSize(value: Int) extends Primitive[Int]

@@ -16,6 +16,8 @@
 
 package subatomic
 
+import subatomic.internal.BuildInfo
+
 import coursier.Fetch
 import coursier.core.Dependency
 import coursier.parse.DependencyParser
@@ -35,8 +37,8 @@ case class ScalaJSResult(
     mdocFile: os.Path
 )
 
-class MdocJsProcessor(
-    scalaBinaryVersion: String = "2.13",
+class MdocJS(
+    scalaBinaryVersion: String = BuildInfo.scalaBinaryVersion,
     mdocVersion: String = "2.2.9",
     scalajsConfiguration: ScalaJsConfiguration = ScalaJsConfiguration.default
 ) {
@@ -66,7 +68,7 @@ class MdocJsProcessor(
     )
   )
 
-  def optsFolder(deps: List[String]) = {
+  def optsFolder(deps: Iterable[String]) = {
     val tempDir = os.temp.dir()
 
     val depsCp = if (deps.nonEmpty) ":" + fetchCp(deps) else ""
@@ -82,10 +84,10 @@ class MdocJsProcessor(
     tempDir.toString
   }
 
-  def fetchCp(deps: List[String]) = {
+  def fetchCp(deps: Iterable[String]) = {
     Fetch()
       .addDependencies(
-        deps
+        deps.toSeq
           .map(DependencyParser.dependency(_, scalaBinaryVersion))
           .map(_.left.map(new RuntimeException(_)).toTry.get): _*
       )
@@ -97,7 +99,7 @@ class MdocJsProcessor(
   def process(
       _pwd: os.Path,
       file: os.Path,
-      dependencies: List[String]
+      dependencies: Iterable[String]
   ): ScalaJSResult = {
     val tempDir = os.temp.dir()
     val opts    = optsFolder(dependencies)
@@ -106,7 +108,7 @@ class MdocJsProcessor(
       if (dependencies.nonEmpty) s" [${dependencies.mkString(", ")}]" else ""
 
     logger.logLine(
-      "MDOC.JS: " + file + deps
+      s"MDOC.JS: " + file + deps
     )
 
     os.proc(

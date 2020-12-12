@@ -38,7 +38,7 @@ class Search(index: SearchIndex) {
         if (documentTerms.contains(termId)) {
           val TF = Algorithms.augmented_Term_Frequency(
             termId,
-            documentTerms.map{case (k, v) => k -> v.frequencyInDocument}
+            documentTerms.map { case (k, v) => k -> v.frequencyInDocument }
           )
 
           val IDF = Algorithms.inverse_Document_Frequency(
