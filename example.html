@@ -1,5 +1,5 @@
-<html><head><title>Subatomic: Example</title><link rel="stylesheet" href="/assets/highlight-theme.css" /><link rel="stylesheet" href="/assets/bootstrap.css" /><link rel="stylesheet" href="/assets/styles.css" /><link rel="shortcut icon" type="image/png" href="/assets/logo.png" /><script src="/assets/highlight.js"></script><script src="/assets/highlight-scala.js"></script><script src="/assets/script.js"></script><meta charset="UTF-8" /></head><body><div class="container"><div class="row"><div class="col-1"></div><div class="col-9"><div class="row"><div class="col-2"><img src="/assets/logo.png" class="img-fluid" style="height: 100;" /></div><div class="col-8"><div class="align-middle"><h1><a href="/">Subatomic</a></h1><small>a tiny, horrible static site builder for Scala</small></div></div><div class="col-2"><p><a href="https://github.com/indoorvivants/subatomic">Github</a></p><p><a href="https://index.scala-lang.org/indoorvivants/subatomic/subatomic">Versions</a></p></div></div><hr /><a class="btn btn-dark" href="/index.html">Home</a> <a class="btn btn-dark" href="/example.html">Example</a><hr /><h1>Example</h1><div><p>We're going build a simple website with statically checked Scala code in Markdown</p>
-<p>We will use</p>
+<html><head><title>Subatomic: Example</title><link rel="stylesheet" href="/assets/highlight-theme.css" /><link rel="stylesheet" href="/assets/styles.css" /><link rel="shortcut icon" type="image/png" href="/assets/logo.png" /><script src="/assets/highlight.js"></script><script src="/assets/highlight-scala.js"></script><script src="/assets/script.js"></script><script src="/assets/search-index.js"></script><meta charset="UTF-8" /></head><body><div class="container"><header class="main-header"><div class="logo"><img src="/assets/logo.png" /></div><div class="site-title"><h1><a href="/">Subatomic</a></h1><small>a tiny, horrible static site builder for Scala</small></div><div id="searchContainer"></div><div class="site-links"><p><a href="https://github.com/indoorvivants/subatomic">Github</a></p><p><a href="https://index.scala-lang.org/indoorvivants/subatomic/subatomic">Versions</a></p></div></header><div><a class="nav-btn" href="/index.html">Home</a><a class="nav-btn" href="/example.html">Example</a></div><h1>Example</h1><div><p>We're going build a simple website with statically checked Scala code in Markdown.</p>
+<p>Tools we will use:</p>
 <ul>
 <li><a href="https://ammonite.io">Ammonite</a>, for writing the entire site builder in a single Scala script</li>
 <li><a href="https://scalameta.org/mdoc">Mdoc</a> to compile code examples in markdown</li>
@@ -18,9 +18,9 @@ assets/
     script.js
     styles.css
 pages/
-    index.md # will become index.html
-    scala-usage.md # will become scala-usage.html
-    scala-js-usage.md # will become scala-js-usage.html
+    index.md # will become index.html, not processed with mdoc
+    scala-usage.md # will become scala-usage.html, processed with mdoc
+    scala-js-usage.md # will become scala-js-usage.html, processed with mdoc
 build.sc # static site builder
 </code></pre>
 <h2>Goals</h2>
@@ -37,25 +37,23 @@ build.sc # static site builder
 </li>
 <li>
 <p>We want to be able to deploy our site to a relative URL of our choosing</p>
-<p>This matters when you maintain several sites from the same domain, and want to, say, build a static site for your library at <strong>https://indoorvivants.com/subatomic</strong>, and want to maintain your abandoned blog at <strong>https://indoorvivants.com/blog</strong></p>
+<p>This matters when you maintain several sites from the same domain, and want to, say, build a static site for your library at <strong>https://indoorvivants.com/subatomic</strong>,
+and want to maintain your abandoned blog at <strong>https://indoorvivants.com/blog</strong></p>
 <p>All links should work as expected.</p>
 </li>
 </ul>
 <h2>Dependencies and imports</h2>
-<pre><code class="language-scala">import $ivy.`com.indoorvivants::subatomic:0.0.2`
+<pre><code class="language-scala">import $ivy.`com.indoorvivants::subatomic:0.0.3`
 import $ivy.`com.lihaoyi::scalatags:0.9.1`
 </code></pre>
-<pre><code class="language-scala">import com.indoorvivants.subatomic._
+<pre><code class="language-scala">import subatomic._
+
 import ammonite.ops._
 </code></pre>
-<h2>Content</h2>
-<p>Let's create two folders:</p>
-<ul>
-<li><code>pages</code> where we will store our markdown pages</li>
-<li><code>assets</code> where we will store our static files, like CSS and JS files</li>
-</ul>
+<h2>Defining content models</h2>
 <p>We're going to reperesent our content model very simply:</p>
 <pre><code class="language-scala">sealed trait Content
+
 case class ScalaPage(
     title: String,
     path: os.Path,
@@ -68,13 +66,9 @@ case class ScalaJSPage(
     dependencies: List[String]
 ) extends Content
 
-case class StaticFile(path: os.Path)                  extends Content
 case class MarkdownPage(title: String, path: os.Path) extends Content
 </code></pre>
 <ul>
-<li>
-<p><code>StaticFile</code> is just that - a file copied without changes from <code>path</code></p>
-</li>
 <li>
 <p><code>MarkdownPage</code> - a page with no Scala snippets that we just want to render as HTML</p>
 </li>
@@ -87,18 +81,6 @@ case class MarkdownPage(title: String, path: os.Path) extends Content
 </ul>
 <p>Let's define our site map, by passing a version of subatomic itself:</p>
 <pre><code class="language-scala">object Content {
-  def apply(root: os.Path) =
-    Assets(root) ++ Pages(root)
-
-  def Assets(root: os.Path): Vector[(SitePath, Content)] = {
-    // recursively discovering all files in assets folder
-    os.walk(root / &quot;assets&quot;).filter(_.toIO.isFile()).map { path =&gt;
-      // make sure relative path on site matches relative path
-      // in assets folder
-      SiteRoot / path.relativeTo(root) -&gt; StaticFile(path)
-    }
-  }.toVector
-
   def Pages(root: os.Path): Vector[(SitePath, Content)] = {
     Vector(
       SiteRoot / &quot;index.html&quot; -&gt; MarkdownPage(
@@ -119,10 +101,6 @@ case class MarkdownPage(title: String, path: os.Path) extends Content
   }
 }
 </code></pre>
-<ul>
-<li>For assets we just recursively walk over the <code>assets</code> folder matching the relative path in our sitemap</li>
-<li>We define our Markdown and Scala pages as separate objects</li>
-</ul>
 <h2>Templates</h2>
 <p>Let's create a simple template with Bootstrap styles and Highlight.js dark theme for syntax highlighting:</p>
 <pre><code class="language-scala">class Template(linker: Linker) {
@@ -140,15 +118,15 @@ case class MarkdownPage(title: String, path: os.Path) extends Content
         scalatags.Text.tags2.title(title),
         link(
           rel := &quot;stylesheet&quot;,
-          href := linker.rooted(_ / &quot;assets&quot; / &quot;highlight-theme.css&quot;)
+          href := linker.unsafe(_ / &quot;assets&quot; / &quot;highlight-theme.css&quot;)
         ),
         link(
           rel := &quot;stylesheet&quot;,
-          href := linker.rooted(_ / &quot;assets&quot; / &quot;bootstrap.css&quot;)
+          href := linker.unsafe(_ / &quot;assets&quot; / &quot;bootstrap.css&quot;)
         ),
-        script(src := linker.rooted(_ / &quot;assets&quot; / &quot;highlight.js&quot;)),
-        script(src := linker.rooted(_ / &quot;assets&quot; / &quot;highlight-scala.js&quot;)),
-        script(src := linker.rooted(_ / &quot;assets&quot; / &quot;script.js&quot;))
+        script(src := linker.unsafe(_ / &quot;assets&quot; / &quot;highlight.js&quot;)),
+        script(src := linker.unsafe(_ / &quot;assets&quot; / &quot;highlight-scala.js&quot;)),
+        script(src := linker.unsafe(_ / &quot;assets&quot; / &quot;script.js&quot;))
       ),
       body(
         div(
@@ -158,7 +136,7 @@ case class MarkdownPage(title: String, path: os.Path) extends Content
             div(
               cls := &quot;col-9&quot;,
               h1(title),
-              content
+              content // this is what our pages will be rendered as
             )
           )
         )
@@ -167,40 +145,24 @@ case class MarkdownPage(title: String, path: os.Path) extends Content
   }
 }
 </code></pre>
-<h3>Assembling</h3>
-<p>As subatomic goes through the site map, for each location we need to output a sequence (potentially empty) of site assets:</p>
-<pre><code class="language-scala">sealed trait SiteAsset
-case class Page(content: String)                      extends SiteAsset
-case class CopyOf(source: os.Path)                    extends SiteAsset
-case class CreatedFile(source: os.Path, to: SitePath) extends SiteAsset
-</code></pre>
 <ul>
 <li>
-<p><code>Page</code> represents content copied into the location verbatim</p>
+<p>We use <code>Linker</code> interface to resolve links on the site</p>
 </li>
 <li>
-<p><code>CopyOf</code> copies a file from <code>source</code> into the location on the website</p>
-</li>
-<li>
-<p><code>CreatedFile</code> is useful when the processing of a page produces extra resources.</p>
-<p>For example, if you're writing Scala.js documents, mdoc will produce 3 files:</p>
-<ul>
-<li><code>mdoc.js</code> which invokes the JavaScript snippets in your compiled document</li>
-<li><code>&lt;filename&gt;.js</code> which contains the code for each of the snippets that were compiled to JavaScript</li>
-<li><code>&lt;filename&gt;.md</code> resulting markdown file that references those files</li>
-</ul>
+<p>We define a helper method <code>RawHTML</code> which takes a <code>String</code> - markdown processor
+will produce resulting HTML as a String.</p>
 </li>
 </ul>
-<p>Let's write a function that will assemble our site.</p>
-<p>The function is fairly long but it's peppered with comments to help
-understanding.</p>
+<h2>Configurting the site</h2>
+<p>Take a look at the whole function, it's excessively commented:</p>
 <pre><code class="language-scala">def createSite(
     destination: os.Path,
     contentRoot: os.Path = os.pwd,
     siteRoot: SitePath
 ) = {
   // creating a full site map
-  val raw = Content(contentRoot)
+  val raw = Content.Pages(contentRoot)
 
   // shift all the content to match the site prefix (siteRoot)
   val content = raw.map {
@@ -211,14 +173,10 @@ understanding.</p>
   // helper to resolve links to their correct
   // values with regard to site root
   val linker = new Linker(raw, siteRoot)
-
-  // built-in Mdoc interface
-  val mdoc   = new MdocProcessor()
-  val mdocJs = new MdocJsProcessor
-
+  
   val template = new Template(linker)
 
-  // wrapper around flexmark
+   // wrapper around flexmark
   val markdown = Markdown(
     // optional:
     //   relativizes all  links in markdown
@@ -226,80 +184,116 @@ understanding.</p>
     RelativizeLinksExtension(siteRoot.toRelPath)
   )
 
-  Site.build(destination)(content) {
-    // handling markdown pages
-    case (path, MarkdownPage(title, markdownFile)) =&gt;
-      Some(
-        Page(
-          template.main(title, markdown.renderToString(markdownFile))
-        )
-      )
+  val scalaPageProcessor =
+    MdocProcessor.create[ScalaPage]() {
+      case ScalaPage(_, markdown, deps) =&gt; MdocFile(markdown, deps.toSet)
+    }
 
-    // Processing Scala markdown pages with mdoc
-    case (_, ScalaPage(title, mdFile, deps)) =&gt;
-      val processed = mdoc.process(mdFile, deps)
-      Some(
-        Page(
-          template.main(title, markdown.renderToString(processed))
-        )
-      )
+  val scalaJSPageProcessor =
+    MdocJSProcessor.create[ScalaJSPage]() {
+      case ScalaJSPage(_, markdown, deps) =&gt; MdocFile(markdown, deps.toSet)
+    }
+  
+  def renderMarkdownFile(title: String, filepath: os.Path): Page = {
+    val renderedHtml = markdown.renderToString(filepath)
+    val fullPageHtml = template.main(title, renderedHtml)
 
-    // handling static assets
-    case (_, sf: StaticFile) =&gt;
-      Some(CopyOf(sf.path))
-
-    // Mdoc for Scala.js returns 3 files
-    case (sitePath, ScalaJSPage(title, mdFile, deps)) =&gt;
-      val result = mdocJs.process(pwd, mdFile, deps)
-
-      List(
-        Page(
-          template.main(title, markdown.renderToString(result.mdFile))
-        ),
-        CreatedFile(result.mdjsFile, sitePath.up / result.mdjsFile.last),
-        CreatedFile(result.mdocFile, sitePath.up / &quot;mdoc.js&quot;)
-      )
+    Page(fullPageHtml)
   }
+
+  val scalaPageRenderer: Processor[ScalaPage, SiteAsset] = scalaPageProcessor
+    // after mdoc processes the page, we want to convert markdown to HTML 
+    .map(result =&gt; renderMarkdownFile(result.original.title, result.resultFile))
+
+  // Pages with Scala.js examples are a bit special
+  // Mdoc produces 3 files associated with each markdown file you give it
+  // We need to be very careful about placing the JS files 
+  // in the correct locations (because they're already references in generated
+  // markdown)
+  def scalaJSPageRenderer(mainDocPath: SitePath): Processor[ScalaJSPage, Map[SitePath, SiteAsset]] =
+    scalaJSPageProcessor.map { result =&gt;
+      Map(
+        // Markdown file to become the page itself
+        mainDocPath -&gt; renderMarkdownFile(result.original.title, result.markdownFile),
+        // Implementations of functions associated with each snippet
+        mainDocPath.up / result.jsSnippetsFile.last -&gt; CopyOf(result.jsSnippetsFile),
+        // general file that triggers the snippets' code when page is loaded
+        mainDocPath.up / &quot;mdoc.js&quot; -&gt; CopyOf(result.jsInitialisationFile)
+      )
+    }
+
+  Site
+    // we're just adding content to call populate later, 
+    // at the moment the site is empty
+    .init(content) 
+    // populate the site by going over every piece of content
+    // and applying a function that can add pages to the site
+    .populate {
+      case (site, content) =&gt;
+        content match {
+          case (sitePath, doc: ScalaPage) =&gt;
+            // we're telling subatomic to use scalaPageRenderer
+            // to process this piece of content
+            // when the site is built
+            site.addProcessed(sitePath, scalaPageRenderer, doc)
+
+          case (sitePath, doc: MarkdownPage) =&gt;
+            // we don't need to do any special processing on
+            // regular markdown pages (calling mdoc is expensive)
+            // so we can just use addPage
+            site.add(sitePath, renderMarkdownFile(doc.title, doc.path))
+
+          case (sitePath, doc: ScalaJSPage) =&gt;
+            // we're using a special 
+            site.addProcessed(scalaJSPageRenderer(sitePath), doc)
+        }
+    }
+    // copy all static files to be served at /assets/ on our site
+    .copyAll(contentRoot / &quot;assets&quot;, SiteRoot / &quot;assets&quot;)
+    // finally, produce all the files configured by the site
+    // and write them to a temporary folder
+    .buildAt(destination)
 }
 </code></pre>
-<p>And this is it. Now we can call this function and it will render the full site at the
-destination:</p>
-<pre><code class="language-scala">// using temporary folder as destination
-createSite(
-  destination = os.temp.dir(),
+<h3>Building the site</h3>
+<pre><code class="language-scala">createSite(
+  destination = os.pwd / &quot;site&quot; / &quot;example&quot;,
   contentRoot = os.pwd / &quot;docs&quot; / &quot;example&quot;,
-  siteRoot    = SiteRoot / &quot;subatomic-example&quot;
+  siteRoot    = SiteRoot / &quot;example&quot; / &quot;subatomic-example&quot;
 )
 // 
-// Creating site in /tmp/4730530054084485167
+// Creating site in /home/runner/work/subatomic/subatomic/site/example
 // 
-// subatomic-example/assets/styles.css
-//     ^--copy-of--&gt; /home/runner/work/subatomic/subatomic/docs/example/assets/styles.css
-// subatomic-example/assets/highlight.js
-//     ^--copy-of--&gt; /home/runner/work/subatomic/subatomic/docs/example/assets/highlight.js
-// subatomic-example/assets/bootstrap.css
-//     ^--copy-of--&gt; /home/runner/work/subatomic/subatomic/docs/example/assets/bootstrap.css
-// subatomic-example/assets/highlight-scala.js
-//     ^--copy-of--&gt; /home/runner/work/subatomic/subatomic/docs/example/assets/highlight-scala.js
-// subatomic-example/assets/highlight-theme.css
-//     ^--copy-of--&gt; /home/runner/work/subatomic/subatomic/docs/example/assets/highlight-theme.css
-// subatomic-example/assets/script.js
-//     ^--copy-of--&gt; /home/runner/work/subatomic/subatomic/docs/example/assets/script.js
-// subatomic-example/index.html
+// example/subatomic-example/index.html
 //     ^--content--&gt; &lt;html&gt;&lt;head&gt;&lt;title&gt;Home&lt;/title&gt;&lt;link rel=&quot;style...
-//     MarkdownPage(Home,/home/runner/work/subatomic/subatomic/docs/exampl...
-// [MDOC]: /home/runner/work/subatomic/subatomic/docs/example/pages/scala-usage.md
-// [MDOC]: dependencies org.typelevel::cats-effect:2.2.0
-// subatomic-example/scala-usage.html
-//     ^--content--&gt; &lt;html&gt;&lt;head&gt;&lt;title&gt;Scala usage&lt;/title&gt;&lt;link rel...
-//     ScalaPage(Scala usage,/home/runner/work/subatomic/subatomic/docs/ex...
+// assets/highlight-scala.js
+//     ^--copy-of--&gt; /home/runner/work/subatomic/subatomic/docs/example/assets/highlight-scala.js
+// assets/highlight.js
+//     ^--copy-of--&gt; /home/runner/work/subatomic/subatomic/docs/example/assets/highlight.js
+// assets/highlight-theme.css
+//     ^--copy-of--&gt; /home/runner/work/subatomic/subatomic/docs/example/assets/highlight-theme.css
+// assets/bootstrap.css
+//     ^--copy-of--&gt; /home/runner/work/subatomic/subatomic/docs/example/assets/bootstrap.css
+// assets/styles.css
+//     ^--copy-of--&gt; /home/runner/work/subatomic/subatomic/docs/example/assets/styles.css
+// assets/script.js
+//     ^--copy-of--&gt; /home/runner/work/subatomic/subatomic/docs/example/assets/script.js
+// Computing for MdocSettings(Set(org.typelevel::cats-effect:2.2.0)) (on scala-execution-context-global-16)
+// [MDOC batch]: /home/runner/work/subatomic/subatomic/docs/example/pages/scala-usage.md
+// [MDOC batch]: dependencies org.typelevel::cats-effect:2.2.0
+// [MDOC batch]: inherited classpath from subatomic.properties resource
 // MDOC.JS: /home/runner/work/subatomic/subatomic/docs/example/pages/scala-js-usage.md [com.raquo::laminar_sjs1:0.11.0]
-// subatomic-example/scala-js-usage.html
+// example/subatomic-example/scala-usage.html
+//     ^--content--&gt; &lt;html&gt;&lt;head&gt;&lt;title&gt;Scala usage&lt;/title&gt;&lt;link rel...
+//     ^--processed-from--&gt; ScalaPage(Scala usage,/home/runner/work/subatomic/subatomic/docs/example/page...
+// example/subatomic-example/scala-js-usage.html
 //     ^--content--&gt; &lt;html&gt;&lt;head&gt;&lt;title&gt;Scala.js usage&lt;/title&gt;&lt;link ...
-//     ScalaJSPage(Scala.js usage,/home/runner/work/subatomic/subatomic/do...
-// /subatomic-example/scala-js-usage.md.js
-//     ^--created-from--&gt; /tmp/6613934677728820397/scala-js-usage.md.js
-// /subatomic-example/mdoc.js
-//     ^--created-from--&gt; /tmp/6613934677728820397/mdoc.js
+//     ^--processed-from--&gt; ScalaJSPage(Scala.js usage,/home/runner/work/subatomic/subatomic/docs/example...
+// example/subatomic-example/scala-js-usage.md.js
+//     ^--copy-of--&gt; /tmp/6411723148225198858/scala-js-usage.md.js
+//     ^--processed-from--&gt; ScalaJSPage(Scala.js usage,/home/runner/work/subatomic/subatomic/docs/example...
+// example/subatomic-example/mdoc.js
+//     ^--copy-of--&gt; /tmp/6411723148225198858/mdoc.js
+//     ^--processed-from--&gt; ScalaJSPage(Scala.js usage,/home/runner/work/subatomic/subatomic/docs/example...
 </code></pre>
-</div></div></div><div class="row"><div class="col-12"><div class="footer">© 2020 Anton Sviridov</div></div></div></div></body></html>
+</div></div><div class="footer">© 2020 Anton Sviridov</div><script src="/assets/search.js"></script></body></html>
