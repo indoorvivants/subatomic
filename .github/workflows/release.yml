@@ -13,6 +13,8 @@ jobs:
       - run: git fetch --unshallow
       - name: Test
         run: sbt ci
+        env:
+          JAVA_OPTS: "-Xmx4G"
       - name: Publish ${{ github.ref }}
         run: sbt ci-release
         env:

@@ -12,5 +12,7 @@ jobs:
       - uses: olafurpg/setup-scala@v10
       - name: Test
         run: sbt ci
+        env:
+          JAVA_OPTS: "-Xmx4G"
       - name: Check site build
         run: sbt buildSite
