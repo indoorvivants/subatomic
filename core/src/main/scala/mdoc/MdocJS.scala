@@ -21,6 +21,7 @@ import subatomic.internal.BuildInfo
 import coursier.Fetch
 import coursier.core.Dependency
 import coursier.parse.DependencyParser
+import os.ProcessOutput
 
 case class ScalaJsConfiguration(
     version: String = "1.1.1",
@@ -40,8 +41,11 @@ case class ScalaJSResult(
 class MdocJS(
     scalaBinaryVersion: String = BuildInfo.scalaBinaryVersion,
     mdocVersion: String = "2.2.9",
-    scalajsConfiguration: ScalaJsConfiguration = ScalaJsConfiguration.default
+    scalajsConfiguration: ScalaJsConfiguration = ScalaJsConfiguration.default,
+    logger: Logger = Logger.default
 ) {
+
+  val logging = logger
 
   private lazy val runnerCp = cp(
     unsafeParse(s"org.scalameta::mdoc-js:$mdocVersion")
@@ -104,12 +108,12 @@ class MdocJS(
     val tempDir = os.temp.dir()
     val opts    = optsFolder(dependencies)
 
+    val logger = logging.at("MDOC.JS")
+
     val deps =
       if (dependencies.nonEmpty) s" [${dependencies.mkString(", ")}]" else ""
 
-    logger.logLine(
-      s"MDOC.JS: " + file + deps
-    )
+    logger.logLine(s"$file, dependencies: $deps")
 
     os.proc(
       "java",
@@ -122,7 +126,11 @@ class MdocJS(
       file.toString(),
       "--out",
       (tempDir / file.last).toString()
-    ).call(_pwd, stderr = os.Inherit, stdout = os.Inherit)
+    ).call(
+      _pwd,
+      stderr = ProcessOutput.Readlines(logger.at("ERR")._println),
+      stdout = ProcessOutput.Readlines(logger.at("OUT")._println)
+    )
 
     ScalaJSResult(
       tempDir / file.last,

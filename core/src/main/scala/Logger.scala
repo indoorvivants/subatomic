@@ -16,7 +16,10 @@
 
 package subatomic
 
-object logger {
+class Logger(val impl: String => Unit) {
+  def _print(s: String)   = impl(s)
+  def _println(s: String) = impl(s + "\n")
+
   import Console._
 
   private lazy val colors =
@@ -27,13 +30,23 @@ object logger {
   def _green(s: String) = if (!colors) s else GREEN + s + RESET
   def _bold(s: String)  = if (!colors) s else BOLD + s + RESET
 
+  def at(name: String) = {
+    new Logger(s => impl(s"[$name] $s"))
+  }
+
   def log(segments: List[String]) = {
     segments.foreach { seg =>
-      print(seg)
+      _print(seg)
     }
   }
 
   def logLine(string: String) = {
-    println(string)
+    _println(string)
   }
+}
+
+object Logger {
+  def default = new Logger(print)
+
+  def nop = new Logger(_ => ())
 }

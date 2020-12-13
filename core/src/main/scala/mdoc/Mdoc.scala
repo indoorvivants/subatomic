@@ -23,6 +23,7 @@ import subatomic.internal.BuildInfo
 
 import coursier._
 import coursier.parse.DependencyParser
+import os.ProcessOutput
 
 case class MdocFile(
     path: os.Path,
@@ -33,8 +34,11 @@ case class MdocFile(
 class Mdoc(
     scalaBinaryVersion: String = BuildInfo.scalaBinaryVersion,
     mdocVersion: String = "2.2.9",
-    extraCp: List[String] = Nil
+    extraCp: List[String] = Nil,
+    logger: Logger = Logger.default
 ) { self =>
+
+  val logging = logger
 
   lazy val inheritedClasspath = {
     val path        = "subatomic.properties"
@@ -45,7 +49,7 @@ class Mdoc(
       case Some(stream) =>
         props.load(stream)
       case None =>
-        println(s"error: failed to load $path")
+        logging.logLine(s"error: failed to load $path")
     }
 
     Option(props.getProperty("classpath"))
@@ -89,6 +93,8 @@ class Mdoc(
       dependencies: Set[String],
       pwd: Option[os.Path]
   ) = {
+
+    val logger      = logging.at("MDOC(batch)")
     val tmpLocation = os.temp.dir()
 
     val filesWithTargets = files.map { p =>
@@ -96,17 +102,17 @@ class Mdoc(
     }
 
     logger.logLine(
-      "[MDOC batch]: " + files.mkString(", ")
+      files.mkString(", ")
     )
 
     if (dependencies.nonEmpty)
       logger.logLine(
-        s"[MDOC batch]: dependencies ${dependencies.mkString(", ")}"
+        s"dependencies ${dependencies.mkString(", ")}"
       )
 
     if (inheritedClasspath.nonEmpty)
       logger.logLine(
-        "[MDOC batch]: inherited classpath from subatomic.properties resource"
+        "inherited classpath from subatomic.properties resource"
       )
 
     val args = filesWithTargets.flatMap {
@@ -127,8 +133,8 @@ class Mdoc(
       .proc(base ++ args)
       .call(
         pwd.getOrElse(tmpLocation),
-        stderr = os.Inherit,
-        stdout = os.Inherit
+        stderr = ProcessOutput.Readlines(logger.at("ERR")._println),
+        stdout = ProcessOutput.Readlines(logger.at("OUT")._println)
       )
 
     filesWithTargets
@@ -155,16 +161,16 @@ class Mdoc(
 
     val pwd = f / os.up
 
-    logger.logLine(
-      "[MDOC]: " + file
-    )
+    val logger = logging.at("MDOC")
+
+    logger.logLine(file.toString())
 
     if (dependencies.nonEmpty)
-      logger.logLine(s"[MDOC]: dependencies ${dependencies.mkString(", ")}")
+      logger.logLine(s"dependencies ${dependencies.mkString(", ")}")
 
     if (inheritedClasspath.nonEmpty)
       logger.logLine(
-        "[MDOC]: inherited classpath from subatomic.properties resource"
+        "inherited classpath from subatomic.properties resource"
       )
 
     os
@@ -180,7 +186,11 @@ class Mdoc(
         "--out",
         f.toString()
       )
-      .call(pwd, stderr = os.Inherit, stdout = os.Inherit)
+      .call(
+        pwd,
+        stderr = ProcessOutput.Readlines(logger.at("ERR")._println),
+        stdout = ProcessOutput.Readlines(logger.at("OUT")._println)
+      )
 
     f
   }

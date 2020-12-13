@@ -31,7 +31,7 @@ case class Ready(path: SitePath, content: SiteAsset)                            
 case class Delayed(path: SitePath, processor: () => SiteAsset, original: String)    extends Entry
 case class DelayedMany(processor: () => Map[SitePath, SiteAsset], original: String) extends Entry
 
-case class Site[Content] private (pages: Vector[Entry], content: Iterable[(SitePath, Content)]) {
+case class Site[Content] private (pages: Vector[Entry], content: Iterable[(SitePath, Content)], logger: Logger) {
   private[subatomic] def addReadyAsset(path: SitePath, asset: SiteAsset) =
     copy(pages = pages :+ Ready(path, asset))
 
@@ -55,6 +55,10 @@ case class Site[Content] private (pages: Vector[Entry], content: Iterable[(SiteP
   def addProcessed[C1 <: Content](processor: Processor[C1, Map[SitePath, SiteAsset]], content: C1) = {
     addDelayedAssets(() => processor.retrieve(content), content.toString())
   }
+
+  def noLogging = copy(logger = Logger.nop)
+
+  def changeLogger(logger: String => Unit) = copy(logger = new Logger(logger))
 
   def copyAll(root: os.Path, siteBase: SitePath): Site[Content] = {
     os.walk(root).filter(_.toIO.isFile()).foldLeft(this) {
@@ -82,7 +86,7 @@ case class Site[Content] private (pages: Vector[Entry], content: Iterable[(SiteP
 
     ready.foreach {
       case Ready(sitePath, asset) =>
-        Site.logEntry(sitePath.toRelPath, asset)
+        Site.logEntry(sitePath.toRelPath, asset, None, logger)
 
         writeAsset(sitePath, asset, destination)
     }
@@ -99,13 +103,13 @@ case class Site[Content] private (pages: Vector[Entry], content: Iterable[(SiteP
 
     delayed.foreach {
       case Left((Delayed(sitePath, _, original), assetResult)) =>
-        Site.logEntry(sitePath.toRelPath, assetResult, Some(original))
+        Site.logEntry(sitePath.toRelPath, assetResult, Some(original), logger)
         writeAsset(sitePath, assetResult, destination)
 
       case Right((DelayedMany(_, original), results)) =>
         results.foreach {
           case (sitePath, asset) =>
-            Site.logEntry(sitePath.toRelPath, asset, Some(original))
+            Site.logEntry(sitePath.toRelPath, asset, Some(original), logger)
             writeAsset(sitePath, asset, destination)
         }
     }
@@ -145,13 +149,13 @@ case class Site[Content] private (pages: Vector[Entry], content: Iterable[(SiteP
 
 object Site {
 
-  def init[Content](c: Iterable[(SitePath, Content)]) = new Site[Content](Vector.empty, c)
+  def init[Content](c: Iterable[(SitePath, Content)]) = new Site[Content](Vector.empty, c, Logger.default)
 
   def trim(content: String, len: Int = 50) =
     if (content.length > len) content.take(len - 3) + "..."
     else content
 
-  def logEntry(path: os.RelPath, asset: SiteAsset, from: Option[String] = None) = {
+  def logEntry(path: os.RelPath, asset: SiteAsset, from: Option[String] = None, logger: Logger) = {
     import logger._
 
     val arrow = asset match {
