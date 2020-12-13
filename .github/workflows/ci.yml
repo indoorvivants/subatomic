@@ -17,6 +17,5 @@ jobs:
         env:
           JAVA_OPTS: "-XX:MaxMetaspaceSize=1g -Xms1g -Xmx4g -Xss2M -XX:+UseG1GC"
           JVM_OPTS: "-XX:MaxMetaspaceSize=1g -Xms1g -Xmx4g -Xss2M -XX:+UseG1GC"
-          SBT_OPTS: "-XX:MaxMetaspaceSize=2g -XX:+UseG1GC -Xmx4g"
       - name: Check site build
         run: sbt buildSite

@@ -78,25 +78,6 @@ lazy val searchFrontendPack = projectMatrix
       }.taskValue
   )
 
-// concurrentRestrictions in Global ++= {
-//   if (sys.env.get("CI").nonEmpty) {
-//     // all Scala.js projects ( get their IDs)
-//     val jsProjects =
-//       Seq(searchFrontend, searchIndex, searchRetrieve, searchShared)
-//         .flatMap(_.filterProjects(Seq(VirtualAxis.js)).map(_.id))
-
-//     val tags = for {
-//       projectName <- jsProjects
-//       stage       <- Seq(Compile.name, Test.name)
-//       typ         <- Seq("fastopt", "fullopt")
-//       name = s"uses-scalajs-linker-$projectName-$stage-$typ"
-//     } yield Tags.Tag(name)
-
-//     // only 2 concurrent linking processes can run
-//     Seq(Tags.limitSum(1, tags: _*))
-//   } else Seq.empty
-// }
-
 lazy val searchFrontend =
   projectMatrix
     .in(file("search/frontend"))
