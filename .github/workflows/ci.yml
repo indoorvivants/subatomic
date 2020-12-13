@@ -10,11 +10,13 @@ jobs:
       - uses: actions/checkout@v1
       - uses: coursier/cache-action@v3      
       - uses: olafurpg/setup-scala@v10
+        with:
+          java-version: adopt@1.8
       - name: Test
         run: sbt ci
         env:
           JAVA_OPTS: "-XX:MaxMetaspaceSize=1g -Xms1g -Xmx4g -Xss2M -XX:+UseG1GC"
           JVM_OPTS: "-XX:MaxMetaspaceSize=1g -Xms1g -Xmx4g -Xss2M -XX:+UseG1GC"
-          SBT_OPTS: "-XX:+CMSClassUnloadingEnabled -XX:MaxMetaspaceSize=2g -XX:+UseG1GC -Xmx4g"
+          SBT_OPTS: "-XX:MaxMetaspaceSize=2g -XX:+UseG1GC -Xmx4g"
       - name: Check site build
         run: sbt buildSite

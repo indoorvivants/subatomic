@@ -8,6 +8,8 @@ import weaver.SimpleMutableIOSuite
 import weaver.scalacheck.IOCheckers
 
 object CharTreeTests extends SimpleMutableIOSuite with IOCheckers {
+  override def maxParallelism: Int = 1
+
   val MostCommonEnglishBigrams =
     ("th,en,ng,he,ed,of,in,to,al,er,it,de,an,ou,se," +
       "re,ea,le,nd,hi,sa,at,is,si,on,or,ar,nt,ti,ve," +
