@@ -20,6 +20,7 @@ import scala.jdk.CollectionConverters._
 
 import com.vladsch.flexmark.html.HtmlRenderer
 import com.vladsch.flexmark.parser.Parser
+import com.vladsch.flexmark.util.ast.Document
 import com.vladsch.flexmark.util.data.MutableDataSet
 import com.vladsch.flexmark.util.misc.Extension
 
@@ -49,6 +50,12 @@ class Markdown(extensions: List[Extension]) {
 
     renderer.render(document)
   }
+
+  def read(markdownFile: os.Path): Document = {
+    read(os.read(markdownFile))
+  }
+
+  def read(content: String): Document = parser.parse(content)
 
 }
 
