@@ -35,12 +35,14 @@ class Mdoc(
     scalaBinaryVersion: String = BuildInfo.scalaBinaryVersion,
     mdocVersion: String = "2.2.9",
     extraCp: List[String] = Nil,
-    logger: Logger = Logger.default
+    logger: Logger = Logger.default,
+    inheritClasspath: Boolean = true,
+    variables: Map[String, String] = Map.empty
 ) { self =>
 
   val logging = logger
 
-  lazy val inheritedClasspath = {
+  lazy val inheritedClasspath: Option[String] = if (inheritClasspath) {
     val path        = "subatomic.properties"
     val classloader = this.getClass.getClassLoader
     val props       = new Properties()
@@ -53,6 +55,12 @@ class Mdoc(
     }
 
     Option(props.getProperty("classpath"))
+  } else None
+
+  lazy val variablesStr: Seq[String] = {
+    variables.map {
+      case (k, v) => s"--site.$k=$v"
+    }.toSeq
   }
 
   case class MdocSettings(
@@ -117,7 +125,7 @@ class Mdoc(
 
     val args = filesWithTargets.flatMap {
       case (from, to) =>
-        Seq("--in", from.toString, "--out", to.toString)
+        Seq("--in", from.toString, "--out", to.toString) ++ variablesStr
     }
 
     val base = Seq(
@@ -173,9 +181,7 @@ class Mdoc(
         "inherited classpath from subatomic.properties resource"
       )
 
-    os
-      .proc(
-        "java",
+    val args = Seq("java",
         "-classpath",
         mainCp,
         "mdoc.Main",
@@ -184,8 +190,10 @@ class Mdoc(
         "--in",
         file.toString(),
         "--out",
-        f.toString()
-      )
+        f.toString()) ++ variablesStr
+
+    os
+      .proc(args)
       .call(
         pwd,
         stderr = ProcessOutput.Readlines(logger.at("ERR")._println),
