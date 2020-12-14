@@ -17,13 +17,14 @@
 package subatomic
 
 import scala.collection.mutable.ListBuffer
+import java.util.concurrent.atomic.AtomicReference
 
 case class MdocResult[C](original: C, resultFile: os.Path)
 
 class MdocProcessor[C] private (mdoc: Mdoc, pwd: os.Path, toMdocFile: PartialFunction[C, MdocFile])
     extends Processor[C, MdocResult[C]] {
-  private var preparedMdoc: Option[mdoc.PreparedMdoc[C]]   = None
-  private val registeredContent: ListBuffer[(C, MdocFile)] = ListBuffer.empty
+  private val preparedMdoc: AtomicReference[Option[mdoc.PreparedMdoc[C]]] = new AtomicReference(None)
+  private val registeredContent: ListBuffer[(C, MdocFile)]                = ListBuffer.empty
 
   val toMdocFileTotal = toMdocFile.lift
 
@@ -34,10 +35,9 @@ class MdocProcessor[C] private (mdoc: Mdoc, pwd: os.Path, toMdocFile: PartialFun
   }
 
   override def retrieve(content: C): MdocResult[C] = {
-    if (preparedMdoc.isEmpty)
-      preparedMdoc = Some(mdoc.prepare(registeredContent, Some(pwd)))
+    preparedMdoc.compareAndSet(None, Some(mdoc.prepare(registeredContent, Some(pwd))))
 
-    MdocResult(content, preparedMdoc.get.get(content))
+    MdocResult(content, preparedMdoc.get.get.get(content))
   }
 }
 
