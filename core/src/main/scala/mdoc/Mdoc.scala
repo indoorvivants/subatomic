@@ -181,16 +181,18 @@ class Mdoc(
         "inherited classpath from subatomic.properties resource"
       )
 
-    val args = Seq("java",
-        "-classpath",
-        mainCp,
-        "mdoc.Main",
-        "--classpath",
-        fetchCp(dependencies) + inheritedClasspath.map(":" + _).getOrElse(""),
-        "--in",
-        file.toString(),
-        "--out",
-        f.toString()) ++ variablesStr
+    val args = Seq(
+      "java",
+      "-classpath",
+      mainCp,
+      "mdoc.Main",
+      "--classpath",
+      fetchCp(dependencies) + inheritedClasspath.map(":" + _).getOrElse(""),
+      "--in",
+      file.toString(),
+      "--out",
+      f.toString()
+    ) ++ variablesStr
 
     os
       .proc(args)

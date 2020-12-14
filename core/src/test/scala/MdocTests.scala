@@ -15,7 +15,8 @@ object MdocTests extends SimpleMutableIOSuite {
   def process(content: String, dependencies: Set[String] = Set.empty, variables: Map[String, String] = Map.empty)(
       result: String => Expectations
   )(implicit log: Log[IO]): IO[Expectations] = {
-    val mdoc = new Mdoc(logger = new Logger(s => log.info(s.replace("\n", "  ")).unsafeRunSync()), variables = variables)
+    val mdoc =
+      new Mdoc(logger = new Logger(s => log.info(s.replace("\n", "  ")).unsafeRunSync()), variables = variables)
 
     val tmpFile = os.temp(content, suffix = ".md")
 
