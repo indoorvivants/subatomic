@@ -82,7 +82,6 @@ class Mdoc(
           processed.computeIfAbsent(
             settings,
             _ => {
-              println(s"Computing for $settings (on ${Thread.currentThread.getName})")
               val paths = pieces.map(_._2.path)
 
               val result = processor.processAll(paths, settings.dependencies, pwd)
