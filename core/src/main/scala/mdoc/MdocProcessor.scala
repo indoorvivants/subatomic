@@ -16,8 +16,9 @@
 
 package subatomic
 
-import scala.collection.mutable.ListBuffer
 import java.util.concurrent.atomic.AtomicReference
+
+import scala.collection.mutable.ListBuffer
 
 case class MdocResult[C](original: C, resultFile: os.Path)
 

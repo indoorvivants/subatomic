@@ -152,8 +152,8 @@ object Site {
   def init[Content](c: Iterable[(SitePath, Content)]) = new Site[Content](Vector.empty, c, Logger.default)
 
   def trim(content: String, len: Int = 50) =
-    if (content.length > len) content.take(len - 3) + "..."
-    else content
+    (if (content.length > len) content.take(len - 3) + "..."
+     else content).replaceAll("\n", "\\\n")
 
   def logEntry(path: os.RelPath, asset: SiteAsset, from: Option[String] = None, logger: Logger) = {
     import logger._
