@@ -1,4 +1,4 @@
-<html><head><title>Subatomic: Example</title><link rel="stylesheet" href="/assets/highlight-theme.css" /><link rel="stylesheet" href="/assets/styles.css" /><link rel="shortcut icon" type="image/png" href="/assets/logo.png" /><script src="/assets/highlight.js"></script><script src="/assets/highlight-scala.js"></script><script src="/assets/script.js"></script><script src="/assets/search-index.js"></script><meta charset="UTF-8" /></head><body><div class="container"><header class="main-header"><div class="logo"><img src="/assets/logo.png" /></div><div class="site-title"><h1><a href="/">Subatomic</a></h1><small>a tiny, horrible static site builder for Scala</small></div><div id="searchContainer"></div><div class="site-links"><p><a href="https://github.com/indoorvivants/subatomic">Github</a></p><p><a href="https://index.scala-lang.org/indoorvivants/subatomic/subatomic">Versions</a></p></div></header><div><a class="nav-btn" href="/index.html">Home</a><a class="nav-btn" href="/example.html">Example</a></div><h1>Example</h1><div><p>We're going build a simple website with statically checked Scala code in Markdown.</p>
+<html><head><title>Subatomic: Example</title><link rel="stylesheet" href="/assets/highlight-theme.css" /><link rel="stylesheet" href="/assets/styles.css" /><link rel="shortcut icon" type="image/png" href="/assets/logo.png" /><script src="/assets/highlight.js"></script><script src="/assets/highlight-scala.js"></script><script src="/assets/script.js"></script><script src="/assets/search-index.js"></script><meta charset="UTF-8" /></head><body><div class="container"><header class="main-header"><div class="site-title"><h1><a href="/">Subatomic</a></h1><small>a horrible static site builder library no one should use</small></div><div id="searchContainer" class="searchContainer"></div><div class="site-links"><a href="https://github.com/indoorvivants/subatomic"><img src="https://cdn.svgporn.com/logos/github-icon.svg" class="gh-logo" /></a></div></header><div><a class="nav-btn" href="/index.html">Home </a><a class="nav-btn nav-selected" href="/example.html">Example</a></div><hr /><div><p>We're going build a simple website with statically checked Scala code in Markdown.</p>
 <p>Tools we will use:</p>
 <ul>
 <li><a href="https://ammonite.io">Ammonite</a>, for writing the entire site builder in a single Scala script</li>
@@ -266,27 +266,27 @@ will produce resulting HTML as a String.</p>
 // 
 // example/subatomic-example/index.html
 //     ^--content--&gt; &lt;html&gt;&lt;head&gt;&lt;title&gt;Home&lt;/title&gt;&lt;link rel=&quot;style...
+// assets/highlight-theme.css
+//     ^--copy-of--&gt; /home/runner/work/subatomic/subatomic/docs/example/assets/highlight-theme.css
+// assets/script.js
+//     ^--copy-of--&gt; /home/runner/work/subatomic/subatomic/docs/example/assets/script.js
 // assets/highlight-scala.js
 //     ^--copy-of--&gt; /home/runner/work/subatomic/subatomic/docs/example/assets/highlight-scala.js
 // assets/highlight.js
 //     ^--copy-of--&gt; /home/runner/work/subatomic/subatomic/docs/example/assets/highlight.js
-// assets/highlight-theme.css
-//     ^--copy-of--&gt; /home/runner/work/subatomic/subatomic/docs/example/assets/highlight-theme.css
-// assets/bootstrap.css
-//     ^--copy-of--&gt; /home/runner/work/subatomic/subatomic/docs/example/assets/bootstrap.css
 // assets/styles.css
 //     ^--copy-of--&gt; /home/runner/work/subatomic/subatomic/docs/example/assets/styles.css
-// assets/script.js
-//     ^--copy-of--&gt; /home/runner/work/subatomic/subatomic/docs/example/assets/script.js
+// assets/bootstrap.css
+//     ^--copy-of--&gt; /home/runner/work/subatomic/subatomic/docs/example/assets/bootstrap.css
 // [MDOC(batch)] /home/runner/work/subatomic/subatomic/docs/example/pages/scala-usage.md
 // [MDOC(batch)] dependencies org.typelevel::cats-effect:2.2.0
 // [MDOC(batch)] inherited classpath from subatomic.properties resource
 // [MDOC.JS] /home/runner/work/subatomic/subatomic/docs/example/pages/scala-js-usage.md, dependencies:  [com.raquo::laminar_sjs1:0.11.0]
-// [MDOC(batch)] [OUT] [34minfo[39m: Compiling 1 file to /tmp/544368428975545433/3183041528171818125.md
-// [MDOC.JS] [OUT] [34minfo[39m: Compiling 1 file to /tmp/6585027166495351940/scala-js-usage.md
-// [MDOC(batch)] [OUT] [34minfo[39m: Compiled in 6.47s (0 errors)
+// [MDOC(batch)] [OUT] [34minfo[39m: Compiling 1 file to /tmp/6410845835902924156/1536772612475711733.md
+// [MDOC.JS] [OUT] [34minfo[39m: Compiling 1 file to /tmp/4731838027593222154/scala-js-usage.md
+// [MDOC(batch)] [OUT] [34minfo[39m: Compiled in 6.72s (0 errors)
 // [MDOC.JS] [OUT] [34minfo[39m: Closure: 0 error(s), 0 warning(s)
-// [MDOC.JS] [OUT] [34minfo[39m: Compiled in 14.65s (0 errors)
+// [MDOC.JS] [OUT] [34minfo[39m: Compiled in 14.36s (0 errors)
 // example/subatomic-example/scala-usage.html
 //     ^--content--&gt; &lt;html&gt;&lt;head&gt;&lt;title&gt;Scala usage&lt;/title&gt;&lt;link rel...
 //     ^--processed-from--&gt; ScalaPage(Scala usage,/home/runner/work/subatomic/subatomic/docs/example/page...
@@ -294,10 +294,10 @@ will produce resulting HTML as a String.</p>
 //     ^--content--&gt; &lt;html&gt;&lt;head&gt;&lt;title&gt;Scala.js usage&lt;/title&gt;&lt;link ...
 //     ^--processed-from--&gt; ScalaJSPage(Scala.js usage,/home/runner/work/subatomic/subatomic/docs/example...
 // example/subatomic-example/scala-js-usage.md.js
-//     ^--copy-of--&gt; /tmp/6585027166495351940/scala-js-usage.md.js
+//     ^--copy-of--&gt; /tmp/4731838027593222154/scala-js-usage.md.js
 //     ^--processed-from--&gt; ScalaJSPage(Scala.js usage,/home/runner/work/subatomic/subatomic/docs/example...
 // example/subatomic-example/mdoc.js
-//     ^--copy-of--&gt; /tmp/6585027166495351940/mdoc.js
+//     ^--copy-of--&gt; /tmp/4731838027593222154/mdoc.js
 //     ^--processed-from--&gt; ScalaJSPage(Scala.js usage,/home/runner/work/subatomic/subatomic/docs/example...
 </code></pre>
-</div></div><div class="footer">© 2020 Anton Sviridov</div><script src="/assets/search.js"></script></body></html>
+</div></div><footer>© 2020 Anton Sviridov</footer><script src="/assets/search.js"></script></body></html>
