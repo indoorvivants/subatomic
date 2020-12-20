@@ -1,3 +1,8 @@
+---
+id: example
+title: Example
+---
+
 We're going build a simple website with statically checked Scala code in Markdown.
 
 Tools we will use:

@@ -14,130 +14,25 @@
  * limitations under the License.
  */
 
+package subatomic
 package docs
 
-import subatomic._
+import subatomic.builders.LibrarySite
 
-import cats.implicits._
-import com.monovore.decline._
+object Docs extends LibrarySite.App {
+  override def extra(site: Site[LibrarySite.Doc]) = {
+    site
+      .copyAll(os.pwd / "docs" / "assets", SiteRoot / "assets")
+      .addCopyOf(SiteRoot / "CNAME", os.pwd / "docs" / "assets" / "CNAME")
+  }
 
-object Main {
-  object cli {
-    case class Config(
-        destination: os.Path,
-        contentRoot: os.Path,
-        disableMdoc: Boolean
+  def config =
+    LibrarySite(
+      name = "Subatomic",
+      contentRoot = os.pwd / "docs" / "pages",
+      assetsRoot = Some(os.pwd / "assets"),
+      copyright = Some("© 2020 Anton Sviridov"),
+      githubUrl = Some("https://github.com/indoorvivants/subatomic")
     )
-    implicit val pathArgument: Argument[os.Path] =
-      Argument[String].map(s => os.Path.apply(s))
 
-    private val disableMdoc = Opts
-      .flag(
-        "disable-mdoc",
-        "Don't call mdoc. This greatly speeds up things and is useful for iterating on the design"
-      )
-      .orFalse
-
-    private val destination = Opts
-      .option[os.Path](
-        "destination",
-        help = "where the static site will be generated"
-      )
-      .withDefault(os.temp.dir())
-
-    private val contentRoot = Opts
-      .option[os.Path](
-        "content-root",
-        help = "where the content is located"
-      )
-      .withDefault(os.pwd / "docs")
-
-    val command = Command("build site", "builds the site")(
-      (destination, contentRoot, disableMdoc).mapN(Config)
-    )
-  }
-
-  def main(args: Array[String]): Unit = {
-    import cli._
-
-    command.parse(args.toList) match {
-      case Left(value) => println(value)
-      case Right(Config(destination, contentRoot, disableMdoc)) =>
-        createSite(
-          destination = destination,
-          siteRoot = SiteRoot,
-          contentRoot = contentRoot,
-          runMdoc = !disableMdoc
-        )
-
-    }
-  }
-
-  def createNavigation(linker: Linker, content: Vector[Doc]): Doc => Vector[NavLink] = {
-    val all = content.map {
-      case doc => doc -> NavLink(linker.find(doc), doc.title, selected = false)
-    }
-
-    { piece =>
-      all.map {
-        case (`piece`, link) => link.copy(selected = true)
-        case (_, link)       => link
-      }
-    }
-  }
-
-  def createSite(
-      destination: os.Path,
-      siteRoot: SitePath,
-      contentRoot: os.Path,
-      runMdoc: Boolean
-  ) = {
-    val content  = Content.pages(contentRoot)
-    val markdown = Markdown(RelativizeLinksExtension(siteRoot.toRelPath))
-
-    val linker = new Linker(content, siteRoot)
-
-    val navigation = createNavigation(linker, content.map(_._2))
-
-    val template = new Template(linker)
-
-    val mdocProcessor =
-      if (runMdoc)
-        MdocProcessor.create[Doc]() {
-          case Doc(_, markdown, deps) => MdocFile(markdown, deps.toSet)
-        }
-      else {
-        Processor.simple[Doc, MdocResult[Doc]](doc => MdocResult(doc, doc.path))
-      }
-
-    def renderMarkdownPage(title: String, file: os.Path, links: Vector[NavLink]) = {
-      val renderedMarkdown = markdown.renderToString(file)
-      val renderedHtml     = template.doc(title, renderedMarkdown, links)
-
-      Page(renderedHtml)
-    }
-
-    val mdocPageRenderer: Processor[Doc, SiteAsset] = mdocProcessor
-      .map { mdocResult =>
-        renderMarkdownPage(
-          mdocResult.original.title,
-          mdocResult.resultFile,
-          navigation(mdocResult.original)
-        )
-      }
-
-    Site
-      .init(content)
-      .populate {
-        case (site, content) =>
-          content match {
-            case (sitePath, doc: Doc) =>
-              site.addProcessed(sitePath, mdocPageRenderer, doc)
-          }
-      }
-      .copyAll(contentRoot / "assets", SiteRoot / "assets")
-      .addCopyOf(SiteRoot / "CNAME", contentRoot / "assets" / "CNAME")
-      .buildAt(destination)
-
-  }
 }

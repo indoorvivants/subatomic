@@ -39,13 +39,13 @@ class Markdown(extensions: List[Extension]) {
 
   private val renderer = HtmlRenderer.builder(opts).build()
 
-  def renderToString(markdownFile: os.Path) = {
+  def renderToString(markdownFile: os.Path): String = {
     val document = parser.parse(os.read(markdownFile))
 
     renderer.render(document)
   }
 
-  def renderToString(content: String) = {
+  def renderToString(content: String): String = {
     val document = parser.parse(content)
 
     renderer.render(document)

@@ -6,6 +6,7 @@ lazy val root = project
       docs.projectRefs,
       plugin.projectRefs,
       core.projectRefs,
+      builders.projectRefs,
       searchIndex.projectRefs,
       searchShared.projectRefs,
       searchFrontend.projectRefs,
@@ -18,7 +19,7 @@ lazy val root = project
 lazy val core = projectMatrix
   .in(file("core"))
   .settings(
-    name := "subatomic",
+    name := "subatomic-core",
     libraryDependencies ++= Seq(
       "io.get-coursier"        %% "coursier"                % "2.0.0-RC6-24",
       "com.vladsch.flexmark"    % "flexmark-all"            % "0.62.2",
@@ -31,6 +32,20 @@ lazy val core = projectMatrix
   .settings(testSettings)
   .enablePlugins(BuildInfoPlugin)
   .settings(buildInfoSettings)
+
+lazy val builders =
+  projectMatrix
+    .in(file("builders"))
+    .dependsOn(core)
+    .settings(
+      name := "subatomic-builders",
+      libraryDependencies += "com.lihaoyi"  %% "scalatags" % "0.9.1",
+      libraryDependencies += "com.monovore" %% "decline"   % "1.3.0"
+    )
+    .jvmPlatform(AllScalaVersions)
+    .settings(testSettings)
+    .enablePlugins(BuildInfoPlugin)
+    .settings(buildInfoSettings)
 
 lazy val searchIndex =
   projectMatrix
@@ -115,7 +130,7 @@ lazy val searchShared =
 lazy val docs = projectMatrix
   .in(file("docs"))
   .withId("docs")
-  .dependsOn(core, plugin, searchIndex, searchFrontendPack)
+  .dependsOn(builders, plugin, searchIndex, searchFrontendPack)
   .jvmPlatform(scalaVersions = Seq(Scala_212))
   .enablePlugins(SubatomicPlugin)
   .settings(
@@ -181,7 +196,8 @@ lazy val testSettings =
     libraryDependencies += "com.disneystreaming" %%% "weaver-scalacheck" % "0.6.0-M1" % Test,
     testFrameworks += new TestFramework("weaver.framework.CatsEffect"),
     scalacOptions.in(Test) ~= filterConsoleScalacOptions,
-    fork in Test := virtualAxes.value.contains(VirtualAxis.jvm)
+    fork in Test := virtualAxes.value.contains(VirtualAxis.jvm),
+    parallelExecution in Test := true
   )
 
 lazy val skipPublish = Seq(
