@@ -18,16 +18,22 @@ package docs
 
 import subatomic._
 
+case class NavLink(
+    url: String,
+    title: String,
+    selected: Boolean
+)
+
 class Template(linker: Linker) {
   import scalatags.Text.all._
   import scalatags.Text.TypedTag
 
   def RawHTML(rawHtml: String) = div(raw(rawHtml))
 
-  def main(title: String, content: String): String =
-    main(title, RawHTML(content))
+  def doc(title: String, content: String, links: Vector[NavLink]): String =
+    doc(title, RawHTML(content), links)
 
-  def main(title: String, content: TypedTag[_]): String = {
+  def doc(title: String, content: TypedTag[_], links: Vector[NavLink]): String = {
     html(
       head(
         scalatags.Text.tags2.title(s"Subatomic: $title"),
@@ -54,8 +60,8 @@ class Template(linker: Linker) {
         div(
           cls := "container",
           Header,
-          NavigationBar,
-          h1(title),
+          NavigationBar(links),
+          hr,
           content
         ),
         Footer,
@@ -64,52 +70,38 @@ class Template(linker: Linker) {
     ).render
   }
 
-  val NavigationBar = div(
-    a(
-      cls := "nav-btn",
-      href := linker.unsafe(_ / "index.html"),
-      "Home"
-    ),
-    a(
-      cls := "nav-btn",
-      href := linker.unsafe(_ / "example.html"),
-      "Example"
+  def NavigationBar(links: Vector[NavLink]) =
+    div(
+      links.map { link =>
+        val sel = if (link.selected) " nav-selected" else ""
+        a(
+          cls := "nav-btn" + sel,
+          href := link.url,
+          link.title
+        )
+      }
     )
-  )
 
   val Header = header(
     cls := "main-header",
     div(
-      cls := "logo",
-      img(
-        src := linker.unsafe(_ / "assets" / "logo.png")
-      )
-    ),
-    div(
       cls := "site-title",
-      h1(a(href := linker.root, "Subatomic")),
-      small("a tiny, horrible static site builder for Scala")
+      h1(
+        a(href := linker.root, "Subatomic")
+      ),
+      small("a horrible static site builder library no one should use")
     ),
-    div(id := "searchContainer"),
+    div(id := "searchContainer", cls := "searchContainer"),
     div(
       cls := "site-links",
-      p(
-        a(
-          href := "https://github.com/indoorvivants/subatomic",
-          "Github"
-        )
-      ),
-      p(
-        a(
-          href := "https://index.scala-lang.org/indoorvivants/subatomic/subatomic",
-          "Versions"
-        )
+      a(
+        href := "https://github.com/indoorvivants/subatomic",
+        img(src := "https://cdn.svgporn.com/logos/github-icon.svg", cls := "gh-logo")
       )
     )
   )
 
-  val Footer = div(
-    cls := "footer",
+  val Footer = footer(
     "© 2020 Anton Sviridov"
   )
 }

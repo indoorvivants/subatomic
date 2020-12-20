@@ -17,16 +17,14 @@
 package docs
 
 import subatomic._
-
-sealed trait Content extends Product with Serializable
 case class Doc(
     title: String,
     path: os.Path,
     dependencies: Set[String] = Set.empty
-) extends Content
+)
 
 object Content {
-  def apply(root: os.Path): Vector[(SitePath, Content)] = {
+  def pages(root: os.Path): Vector[(SitePath, Doc)] = {
     Vector(
       SiteRoot / "index.html" -> Doc(
         "Home ",

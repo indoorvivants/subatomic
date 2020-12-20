@@ -59,18 +59,13 @@ lazy val searchFrontendPack = projectMatrix
   .settings(name := "subatomic-search-frontend-pack")
   .jvmPlatform(AllScalaVersions)
   .settings(
-    compile := {
-      val _ = (searchFrontend.js(Scala_213) / Compile / fullOptJS).value
-
-      (compile in Compile).value
-    },
     resourceGenerators in Compile +=
       Def.task {
         val out = (Compile / resourceManaged).value / "search.js"
 
         // doesn't matter which Scala version we use, it's compiled to JS anyways
         val fullOpt =
-          (searchFrontend.js(Scala_213) / Compile / fastOptJS).value.data
+          (searchFrontend.js(Scala_213) / Compile / fullOptJS).value.data
 
         IO.copyFile(fullOpt, out)
 
@@ -185,7 +180,7 @@ lazy val testSettings =
     libraryDependencies += "com.disneystreaming" %%% "weaver-scalacheck" % "0.6.0-M1" % Test,
     testFrameworks += new TestFramework("weaver.framework.CatsEffect"),
     scalacOptions.in(Test) ~= filterConsoleScalacOptions,
-    fork in Test := false
+    fork in Test := virtualAxes.value.contains(VirtualAxis.jvm)
   )
 
 lazy val skipPublish = Seq(

@@ -1,29 +1,57 @@
+/*https://coolors.co/463f3a-8a817c-bcb8b1-f4f3ee-e0afa0*/
+
 body {
-  font-size: 18px;
+  font-size: 19px;
   color: black;
-  background-color: rgba(101, 46, 117, 0.93);
+  background-color: #463F3A;
 
   font-family: -apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif,Apple Color Emoji,Segoe UI Emoji,Segoe UI Symbol;
 }
 
 div.container{
     background-color: rgb(254, 255, 248);
-    border-radius: 0% 0% 0% 0%;
+    border-radius: 5px;
     padding: 30px;
     width: 80%;
     margin:30px;
 }
 
-div.footer {
-  width:100%;
+footer {
+  width:80%;
   text-align: center;
+  margin-left: 30px;
   padding:10px;
   font-weight: bold;
+  color: #f4f3ee
+}
+
+header h1 a {
+  text-decoration: none;
+}
+
+a {
+  color: rgb(2, 47, 47);
+  text-decoration: underline;
+}
+
+a:visited, a:hover, a:active, a:focus {
+  color:rgb(29, 49, 49);
+  text-decoration: none !important;
+  outline: none !important;
+}
+
+header h1 {
+  margin:0px;
+}
+
+img.gh-logo {
+  width:30px;
+  margin-left: 20px
 }
 
 
-header.main-header div.logo img {
-  width: 74px;
+div.logo img {
+  width: 75px;
 }
 
 header.main-header {
@@ -31,23 +59,34 @@ header.main-header {
   width: 100%;
   flex-direction: row;
   flex-wrap: nowrap;
-  justify-content: space-between;
+  align-content: stretch;
+  margin-bottom: 10px;
 }
 
 a.nav-btn {
-  background-color: darkslategrey;
-  color: whitesmoke;
-  padding: 5px;
-  margin: 5px;
+  padding: 10px;
+  margin-right: 5px;
   border-radius: 3px;
   display: inline-block;
-  text-decoration: none;
+  text-decoration: underline;
+  font-size: 20px;
+}
+
+a.nav-selected {
+  border-left:0px;
+  background-color: darkslategrey;
+  color: whitesmoke
 }
 
 div.site-title {
   align-self: flex-start;
+  flex-grow: 4;
 }
 
 div#searchContainer {
   width: 200px;
+}
+
+div.site-links {
+  align-self: flex-end;
 }

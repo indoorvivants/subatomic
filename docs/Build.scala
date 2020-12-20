@@ -73,16 +73,31 @@ object Main {
     }
   }
 
+  def createNavigation(linker: Linker, content: Vector[Doc]): Doc => Vector[NavLink] = {
+    val all = content.map {
+      case doc => doc -> NavLink(linker.find(doc), doc.title, selected = false)
+    }
+
+    { piece =>
+      all.map {
+        case (`piece`, link) => link.copy(selected = true)
+        case (_, link)       => link
+      }
+    }
+  }
+
   def createSite(
       destination: os.Path,
       siteRoot: SitePath,
       contentRoot: os.Path,
       runMdoc: Boolean
   ) = {
-    val content  = Content(contentRoot)
+    val content  = Content.pages(contentRoot)
     val markdown = Markdown(RelativizeLinksExtension(siteRoot.toRelPath))
 
     val linker = new Linker(content, siteRoot)
+
+    val navigation = createNavigation(linker, content.map(_._2))
 
     val template = new Template(linker)
 
@@ -95,15 +110,21 @@ object Main {
         Processor.simple[Doc, MdocResult[Doc]](doc => MdocResult(doc, doc.path))
       }
 
-    def renderMarkdownPage(title: String, file: os.Path) = {
+    def renderMarkdownPage(title: String, file: os.Path, links: Vector[NavLink]) = {
       val renderedMarkdown = markdown.renderToString(file)
-      val renderedHtml     = template.main(title, renderedMarkdown)
+      val renderedHtml     = template.doc(title, renderedMarkdown, links)
 
       Page(renderedHtml)
     }
 
     val mdocPageRenderer: Processor[Doc, SiteAsset] = mdocProcessor
-      .map { mdocResult => renderMarkdownPage(mdocResult.original.title, mdocResult.resultFile) }
+      .map { mdocResult =>
+        renderMarkdownPage(
+          mdocResult.original.title,
+          mdocResult.resultFile,
+          navigation(mdocResult.original)
+        )
+      }
 
     Site
       .init(content)

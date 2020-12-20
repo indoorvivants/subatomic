@@ -1,4 +1,4 @@
-Subatomic is not a framework for _quickly building static websites.
+Subatomic is not a framework for _quickly_ building static websites.
 
 It's a library with a lot of useful helpers that help you configure your site building process
 with code.
