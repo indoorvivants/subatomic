@@ -9,6 +9,7 @@ import cats.effect.Blocker
 import weaver.Log
 
 object MdocTests extends SimpleMutableIOSuite {
+  override def maxParallelism: Int = sys.env.get("CI").map(_ => 1).getOrElse(100)
 
   val HelloWorldPath = SiteRoot / "hello" / "world"
 

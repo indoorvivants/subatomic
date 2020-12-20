@@ -38,7 +38,7 @@ lazy val searchIndex =
     .dependsOn(searchShared)
     .settings(name := "subatomic-search-indexer")
     .jvmPlatform(AllScalaVersions)
-    .jsPlatform(AllScalaVersions)
+    .jsPlatform(AllScalaVersions, batchModeOnCI)
     .settings(testSettings)
     .settings(buildInfoSettings)
 
@@ -85,6 +85,7 @@ lazy val searchFrontend =
     .jsPlatform(AllScalaVersions)
     .settings(testSettings)
     .settings(buildInfoSettings)
+    .settings(batchModeOnCI)
 
 lazy val searchRetrieve =
   projectMatrix
@@ -94,7 +95,7 @@ lazy val searchRetrieve =
       name := "subatomic-search-retrieve"
     )
     .jvmPlatform(AllScalaVersions)
-    .jsPlatform(AllScalaVersions)
+    .jsPlatform(AllScalaVersions, batchModeOnCI)
     .settings(testSettings)
     .settings(buildInfoSettings)
 
@@ -106,7 +107,7 @@ lazy val searchShared =
       libraryDependencies += "com.lihaoyi" %%% "upickle" % "1.2.2"
     )
     .jvmPlatform(AllScalaVersions)
-    .jsPlatform(AllScalaVersions)
+    .jsPlatform(AllScalaVersions, batchModeOnCI)
     .settings(testSettings)
     .settings(buildInfoSettings)
     .enablePlugins(BuildInfoPlugin)
@@ -186,6 +187,12 @@ lazy val testSettings =
 lazy val skipPublish = Seq(
   skip in publish := true
 )
+
+val batchModeOnCI =
+  if (sys.env.contains("CI")) Seq(scalaJSLinkerConfig ~= {
+    _.withBatchMode(true)
+  })
+  else Seq.empty
 
 val platform = settingKey[String]("")
 

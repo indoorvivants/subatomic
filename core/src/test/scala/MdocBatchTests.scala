@@ -15,6 +15,8 @@ import cats.syntax.all._
 
 object MdocBatchTests extends SimpleMutableIOSuite {
 
+  override def maxParallelism: Int = sys.env.get("CI").map(_ => 1).getOrElse(100)
+
   val HelloWorldPath = SiteRoot / "hello" / "world"
 
   def process(content: String, dependencies: Set[String] = Set.empty, variables: Map[String, String] = Map.empty)(
