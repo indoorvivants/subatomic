@@ -1,4 +1,4 @@
-<html><head><title>Subatomic: Example</title><link rel="stylesheet" href="/assets/highlight-theme.css" /><link rel="stylesheet" href="/assets/styles.css" /><link rel="shortcut icon" type="image/png" href="/assets/logo.png" /><script src="/assets/highlight.js"></script><script src="/assets/highlight-scala.js"></script><script src="/assets/script.js"></script><script src="/assets/search-index.js"></script><meta charset="UTF-8" /></head><body><div class="container"><header class="main-header"><div class="site-title"><h1><a href="/">Subatomic</a></h1><small>a horrible static site builder library no one should use</small></div><div id="searchContainer" class="searchContainer"></div><div class="site-links"><a href="https://github.com/indoorvivants/subatomic"><img src="https://cdn.svgporn.com/logos/github-icon.svg" class="gh-logo" /></a></div></header><div><a class="nav-btn" href="/index.html">Home </a><a class="nav-btn nav-selected" href="/example.html">Example</a></div><hr /><div><p>We're going build a simple website with statically checked Scala code in Markdown.</p>
+<html><head><title>Subatomic: Example</title><link rel="stylesheet" href="/assets/highlight-theme.css" /><link rel="stylesheet" href="/assets/styles.css" /><link rel="shortcut icon" type="image/png" href="/assets/logo.png" /><script src="/assets/highlight.js"></script><script src="/assets/highlight-scala.js"></script><script src="/assets/script.js"></script><script src="/assets/search-index.js"></script><meta charset="UTF-8" /></head><body><div class="container"><header class="main-header"><div class="site-title"><h1><a href="/">Subatomic</a></h1></div><div id="searchContainer" class="searchContainer"></div><div class="site-links"><a href="https://github.com/indoorvivants/subatomic"><img src="https://cdn.svgporn.com/logos/github-icon.svg" class="gh-logo" /></a></div></header><div><a class="nav-btn nav-selected" href="/example/index.html">Example</a><a class="nav-btn" href="/index.html">Home</a></div><hr /><div><p>We're going build a simple website with statically checked Scala code in Markdown.</p>
 <p>Tools we will use:</p>
 <ul>
 <li><a href="https://ammonite.io">Ammonite</a>, for writing the entire site builder in a single Scala script</li>
@@ -251,8 +251,7 @@ will produce resulting HTML as a String.</p>
     // copy all static files to be served at /assets/ on our site
     .copyAll(contentRoot / &quot;assets&quot;, SiteRoot / &quot;assets&quot;)
     // finally, produce all the files configured by the site
-    // and write them to a temporary folder
-    .buildAt(destination)
+    .buildAt(destination, overwrite = true)
 }
 </code></pre>
 <h3>Building the site</h3>
@@ -262,42 +261,42 @@ will produce resulting HTML as a String.</p>
   siteRoot    = SiteRoot / &quot;example&quot; / &quot;subatomic-example&quot;
 )
 // 
-// Creating site in /home/runner/work/subatomic/subatomic/site/example
+// Creating site in [32m/home/runner/work/subatomic/subatomic/site/example[0m
 // 
-// example/subatomic-example/index.html
-//     ^--content--&gt; &lt;html&gt;&lt;head&gt;&lt;title&gt;Home&lt;/title&gt;&lt;link rel=&quot;style...
-// assets/highlight-theme.css
-//     ^--copy-of--&gt; /home/runner/work/subatomic/subatomic/docs/example/assets/highlight-theme.css
-// assets/script.js
-//     ^--copy-of--&gt; /home/runner/work/subatomic/subatomic/docs/example/assets/script.js
-// assets/highlight-scala.js
-//     ^--copy-of--&gt; /home/runner/work/subatomic/subatomic/docs/example/assets/highlight-scala.js
-// assets/highlight.js
-//     ^--copy-of--&gt; /home/runner/work/subatomic/subatomic/docs/example/assets/highlight.js
-// assets/styles.css
-//     ^--copy-of--&gt; /home/runner/work/subatomic/subatomic/docs/example/assets/styles.css
-// assets/bootstrap.css
-//     ^--copy-of--&gt; /home/runner/work/subatomic/subatomic/docs/example/assets/bootstrap.css
+// [36mexample/subatomic-example/index.html[0m
+//     [31m^--content--&gt;[0m [32m&lt;html&gt;&lt;head&gt;&lt;title&gt;Home&lt;/title&gt;&lt;link rel=&quot;style...[0m
+// [36massets/highlight-theme.css[0m
+//     [31m^--copy-of--&gt;[0m [32m/home/runner/work/subatomic/subatomic/docs/example/assets/highlight-theme.css[0m
+// [36massets/script.js[0m
+//     [31m^--copy-of--&gt;[0m [32m/home/runner/work/subatomic/subatomic/docs/example/assets/script.js[0m
+// [36massets/highlight-scala.js[0m
+//     [31m^--copy-of--&gt;[0m [32m/home/runner/work/subatomic/subatomic/docs/example/assets/highlight-scala.js[0m
+// [36massets/highlight.js[0m
+//     [31m^--copy-of--&gt;[0m [32m/home/runner/work/subatomic/subatomic/docs/example/assets/highlight.js[0m
+// [36massets/styles.css[0m
+//     [31m^--copy-of--&gt;[0m [32m/home/runner/work/subatomic/subatomic/docs/example/assets/styles.css[0m
+// [36massets/bootstrap.css[0m
+//     [31m^--copy-of--&gt;[0m [32m/home/runner/work/subatomic/subatomic/docs/example/assets/bootstrap.css[0m
 // [MDOC(batch)] /home/runner/work/subatomic/subatomic/docs/example/pages/scala-usage.md
 // [MDOC(batch)] dependencies org.typelevel::cats-effect:2.2.0
 // [MDOC(batch)] inherited classpath from subatomic.properties resource
 // [MDOC.JS] /home/runner/work/subatomic/subatomic/docs/example/pages/scala-js-usage.md, dependencies:  [com.raquo::laminar_sjs1:0.11.0]
-// [MDOC(batch)] [OUT] [34minfo[39m: Compiling 1 file to /tmp/621146106222286647/6429028505269600856.md
-// [MDOC.JS] [OUT] [34minfo[39m: Compiling 1 file to /tmp/1237984769428095704/scala-js-usage.md
-// [MDOC(batch)] [OUT] [34minfo[39m: Compiled in 7.23s (0 errors)
+// [MDOC(batch)] [OUT] [34minfo[39m: Compiling 1 file to /tmp/6698073959409035600/7120515964009277542.md
+// [MDOC.JS] [OUT] [34minfo[39m: Compiling 1 file to /tmp/8180245720365240486/scala-js-usage.md
+// [MDOC(batch)] [OUT] [34minfo[39m: Compiled in 7.38s (0 errors)
 // [MDOC.JS] [OUT] [34minfo[39m: Closure: 0 error(s), 0 warning(s)
-// [MDOC.JS] [OUT] [34minfo[39m: Compiled in 15.83s (0 errors)
-// example/subatomic-example/scala-usage.html
-//     ^--content--&gt; &lt;html&gt;&lt;head&gt;&lt;title&gt;Scala usage&lt;/title&gt;&lt;link rel...
-//     ^--processed-from--&gt; ScalaPage(Scala usage,/home/runner/work/subatomic/subatomic/docs/example/page...
-// example/subatomic-example/scala-js-usage.html
-//     ^--content--&gt; &lt;html&gt;&lt;head&gt;&lt;title&gt;Scala.js usage&lt;/title&gt;&lt;link ...
-//     ^--processed-from--&gt; ScalaJSPage(Scala.js usage,/home/runner/work/subatomic/subatomic/docs/example...
-// example/subatomic-example/scala-js-usage.md.js
-//     ^--copy-of--&gt; /tmp/1237984769428095704/scala-js-usage.md.js
-//     ^--processed-from--&gt; ScalaJSPage(Scala.js usage,/home/runner/work/subatomic/subatomic/docs/example...
-// example/subatomic-example/mdoc.js
-//     ^--copy-of--&gt; /tmp/1237984769428095704/mdoc.js
-//     ^--processed-from--&gt; ScalaJSPage(Scala.js usage,/home/runner/work/subatomic/subatomic/docs/example...
+// [MDOC.JS] [OUT] [34minfo[39m: Compiled in 15.85s (0 errors)
+// [36mexample/subatomic-example/scala-usage.html[0m
+//     [31m^--content--&gt;[0m [32m&lt;html&gt;&lt;head&gt;&lt;title&gt;Scala usage&lt;/title&gt;&lt;link rel...[0m
+//     [31m^--processed-from--&gt;[0m [1mScalaPage(Scala usage,/home/runner/work/subatomic/subatomic/docs/example/page...[0m
+// [36mexample/subatomic-example/scala-js-usage.html[0m
+//     [31m^--content--&gt;[0m [32m&lt;html&gt;&lt;head&gt;&lt;title&gt;Scala.js usage&lt;/title&gt;&lt;link ...[0m
+//     [31m^--processed-from--&gt;[0m [1mScalaJSPage(Scala.js usage,/home/runner/work/subatomic/subatomic/docs/example...[0m
+// [36mexample/subatomic-example/scala-js-usage.md.js[0m
+//     [31m^--copy-of--&gt;[0m [32m/tmp/8180245720365240486/scala-js-usage.md.js[0m
+//     [31m^--processed-from--&gt;[0m [1mScalaJSPage(Scala.js usage,/home/runner/work/subatomic/subatomic/docs/example...[0m
+// [36mexample/subatomic-example/mdoc.js[0m
+//     [31m^--copy-of--&gt;[0m [32m/tmp/8180245720365240486/mdoc.js[0m
+//     [31m^--processed-from--&gt;[0m [1mScalaJSPage(Scala.js usage,/home/runner/work/subatomic/subatomic/docs/example...[0m
 </code></pre>
 </div></div><footer>© 2020 Anton Sviridov</footer><script src="/assets/search.js"></script></body></html>
