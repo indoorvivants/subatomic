@@ -1,7 +1,6 @@
 name: Publish site
 on:
   push:
-    branches: ["master"]
     tags: ["*"]
 jobs:
   publish:
