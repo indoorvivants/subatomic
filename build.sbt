@@ -196,8 +196,7 @@ lazy val testSettings =
     libraryDependencies += "com.disneystreaming" %%% "weaver-scalacheck" % "0.7.0-M3" % Test,
     testFrameworks += new TestFramework("weaver.framework.CatsEffect"),
     scalacOptions.in(Test) ~= filterConsoleScalacOptions,
-    fork in Test := virtualAxes.value.contains(VirtualAxis.jvm),
-    parallelExecution in Test := !sys.env.contains("CI")
+    fork in Test := false //virtualAxes.value.contains(VirtualAxis.jvm)
   )
 
 lazy val skipPublish = Seq(
@@ -285,3 +284,7 @@ ThisBuild / commands += Command.command("ci") { st =>
 }
 
 addCommandAlias("buildSite", "docs2_12/run")
+
+ThisBuild / concurrentRestrictions ++= {
+  if (sys.env.contains("CI")) Seq(Tags.limitAll(2)) else Seq.empty
+}

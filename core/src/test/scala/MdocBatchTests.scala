@@ -106,8 +106,9 @@ object MdocBatchTests extends SimpleMutableIOSuite {
       firstRetrievedZeroDep = resultFirst._1
       firstRetrievedCEDep   = resultFirst._2
 
-      allRetrievedZeroDep <- zeroDepContent.parTraverse(path => IO(os.read(prepared.get(path)))).map(_.distinct)
-      allRetrievedCEDep   <- ceDepContent.parTraverse(path => IO(os.read(prepared.get(path)))).map(_.distinct)
+      allRetrievedZeroDep <-
+        zeroDepContent.parTraverse(path => IO.blocking(os.read(prepared.get(path)))).map(_.distinct)
+      allRetrievedCEDep <- ceDepContent.parTraverse(path => IO.blocking(os.read(prepared.get(path)))).map(_.distinct)
 
       results <- logs.get.map(_.toList)
     } yield expect(results.count(_.contains("Compiling 5 files to")) == 2) and
