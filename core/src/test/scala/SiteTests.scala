@@ -33,6 +33,30 @@ object SiteTests extends SimpleMutableIOSuite {
     }
   }
 
+  loggedTest("doesn't overwrite the site by default") { log =>
+    val site = baseSite(log).populate {
+      case (site, (path, content)) =>
+        site.addPage(path, content)
+    }
+
+    val destination = os.temp.dir()
+    site.buildAt(destination) // should succeed
+
+    expect(Try(site.buildAt(destination)).isFailure) // second time it fails
+  }
+
+  loggedTest("overwrites when explicitly told to") { log =>
+    val site = baseSite(log).populate {
+      case (site, (path, content)) =>
+        site.addPage(path, content)
+    }
+
+    val destination = os.temp.dir()
+    site.buildAt(destination) // should succeed
+
+    expect(Try(site.buildAt(destination, overwrite = true)).isSuccess) // second time it fails
+  }
+
   loggedTest("copyAll - recursively copying assets") { log =>
     // create assets folder
     val tmpDir = os.temp.dir()
@@ -116,7 +140,7 @@ object SiteTests extends SimpleMutableIOSuite {
   }
 
   private def baseSite(log: WeaverLog[IO]) =
-    Site.init(content).changeLogger(s => log.info(s.replace("\n", "  ")).unsafeRunSync())
+    Site.init(content).changeLogger(s => effectCompat.sync(log.info(s.replace("\n", "  "))))
 
   private def check[C](site: Site[C])(f: os.Path => Expectations): IO[Expectations] = {
     IO {

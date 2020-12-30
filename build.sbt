@@ -192,8 +192,8 @@ lazy val plugin = projectMatrix
 
 lazy val testSettings =
   Seq(
-    libraryDependencies += "com.disneystreaming" %%% "weaver-cats"       % "0.6.0-M1" % Test,
-    libraryDependencies += "com.disneystreaming" %%% "weaver-scalacheck" % "0.6.0-M1" % Test,
+    libraryDependencies += "com.disneystreaming" %%% "weaver-cats"       % "0.7.0-M3" % Test,
+    libraryDependencies += "com.disneystreaming" %%% "weaver-scalacheck" % "0.7.0-M3" % Test,
     testFrameworks += new TestFramework("weaver.framework.CatsEffect"),
     scalacOptions.in(Test) ~= filterConsoleScalacOptions,
     fork in Test := virtualAxes.value.contains(VirtualAxis.jvm),

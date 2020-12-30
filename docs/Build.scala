@@ -17,7 +17,7 @@
 package subatomic
 package docs
 
-import subatomic.builders.LibrarySite
+import subatomic.builders.librarysite._
 
 object Docs extends LibrarySite.App {
   override def extra(site: Site[LibrarySite.Doc]) = {

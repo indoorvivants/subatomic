@@ -269,8 +269,7 @@ def createSite(
     // copy all static files to be served at /assets/ on our site
     .copyAll(contentRoot / "assets", SiteRoot / "assets")
     // finally, produce all the files configured by the site
-    // and write them to a temporary folder
-    .buildAt(destination)
+    .buildAt(destination, overwrite = true)
 }
 ```
 

@@ -5,9 +5,7 @@ import scala.util.Try
 import weaver.SimpleMutableIOSuite
 import weaver.Expectations
 import cats.effect.IO
-import cats.effect.Blocker
 import weaver.Log
-import cats.effect.concurrent.Ref
 import cats.data.Chain
 
 import cats.effect.syntax._
@@ -22,12 +20,14 @@ object MdocBatchTests extends SimpleMutableIOSuite {
   def process(content: String, dependencies: Set[String] = Set.empty, variables: Map[String, String] = Map.empty)(
       result: String => Expectations
   )(implicit log: Log[IO]): IO[Expectations] = {
+    val logger = new Logger(s => effectCompat.sync(log.info(s.replace("\n", "  "))))
+
     val mdoc =
-      new Mdoc(logger = new Logger(s => log.info(s.replace("\n", "  ")).unsafeRunSync()), variables = variables)
+      new Mdoc(logger = logger, variables = variables)
 
     val tmpFile = os.temp(content, suffix = ".md")
 
-    Blocker[IO].use(bl => bl.delay(mdoc.process(tmpFile, dependencies))).map { p =>
+    IO.blocking(mdoc.process(tmpFile, dependencies)).map { p =>
       result(os.read(p))
     }
   }
@@ -42,11 +42,10 @@ object MdocBatchTests extends SimpleMutableIOSuite {
     |```""".stripMargin
 
     for {
-      logs <- Ref.of[IO, Chain[String]](Chain.empty)
+      logs <- IO.ref(Chain.empty[String])
 
-      mdoc = new Mdoc(
-        logger = new Logger(s => (logs.update(_ ++ Chain(s)) *> log.info(s.replace("\n", "  "))).unsafeRunSync())
-      )
+      logger = new Logger(s => effectCompat.sync(logs.update(_ ++ Chain(s)) *> log.info(s.replace("\n", "  "))))
+      mdoc   = new Mdoc(logger = logger)
 
       tmpContent = List.fill(10)(os.temp(content, suffix = ".md"))
 
@@ -54,9 +53,7 @@ object MdocBatchTests extends SimpleMutableIOSuite {
         path -> MdocFile(path)
       })
 
-      firstRetrieved <- Blocker[IO].use { bl =>
-        bl.delay(prepared.get(tmpContent.head)).map(os.read)
-      }
+      firstRetrieved <- IO.blocking(prepared.get(tmpContent.head)).map(os.read)
 
       allRetrieved <- tmpContent.parTraverse(path => IO(os.read(prepared.get(path)))).map(_.distinct)
       results      <- logs.get
@@ -94,20 +91,17 @@ object MdocBatchTests extends SimpleMutableIOSuite {
     }
 
     for {
-      logs <- Ref.of[IO, Chain[String]](Chain.empty)
+      logs <- IO.ref(Chain.empty[String])
 
-      mdoc = new Mdoc(
-        logger = new Logger(s => (logs.update(_ ++ Chain(s)) *> log.info(s.replace("\n", "  "))).unsafeRunSync())
-      )
+      logger = new Logger(s => effectCompat.sync(logs.update(_ ++ Chain(s)) *> log.info(s.replace("\n", "  "))))
+      mdoc   = new Mdoc(logger = logger)
 
       prepared = mdoc.prepare(preparedZeroDep ++ preparedCEDep)
 
-      resultFirst <- Blocker[IO].use { bl =>
-        (
-          bl.delay(prepared.get(zeroDepContent.head)).map(os.read),
-          bl.delay(prepared.get(ceDepContent.head)).map(os.read)
-        ).parTupled
-      }
+      resultFirst <- (
+          IO.blocking(prepared.get(zeroDepContent.head)).map(os.read),
+          IO.blocking(prepared.get(ceDepContent.head)).map(os.read)
+      ).parTupled
 
       firstRetrievedZeroDep = resultFirst._1
       firstRetrievedCEDep   = resultFirst._2
@@ -132,11 +126,10 @@ object MdocBatchTests extends SimpleMutableIOSuite {
     |```""".stripMargin
 
     for {
-      logs <- Ref.of[IO, Chain[String]](Chain.empty)
+      logs <- IO.ref(Chain.empty[String])
 
-      mdoc = new Mdoc(
-        logger = new Logger(s => (logs.update(_ ++ Chain(s)) *> log.info(s.replace("\n", "  "))).unsafeRunSync())
-      )
+      logger = new Logger(s => effectCompat.sync(logs.update(_ ++ Chain(s)) *> log.info(s.replace("\n", "  "))))
+      mdoc   = new Mdoc(logger = logger)
 
       tmpContent = List.fill(10)(os.temp(content, suffix = ".md"))
 
@@ -144,7 +137,7 @@ object MdocBatchTests extends SimpleMutableIOSuite {
         path -> MdocFile(path)
       })
 
-      allRetrieved <- tmpContent.parTraverse(path => IO(os.read(prepared.get(path)))).map(_.distinct)
+      allRetrieved <- tmpContent.parTraverse(path => IO.blocking(os.read(prepared.get(path)))).map(_.distinct)
       results      <- logs.get
     } yield expect(results.exists(_.contains("Compiling 10 files to"))) and
       expect(results.toList.count(_.contains("Compiling")) == 1) and

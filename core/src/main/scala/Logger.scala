@@ -16,19 +16,9 @@
 
 package subatomic
 
-class Logger(val impl: String => Unit) {
+class Logger(val impl: String => Unit) extends Colors {
   def _print(s: String)   = impl(s)
   def _println(s: String) = impl(s + "\n")
-
-  import Console._
-
-  private lazy val colors =
-    System.console() != null && System.getenv().get("TERM") != null
-
-  def _blue(s: String)  = if (!colors) s else CYAN + s + RESET
-  def _red(s: String)   = if (!colors) s else RED + s + RESET
-  def _green(s: String) = if (!colors) s else GREEN + s + RESET
-  def _bold(s: String)  = if (!colors) s else BOLD + s + RESET
 
   def at(name: String) = {
     new Logger(s => impl(s"[$name] $s"))
@@ -45,8 +35,23 @@ class Logger(val impl: String => Unit) {
   }
 }
 
-object Logger {
+object Logger extends Colors {
   def default = new Logger(print)
 
   def nop = new Logger(_ => ())
+}
+
+trait Colors {
+  import Console._
+
+  private lazy val colors = true
+  //System.console() != null && System.getenv().get("TERM") != null
+
+  def _blue(s: String)  = if (!colors) s else CYAN + s + RESET
+  def _red(s: String)   = if (!colors) s else RED + s + RESET
+  def _green(s: String) = if (!colors) s else GREEN + s + RESET
+  def _bold(s: String)  = if (!colors) s else BOLD + s + RESET
+
+  def _redLines(s: String) = if (!colors) s else s.linesIterator.map(_red).mkString("\n")
+
 }

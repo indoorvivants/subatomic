@@ -5,7 +5,6 @@ import scala.util.Try
 import weaver.SimpleMutableIOSuite
 import weaver.Expectations
 import cats.effect.IO
-import cats.effect.Blocker
 import weaver.Log
 
 object MdocTests extends SimpleMutableIOSuite {
@@ -16,12 +15,13 @@ object MdocTests extends SimpleMutableIOSuite {
   def process(content: String, dependencies: Set[String] = Set.empty, variables: Map[String, String] = Map.empty)(
       result: String => Expectations
   )(implicit log: Log[IO]): IO[Expectations] = {
+    val logger = new Logger(s => effectCompat.sync(log.info(s.replace("\n", "  "))))
     val mdoc =
-      new Mdoc(logger = new Logger(s => log.info(s.replace("\n", "  ")).unsafeRunSync()), variables = variables)
+      new Mdoc(logger = logger, variables = variables)
 
     val tmpFile = os.temp(content, suffix = ".md")
 
-    Blocker[IO].use(bl => bl.delay(mdoc.process(tmpFile, dependencies))).map { p =>
+    IO.blocking(mdoc.process(tmpFile, dependencies)).map { p =>
       result(os.read(p))
     }
   }

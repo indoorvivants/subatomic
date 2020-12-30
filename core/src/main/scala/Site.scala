@@ -73,7 +73,7 @@ case class Site[Content] private (pages: Vector[Entry], content: Iterable[(SiteP
     content.foldLeft(this)(f)
   }
 
-  def buildAt(destination: os.Path): Unit = {
+  def buildAt(destination: os.Path, overwrite: Boolean = false): Unit = {
     logger.logLine(
       "\nCreating site in " + logger._green(
         destination.toIO.getAbsolutePath()
@@ -88,7 +88,7 @@ case class Site[Content] private (pages: Vector[Entry], content: Iterable[(SiteP
       case Ready(sitePath, asset) =>
         Site.logEntry(sitePath.toRelPath, asset, None, logger)
 
-        writeAsset(sitePath, asset, destination)
+        writeAsset(sitePath, asset, destination, overwrite)
     }
 
     val delayed = Await.result(
@@ -104,13 +104,13 @@ case class Site[Content] private (pages: Vector[Entry], content: Iterable[(SiteP
     delayed.foreach {
       case Left((Delayed(sitePath, _, original), assetResult)) =>
         Site.logEntry(sitePath.toRelPath, assetResult, Some(original), logger)
-        writeAsset(sitePath, assetResult, destination)
+        writeAsset(sitePath, assetResult, destination, overwrite)
 
       case Right((DelayedMany(_, original), results)) =>
         results.foreach {
           case (sitePath, asset) =>
             Site.logEntry(sitePath.toRelPath, asset, Some(original), logger)
-            writeAsset(sitePath, asset, destination)
+            writeAsset(sitePath, asset, destination, overwrite)
         }
     }
 
@@ -119,10 +119,14 @@ case class Site[Content] private (pages: Vector[Entry], content: Iterable[(SiteP
   private def writeAsset(
       sp: SitePath,
       ass: SiteAsset,
-      destinationFolder: os.Path
+      destinationFolder: os.Path,
+      overwrite: Boolean
   ) = {
     val p           = sp.toRelPath
     val destination = destinationFolder / p
+
+    if (destination.toIO.exists() && !overwrite)
+      throw SubatomicError.dangerousOverwriting(destination)
 
     ass match {
       case Page(content) => write(content, destination)

@@ -5,7 +5,6 @@ import scala.util.Try
 import weaver.SimpleMutableIOSuite
 import weaver.Expectations
 import cats.effect.IO
-import cats.effect.Blocker
 import weaver.Log
 
 object MdocJSTests extends SimpleMutableIOSuite {
@@ -16,11 +15,13 @@ object MdocJSTests extends SimpleMutableIOSuite {
   def process(content: String, dependencies: Set[String] = Set.empty)(
       result: ScalaJSResult => Expectations
   )(implicit log: Log[IO]): IO[Expectations] = {
-    val mdoc = new MdocJS(logger = new Logger(s => log.info(s.replace("\n", "  ")).unsafeRunSync()))
+    val logger = new Logger(s => effectCompat.sync(log.info(s.replace("\n", "  "))))
+
+    val mdoc = new MdocJS(logger = logger)
 
     val tmpFile = os.temp(content, suffix = ".md")
 
-    Blocker[IO].use(bl => bl.delay(mdoc.process(os.pwd, tmpFile, dependencies))).map(result)
+    IO.blocking(mdoc.process(os.pwd, tmpFile, dependencies)).map(result)
   }
 
   loggedTest("mdoc.js works") { implicit log =>
