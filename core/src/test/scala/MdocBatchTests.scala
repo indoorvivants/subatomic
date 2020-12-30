@@ -2,37 +2,52 @@ package subatomic
 
 import scala.util.Try
 
-import weaver.SimpleMutableIOSuite
-import weaver.Expectations
+import weaver._
 import cats.effect.IO
-import weaver.Log
 import cats.data.Chain
 
 import cats.effect.syntax._
 import cats.syntax.all._
+import cats.effect.concurrent.Ref
+import cats.effect.Blocker
+import cats.effect.Resource
 
-object MdocBatchTests extends SimpleMutableIOSuite {
+object MdocBatchTests extends IOSuite {
+  override type Res = Processor
+  override def sharedResource: Resource[IO, Res] = Blocker[IO].map(new Processor(_))
 
   override def maxParallelism: Int = sys.env.get("CI").map(_ => 1).getOrElse(100)
 
   val HelloWorldPath = SiteRoot / "hello" / "world"
 
-  def process(content: String, dependencies: Set[String] = Set.empty, variables: Map[String, String] = Map.empty)(
-      result: String => Expectations
-  )(implicit log: Log[IO]): IO[Expectations] = {
-    val logger = new Logger(s => effectCompat.sync(log.info(s.replace("\n", "  "))))
+  class Processor(
+      val blocker: Blocker
+  ) {
 
-    val mdoc =
-      new Mdoc(logger = logger, variables = variables)
+    def process(
+        content: String,
+        dependencies: Set[String] = Set.empty,
+        variables: Map[String, String] = Map.empty,
+        log: Log[IO]
+    )(
+        result: String => Expectations
+    ): IO[Expectations] = {
+      val logger = new Logger(s => log.info(s.replace("\n", "  ")).unsafeRunSync())
 
-    val tmpFile = os.temp(content, suffix = ".md")
+      val mdoc =
+        new Mdoc(logger = logger, variables = variables)
 
-    IO.blocking(mdoc.process(tmpFile, dependencies)).map { p =>
-      result(os.read(p))
+      val tmpFile = os.temp(content, suffix = ".md")
+
+      blocker.blockOn(IO(mdoc.process(tmpFile, dependencies))).map { p =>
+        result(os.read(p))
+      }
     }
+
+    def block[A](a: => A) = blocker.blockOn(IO(a))
   }
 
-  loggedTest("prepared Mdoc invoked only once") { implicit log =>
+  test("prepared Mdoc invoked only once") { (res, log) =>
     val content =
       """
     |hello!
@@ -42,7 +57,7 @@ object MdocBatchTests extends SimpleMutableIOSuite {
     |```""".stripMargin
 
     for {
-      logs <- IO.ref(Chain.empty[String])
+      logs <- Ref.of[IO, Chain[String]](Chain.empty[String])
 
       logger = new Logger(s => effectCompat.sync(logs.update(_ ++ Chain(s)) *> log.info(s.replace("\n", "  "))))
       mdoc   = new Mdoc(logger = logger)
@@ -53,7 +68,7 @@ object MdocBatchTests extends SimpleMutableIOSuite {
         path -> MdocFile(path)
       })
 
-      firstRetrieved <- IO.blocking(prepared.get(tmpContent.head)).map(os.read)
+      firstRetrieved <- res.block(prepared.get(tmpContent.head)).map(os.read)
 
       allRetrieved <- tmpContent.parTraverse(path => IO(os.read(prepared.get(path)))).map(_.distinct)
       results      <- logs.get
@@ -62,7 +77,7 @@ object MdocBatchTests extends SimpleMutableIOSuite {
       expect(allRetrieved == List(firstRetrieved))
   }
 
-  loggedTest("prepared Mdoc invoked only once per dependency set") { implicit log =>
+  test("prepared Mdoc invoked only once per dependency set") { (res, log) =>
     val content1 =
       """
     |hello!
@@ -91,7 +106,7 @@ object MdocBatchTests extends SimpleMutableIOSuite {
     }
 
     for {
-      logs <- IO.ref(Chain.empty[String])
+      logs <- Ref.of[IO, Chain[String]](Chain.empty[String])
 
       logger = new Logger(s => effectCompat.sync(logs.update(_ ++ Chain(s)) *> log.info(s.replace("\n", "  "))))
       mdoc   = new Mdoc(logger = logger)
@@ -99,16 +114,15 @@ object MdocBatchTests extends SimpleMutableIOSuite {
       prepared = mdoc.prepare(preparedZeroDep ++ preparedCEDep)
 
       resultFirst <- (
-          IO.blocking(prepared.get(zeroDepContent.head)).map(os.read),
-          IO.blocking(prepared.get(ceDepContent.head)).map(os.read)
+          res.block(prepared.get(zeroDepContent.head)).map(os.read),
+          res.block(prepared.get(ceDepContent.head)).map(os.read)
       ).parTupled
 
       firstRetrievedZeroDep = resultFirst._1
       firstRetrievedCEDep   = resultFirst._2
 
-      allRetrievedZeroDep <-
-        zeroDepContent.parTraverse(path => IO.blocking(os.read(prepared.get(path)))).map(_.distinct)
-      allRetrievedCEDep <- ceDepContent.parTraverse(path => IO.blocking(os.read(prepared.get(path)))).map(_.distinct)
+      allRetrievedZeroDep <- zeroDepContent.parTraverse(path => res.block(os.read(prepared.get(path)))).map(_.distinct)
+      allRetrievedCEDep   <- ceDepContent.parTraverse(path => res.block(os.read(prepared.get(path)))).map(_.distinct)
 
       results <- logs.get.map(_.toList)
     } yield expect(results.count(_.contains("Compiling 5 files to")) == 2) and
@@ -117,7 +131,7 @@ object MdocBatchTests extends SimpleMutableIOSuite {
       expect(allRetrievedCEDep == List(firstRetrievedCEDep))
   }
 
-  loggedTest("prepared Mdoc works if all are requested at once") { implicit log =>
+  test("prepared Mdoc works if all are requested at once") { (res, log) =>
     val content =
       """
     |hello!
@@ -127,7 +141,7 @@ object MdocBatchTests extends SimpleMutableIOSuite {
     |```""".stripMargin
 
     for {
-      logs <- IO.ref(Chain.empty[String])
+      logs <- Ref.of[IO, Chain[String]](Chain.empty[String])
 
       logger = new Logger(s => effectCompat.sync(logs.update(_ ++ Chain(s)) *> log.info(s.replace("\n", "  "))))
       mdoc   = new Mdoc(logger = logger)
@@ -138,7 +152,7 @@ object MdocBatchTests extends SimpleMutableIOSuite {
         path -> MdocFile(path)
       })
 
-      allRetrieved <- tmpContent.parTraverse(path => IO.blocking(os.read(prepared.get(path)))).map(_.distinct)
+      allRetrieved <- tmpContent.parTraverse(path => res.block(os.read(prepared.get(path)))).map(_.distinct)
       results      <- logs.get
     } yield expect(results.exists(_.contains("Compiling 10 files to"))) and
       expect(results.toList.count(_.contains("Compiling")) == 1) and

@@ -9,9 +9,12 @@ import weaver.Expectations
 import weaver.{Log => WeaverLog}
 import cats.effect.IO
 import scala.collection.mutable.ListBuffer
-import cats.effect.std.Dispatcher
+import cats.effect.Blocker
+import cats.effect.Resource
 
-object SiteTests extends SimpleMutableIOSuite {
+object SiteTests extends weaver.IOSuite {
+  override type Res = Check
+  override def sharedResource: Resource[IO, Res] = Blocker[IO].map(new Check(_))
 
   private val content = Vector(
     SiteRoot / "index.html"                     -> "indexpage!",
@@ -19,13 +22,13 @@ object SiteTests extends SimpleMutableIOSuite {
     SiteRoot / "pages" / "hello" / "world.html" -> "worldpage!"
   )
 
-  loggedTest("populate: addPage") { log =>
+  test("populate: addPage") { (res, log) =>
     val site = baseSite(log).populate {
       case (site, (path, content)) =>
         site.addPage(path, content)
     }
 
-    check(site) { result =>
+    res.check(site) { result =>
       expect.all(
         os.read(result / "pages" / "hello.html") == "hellopage",
         os.read(result / "pages" / "hello" / "world.html") == "worldpage!",
@@ -34,7 +37,7 @@ object SiteTests extends SimpleMutableIOSuite {
     }
   }
 
-  loggedTest("doesn't overwrite the site by default") { log =>
+  test("doesn't overwrite the site by default") { (_, log) =>
     val site = baseSite(log).populate {
       case (site, (path, content)) =>
         site.addPage(path, content)
@@ -46,7 +49,7 @@ object SiteTests extends SimpleMutableIOSuite {
     expect(Try(site.buildAt(destination)).isFailure) // second time it fails
   }
 
-  loggedTest("overwrites when explicitly told to") { log =>
+  test("overwrites when explicitly told to") { (_, log) =>
     val site = baseSite(log).populate {
       case (site, (path, content)) =>
         site.addPage(path, content)
@@ -58,7 +61,7 @@ object SiteTests extends SimpleMutableIOSuite {
     expect(Try(site.buildAt(destination, overwrite = true)).isSuccess) // second time it fails
   }
 
-  loggedTest("copyAll - recursively copying assets") { log =>
+  test("copyAll - recursively copying assets") { (res, log) =>
     // create assets folder
     val tmpDir = os.temp.dir()
     os.makeDir.all(tmpDir / "assets" / "scripts")
@@ -69,7 +72,7 @@ object SiteTests extends SimpleMutableIOSuite {
 
     val site = baseSite(log).copyAll(tmpDir / "assets", SiteRoot / "my-assets")
 
-    check(site) { result =>
+    res.check(site) { result =>
       expect.all(
         os.read(result / "my-assets" / "my.img") == "My Image!",
         os.read(result / "my-assets" / "scripts" / "my.js") == "My JS!",
@@ -78,32 +81,32 @@ object SiteTests extends SimpleMutableIOSuite {
     }
   }
 
-  loggedTest("addCopyOf - adding a copy") { log =>
+  test("addCopyOf - adding a copy") { (res, log) =>
     val tmpDir = os.temp.dir()
     os.write(tmpDir / "CNAME", "domain!")
 
     val site = baseSite(log).addCopyOf(SiteRoot / "test" / "CNAME", tmpDir / "CNAME")
 
-    check(site) { result =>
+    res.check(site) { result =>
       expect(
         os.read(result / "test" / "CNAME") == "domain!"
       )
     }
   }
 
-  loggedTest("addProcessed - delays evaluation") { log =>
+  test("addProcessed - delays evaluation") { (res, log) =>
     var evaluations = 0
 
     val processor = Processor.simple[String, SiteAsset](stuff => { evaluations += 1; Page(stuff) })
 
     val site = baseSite(log).addProcessed(SiteRoot / "test", processor, "what's up")
 
-    check(site) { result =>
+    res.check(site) { result =>
       expect(evaluations == 1) and expect(os.read(result / "test") == "what's up")
     }
   }
 
-  loggedTest("addProcessed - invokes register and then retrieve") { log =>
+  test("addProcessed - invokes register and then retrieve") { (res, log) =>
     val lifecycle = ListBuffer.empty[(String, String)]
 
     val processor = new Processor[String, SiteAsset] {
@@ -119,7 +122,7 @@ object SiteTests extends SimpleMutableIOSuite {
       .addProcessed(SiteRoot / "test", processor, "content-1")
       .addProcessed(SiteRoot / "test1", processor, "content-2")
 
-    check(site) { result =>
+    res.check(site) { result =>
       val checkLifecycle = expect(
         // registrations are synchronous
         lifecycle.take(2).toList == List(
@@ -141,15 +144,17 @@ object SiteTests extends SimpleMutableIOSuite {
   }
 
   private def baseSite(log: WeaverLog[IO]) =
-    Site.init(content).changeLogger(s => effectCompat.sync(log.info(s.replace("\n", "  "))))
+    Site.init(content).changeLogger(s => log.info(s.replace("\n", "  ")).unsafeRunSync())
 
-  private def check[C](site: Site[C])(f: os.Path => Expectations): IO[Expectations] = {
-    IO.blocking {
-      val destination = os.temp.dir()
+  class Check(blocker: Blocker) {
+    def check[C](site: Site[C])(f: os.Path => Expectations): IO[Expectations] = {
+      blocker.blockOn(IO {
+        val destination = os.temp.dir()
 
-      site.buildAt(destination)
+        site.buildAt(destination)
 
-      f(destination)
+        f(destination)
+      })
     }
   }
 

@@ -5,26 +5,35 @@ import scala.util.Try
 import weaver.SimpleMutableIOSuite
 import weaver.Expectations
 import cats.effect.IO
-import weaver.Log
+import weaver._
+import cats.effect.Blocker
+import cats.effect.Resource
 
-object MdocJSTests extends SimpleMutableIOSuite {
-  override def maxParallelism: Int = sys.env.get("CI").map(_ => 1).getOrElse(100)
+object MdocJSTests extends IOSuite {
+  override type Res = Processor
+  override def sharedResource: Resource[IO, Res] = Blocker[IO].map(new Processor(_))
+  override def maxParallelism: Int               = sys.env.get("CI").map(_ => 1).getOrElse(100)
 
   val HelloWorldPath = SiteRoot / "hello" / "world"
 
-  def process(content: String, dependencies: Set[String] = Set.empty)(
-      result: ScalaJSResult => Expectations
-  )(implicit log: Log[IO]): IO[Expectations] = {
-    val logger = new Logger(s => effectCompat.sync(log.info(s.replace("\n", "  "))))
+  class Processor(
+      blocker: Blocker
+  ) {
 
-    val mdoc = new MdocJS(logger = logger)
+    def process(content: String, dependencies: Set[String] = Set.empty, log: Log[IO])(
+        result: ScalaJSResult => Expectations
+    ): IO[Expectations] = {
+      val logger = new Logger(s => log.info(s.replace("\n", "  ")).unsafeRunSync())
 
-    val tmpFile = os.temp(content, suffix = ".md")
+      val mdoc = new MdocJS(logger = logger)
 
-    IO.blocking(mdoc.process(os.pwd, tmpFile, dependencies)).map(result)
+      val tmpFile = os.temp(content, suffix = ".md")
+
+      blocker.blockOn(IO(mdoc.process(os.pwd, tmpFile, dependencies))).map(result)
+    }
   }
 
-  loggedTest("mdoc.js works") { implicit log =>
+  test("mdoc.js works") { (res, log) =>
     val content =
       """
     |hello!
@@ -35,7 +44,7 @@ object MdocJSTests extends SimpleMutableIOSuite {
     |}, 1000)
     |```""".stripMargin
 
-    process(content) { result =>
+    res.process(content, log = log) { result =>
       expect.all(
         os.read(result.mdFile).contains("mdoc-html-run0"),
         os.read(result.mdjsFile).nonEmpty,
@@ -44,7 +53,7 @@ object MdocJSTests extends SimpleMutableIOSuite {
     }
   }
 
-  loggedTest("mdoc.js with dependencies works") { implicit log =>
+  test("mdoc.js with dependencies works") { (res, log) =>
     val content =
       """
     |hello!
@@ -64,7 +73,7 @@ object MdocJSTests extends SimpleMutableIOSuite {
     |render(node, rootElement)
     |```""".stripMargin
 
-    process(content, Set("com.raquo::laminar_sjs1:0.11.0")) { result =>
+    res.process(content, Set("com.raquo::laminar_sjs1:0.11.0"), log = log) { result =>
       expect.all(
         os.read(result.mdFile).contains("mdoc-html-run0"),
         os.read(result.mdjsFile).nonEmpty,

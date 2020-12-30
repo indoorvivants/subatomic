@@ -25,7 +25,6 @@ import subatomic.builders.Highlight
 
 import cats.implicits._
 import com.monovore.decline._
-
 import com.vladsch.flexmark.ext.yaml.front.matter.YamlFrontMatterExtension
 
 case class Blog(
