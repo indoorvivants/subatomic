@@ -21,9 +21,11 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
 import subatomic.Discover.MarkdownDocument
+import subatomic.builders.Highlight
 
 import cats.implicits._
 import com.monovore.decline._
+
 import com.vladsch.flexmark.ext.yaml.front.matter.YamlFrontMatterExtension
 
 case class Blog(
@@ -34,7 +36,9 @@ case class Blog(
     copyright: Option[String] = None,
     githubUrl: Option[String] = None,
     tagline: Option[String] = None,
-    customTemplate: Option[Template] = None
+    customTemplate: Option[Template] = None,
+    links: Vector[(String, String)] = Vector.empty,
+    highlightJS: Highlight = Highlight.default
 )
 
 sealed trait Doc {
@@ -47,8 +51,16 @@ case class Post(
     date: LocalDate,
     description: Option[String],
     tags: List[String],
-    mdocConfig: Option[MdocConfig]
+    mdocConfig: Option[MdocConfig],
+    archived: Boolean
 ) extends Doc
+
+case class TagPage(
+    tag: String,
+    posts: List[Post]
+) extends Doc {
+  override val title = s"Posts tagged with $tag"
+}
 
 case class MdocConfig(
     dependencies: List[String]
@@ -56,8 +68,8 @@ case class MdocConfig(
 
 object MdocConfig {
   def from(attrs: Discover.YamlAttributes): Option[MdocConfig] = {
-    val enabled      = attrs.optionalOne("scala.mdoc").getOrElse("false").toBoolean
-    val dependencies = attrs.optionalOne("scala.mdoc.dependencies").map(_.split(",").toList).getOrElse(Nil)
+    val enabled      = attrs.optionalOne("scala-mdoc").getOrElse("false").toBoolean
+    val dependencies = attrs.optionalOne("scala-mdoc-dependencies").map(_.split(",").toList).getOrElse(Nil)
 
     if (enabled) Some(MdocConfig(dependencies)) else None
   }
@@ -119,9 +131,11 @@ object Blog {
   }
 
   def createNavigation(linker: Linker, content: Vector[Doc]): Doc => Vector[NavLink] = {
-    val all = content.map {
-      case doc => doc -> NavLink(linker.find(doc), doc.title, selected = false)
-    }
+    val all = content
+      .collect {
+        case doc: Post if !doc.archived => doc -> NavLink(linker.find(doc), doc.title, selected = false)
+      }
+      .sortBy(-_._1.date.toEpochDay())
 
     { piece =>
       all.map {
@@ -136,13 +150,14 @@ object Blog {
       buildConfig: cli.Config,
       extra: Site[Doc] => Site[Doc]
   ) = {
-    val content = Discover
+    val posts = Discover
       .someMarkdown(siteConfig.contentRoot) {
         case MarkdownDocument(path, filename, attributes) =>
           val date        = LocalDate.parse(attributes.requiredOne("date"))
           val tags        = attributes.optionalOne("tags").toList.flatMap(_.split(",").toList)
           val title       = attributes.requiredOne("title")
           val description = attributes.optionalOne("description")
+          val archived    = attributes.optionalOne("archived").map(_.toBoolean).getOrElse(false)
 
           val sitePath = SiteRoot / (date.format(DateTimeFormatter.ISO_LOCAL_DATE) + "-" + filename + ".html")
 
@@ -154,12 +169,28 @@ object Blog {
             date,
             description,
             tags,
-            mdocConfig
+            mdocConfig,
+            archived
           ): Doc
 
           sitePath -> post
       }
       .toVector
+
+    val tagPages = posts
+      .map(_._2)
+      .collect {
+        case p: Post => p
+      }
+      .flatMap(post => post.tags.map(tag => tag -> post))
+      .groupBy(_._1)
+      .toVector
+      .map {
+        case (tag, posts) =>
+          SiteRoot / "tags" / s"$tag.html" -> TagPage(tag, posts.map(_._2).toList)
+      }
+
+    val content = posts ++ tagPages
 
     val markdown = Markdown(
       RelativizeLinksExtension(siteConfig.base.toRelPath),
@@ -170,34 +201,51 @@ object Blog {
 
     val navigation = createNavigation(linker, content.map(_._2))
 
-    val template = siteConfig.customTemplate.getOrElse(Default(siteConfig, linker))
+    val managedStyles = siteConfig.assetsRoot
+      .map { path =>
+        os.walk(path).filter(_.ext == "css").map(_.relativeTo(path)).map(rel => SiteRoot / "assets" / rel)
+      }
+      .getOrElse(Nil)
+      .toList
+
+    val managedScripts = siteConfig.assetsRoot
+      .map { path =>
+        os.walk(path).filter(_.ext == "js").map(_.relativeTo(path)).map(rel => SiteRoot / "assets" / rel)
+      }
+      .getOrElse(Nil)
+      .toList
+
+    val template = siteConfig.customTemplate.getOrElse(
+      Default(siteConfig, linker, tagPages.map(_._2), managedScripts = managedScripts, managedStyles = managedStyles)
+    )
 
     val mdocProcessor =
       if (!buildConfig.disableMdoc)
         MdocProcessor.create[Post]() {
-          case Post(_, path, _, _, _, Some(config)) => MdocFile(path, config.dependencies.toSet)
+          case Post(_, path, _, _, _, Some(config), _) => MdocFile(path, config.dependencies.toSet)
         }
       else {
         Processor.simple[Post, MdocResult[Post]](doc => MdocResult(doc, doc.path))
       }
 
-    def renderMarkdownPage(title: String, file: os.Path, links: Vector[NavLink]) = {
+    def renderPost(title: String, tags: Seq[String], file: os.Path, links: Vector[NavLink]) = {
       val renderedMarkdown = markdown.renderToString(file)
       val renderedHtml =
         template.post(
           links,
           title,
-          Iterable.empty,
+          tags,
           renderedMarkdown
-        ) //template.post(navigation() title, renderedMarkdown, links)
+        )
 
       Page(renderedHtml)
     }
 
     val mdocPageRenderer: Processor[Post, SiteAsset] = mdocProcessor
       .map { mdocResult =>
-        renderMarkdownPage(
+        renderPost(
           mdocResult.original.title,
+          mdocResult.original.tags,
           mdocResult.resultFile,
           navigation(mdocResult.original)
         )
@@ -211,12 +259,38 @@ object Blog {
             case (sitePath, doc: Post) if doc.mdocConfig.nonEmpty =>
               site.addProcessed(sitePath, mdocPageRenderer, doc)
             case (sitePath, doc: Post) =>
-              site.add(sitePath, renderMarkdownPage(doc.title, doc.path, navigation(doc)))
+              site.add(sitePath, renderPost(doc.title, doc.tags, doc.path, navigation(doc)))
+            case (sitePath, doc: TagPage) =>
+              site.addPage(sitePath, template.tagPage(navigation(doc), doc.tag, doc.posts).render)
           }
       }
 
-    extra(baseSite).buildAt(buildConfig.destination, buildConfig.overwrite)
+    def addIndexPage(site: Site[Doc]): Site[Doc] = {
+      val blogPosts = content.map(_._2).collect {
+        case p: Post if !p.archived => p
+      }
 
+      site.addPage(SiteRoot / "index.html", template.indexPage(blogPosts).render)
+    }
+
+    def addArchivePage(site: Site[Doc]): Site[Doc] = {
+      val blogPosts = content.map(_._2).collect {
+        case p: Post if p.archived => p
+      }
+
+      site.addPage(SiteRoot / "archive.html", template.archivePage(blogPosts).render)
+    }
+
+    def addAllAssets(site: Site[Doc]) = {
+      siteConfig.assetsRoot match {
+        case Some(path) => site.copyAll(path, SiteRoot / "assets")
+        case None       => site
+      }
+    }
+
+    val extraSteps: Site[Doc] => Site[Doc] = site => extra(addAllAssets(addIndexPage(addArchivePage(site))))
+
+    extraSteps(baseSite).buildAt(buildConfig.destination, buildConfig.overwrite)
   }
 }
 
@@ -226,109 +300,39 @@ case class NavLink(
     selected: Boolean
 )
 
-case class Default(site: Blog, linker: Linker) extends Template
-
-// trait Template {
-//   def site: Blog
-//   def linker: Linker
-
-//   import scalatags.Text.all._
-//   import scalatags.Text.TypedTag
-
-//   def RawHTML(rawHtml: String) = div(raw(rawHtml))
-
-//   def doc(title: String, content: String, links: Vector[NavLink]): String =
-//     doc(title, RawHTML(content), links)
-
-//   def doc(title: String, content: TypedTag[_], links: Vector[NavLink]): String = {
-//     html(
-//       head(
-//         scalatags.Text.tags2.title(s"${site.name}: $title"),
-//         link(
-//           rel := "stylesheet",
-//           href := linker.unsafe(_ / "assets" / "highlight-theme.css")
-//         ),
-//         link(
-//           rel := "stylesheet",
-//           href := linker.unsafe(_ / "assets" / "styles.css")
-//         ),
-//         link(
-//           rel := "shortcut icon",
-//           `type` := "image/png",
-//           href := linker.unsafe(_ / "assets" / "logo.png")
-//         ),
-//         script(src := linker.unsafe(_ / "assets" / "highlight.js")),
-//         script(src := linker.unsafe(_ / "assets" / "highlight-scala.js")),
-//         script(src := linker.unsafe(_ / "assets" / "script.js")),
-//         script(src := linker.unsafe(_ / "assets" / "search-index.js")),
-//         meta(charset := "UTF-8")
-//       ),
-//       body(
-//         div(
-//           cls := "container",
-//           Header,
-//           NavigationBar(links),
-//           hr,
-//           content
-//         ),
-//         Footer,
-//         script(src := linker.unsafe(_ / "assets" / "search.js"))
-//       )
-//     ).render
-//   }
-
-//   def NavigationBar(links: Vector[NavLink]) =
-//     div(
-//       links.map { link =>
-//         val sel = if (link.selected) " nav-selected" else ""
-//         a(
-//           cls := "nav-btn" + sel,
-//           href := link.url,
-//           link.title
-//         )
-//       }
-//     )
-
-//   def Header =
-//     header(
-//       cls := "main-header",
-//       div(
-//         cls := "site-title",
-//         h1(
-//           a(href := linker.root, site.name)
-//         ),
-//         site.tagline.map { tagline => small(tagline) }
-//       ),
-//       div(id := "searchContainer", cls := "searchContainer"),
-//       div(
-//         cls := "site-links",
-//         site.githubUrl.map { githubUrl =>
-//           a(
-//             href := githubUrl,
-//             img(src := "https://cdn.svgporn.com/logos/github-icon.svg", cls := "gh-logo")
-//           )
-//         }
-//       )
-//     )
-
-//   def Footer =
-//     footer(site.copyright)
-// }
+case class Default(
+    site: Blog,
+    linker: Linker,
+    tagPages: Seq[TagPage],
+    managedStyles: Seq[SitePath] = Nil,
+    managedScripts: Seq[SitePath] = Nil
+) extends Template
 
 trait Template {
 
   def site: Blog
   def linker: Linker
+  def managedScripts: Seq[SitePath]
+  def managedStyles: Seq[SitePath]
+  def tagPages: Seq[TagPage]
 
   import scalatags.Text.all._
   import scalatags.Text.TypedTag
 
+  def highlightJsBlock = {
+    val styles     = site.highlightJS.styles.map(s => link(rel := "stylesheet", href := s))
+    val scripts    = site.highlightJS.scripts.map(s => script(src := s))
+    val initScript = script(raw(site.highlightJS.initScript))
+
+    (styles ++ scripts) ++ List(initScript)
+  }
+
   def Nav(navigation: Vector[NavLink]) = {
     div(
       navigation.sortBy(_.title).map {
-        case NavLink(title, _, selected) if selected =>
+        case NavLink(_, title, selected) if selected =>
           p(strong(title))
-        case NavLink(title, url, _) =>
+        case NavLink(url, title, _) =>
           p(a(href := url, title))
       }
     )
@@ -336,14 +340,18 @@ trait Template {
 
   def rawHtml(rawHtml: String) = div(raw(rawHtml))
 
-  def stylesheet(name: String) =
-    link(
-      rel := "stylesheet",
-      href := linker.unsafe(_ / "assets" / "styles" / name)
-    )
+  def managedStylesheetsBlock =
+    managedStyles.map { sp =>
+      link(
+        rel := "stylesheet",
+        href := linker.unsafe(_ => sp)
+      )
+    }
 
-  def scriptFile(name: String) =
-    script(src := linker.unsafe(_ / "assets" / "scripts" / name))
+  def managedScriptsBlock =
+    managedScripts.map { sp =>
+      script(src := linker.unsafe(_ => sp))
+    }
 
   def basePage(navigation: Option[Vector[NavLink]], content: TypedTag[_]) = {
     val pageTitle = navigation
@@ -354,13 +362,10 @@ trait Template {
 
     html(
       head(
-        scalatags.Text.tags2.title("Anton Sviridov" + pageTitle),
-        stylesheet("monokai-sublime.min.css"),
-        stylesheet("site.css"),
-        scriptFile("highlight.min.js"),
-        scriptFile("r.min.js"),
-        scriptFile("scala.min.js"),
-        scriptFile("blog.js"),
+        scalatags.Text.tags2.title(site.name + ":" + pageTitle),
+        highlightJsBlock,
+        managedStylesheetsBlock,
+        managedScriptsBlock,
         meta(charset := "UTF-8"),
         meta(
           name := "viewport",
@@ -372,15 +377,13 @@ trait Template {
           cls := "wrapper",
           div(
             cls := "sidebar",
-            h2(a(href := linker.root, "Indoor Vivants")),
+            h2(a(href := linker.root, site.name)),
             hr,
             about,
             staticNav,
-            h4("projects"),
-            projectsNav,
             hr,
             h4("tags"),
-            // tagCloud(tags),
+            tagCloud,
             navigation match {
               case Some(value) => div(hr, h4("posts"), Nav(value))
               case None        => div()
@@ -398,14 +401,14 @@ trait Template {
   def post(
       navigation: Vector[NavLink],
       title: String,
-      tags: Iterable[String],
+      tags: Seq[String],
       content: String
   ): String = post(navigation, title, tags, rawHtml(content))
 
   def post(
       navigation: Vector[NavLink],
       title: String,
-      tags: Iterable[String],
+      tags: Seq[String],
       content: TypedTag[_]
   ) = {
     val tagline = tags.toList.map { tag =>
@@ -420,7 +423,7 @@ trait Template {
   def tagPage(
       navigation: Vector[NavLink],
       tag: String,
-      blogs: Iterable[Post]
+      blogs: Seq[Post]
   ) = {
     page(
       navigation,
@@ -441,15 +444,13 @@ trait Template {
     li(h3(a(href := url, title)), dateFormat(date))
   }
 
-  // def tagCloud(
-  //     tagPages: Iterable[TagPage]
-  // ) = {
-  //   div(
-  //     tagPages.toList.map { tagPage =>
-  //       span(a(href := linker.resolve(tagPage), small(tagPage.tag.tag)), " ")
-  //     }
-  //   )
-  // }
+  def tagCloud = {
+    div(
+      tagPages.toList.map { tagPage =>
+        span(a(href := linker.find(tagPage), small(tagPage.tag)), " ")
+      }
+    )
+  }
 
   def blogCard(
       blogPost: Post
@@ -460,7 +461,9 @@ trait Template {
         cls := "blog-card-body",
         div(
           cls := "blog-card-title",
-          a(href := linker.find(blogPost), blogPost.title)
+          a(href := linker.find(blogPost), blogPost.title),
+          " ",
+          small(i(blogPost.date.format(DateTimeFormatter.ISO_LOCAL_DATE)))
         ),
         p(cls := "blog-card-text", blogPost.description)
       )
@@ -468,58 +471,58 @@ trait Template {
   }
 
   def indexPage(
-      blogs: Iterable[Post]
+      title: String,
+      blogs: Seq[Post]
   ) = {
-    val (archived, modern) = blogs.partition(_.date.getYear < 2020)
-    val newStuff =
-      if (modern.nonEmpty)
-        div(cls := "card-columns", modern.map(blogCard).toVector)
-      else
-        div(
-          "Of course I spent all this time writing a static site generator and haven't actually written" +
-            "a single blog post..."
-        )
-
     basePage(
       None,
       div(
-        h3("Blog posts"),
-        newStuff,
-        h3(cls := "text-muted", "Old posts"),
-        div(cls := "card-columns", archived.map(blogCard).toVector)
+        h3(title),
+        div(cls := "card-columns", blogs.sortBy(-_.date.toEpochDay()).map(blogCard).toVector)
+      )
+    )
+  }
+
+  def indexPage(
+      blogs: Seq[Post]
+  ) = {
+    basePage(
+      None,
+      div(
+        h3("Posts"),
+        div(cls := "card-columns", blogs.sortBy(-_.date.toEpochDay()).map(blogCard).toVector),
+        a(href := linker.unsafe(_ / "archive.html"), "Archive")
+      )
+    )
+  }
+
+  def archivePage(
+      blogs: Seq[Post]
+  ) = {
+    basePage(
+      None,
+      div(
+        h3("Archive"),
+        div(cls := "card-columns", blogs.sortBy(-_.date.toEpochDay()).map(blogCard).toVector)
       )
     )
   }
 
   def about =
     div(
-      strong("Anton Sviridov"),
-      p(
-        "I love reinventing the wheel and I usually use Scala for that."
-      )
+      p(site.tagline)
     )
 
   def staticNav =
     ul(
-      li(
-        a(
-          href := "https://github.com/keynmol/",
-          "Github (personal)"
-        )
-      ),
-      li(
-        a(
-          href := "https://twitter.com/velvetbaldmime/",
-          "Tweettor"
-        )
-      )
-    )
-
-  def projectsNav =
-    div(
-      a(
-        "Subatomic - barely a static site generator",
-        href := "https://subatomic.indoorvivants.com/"
-      )
+      site.links.map {
+        case (title, url) =>
+          li(
+            a(
+              href := url,
+              title
+            )
+          )
+      }
     )
 }
