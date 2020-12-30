@@ -197,7 +197,7 @@ lazy val testSettings =
     testFrameworks += new TestFramework("weaver.framework.CatsEffect"),
     scalacOptions.in(Test) ~= filterConsoleScalacOptions,
     fork in Test := virtualAxes.value.contains(VirtualAxis.jvm),
-    parallelExecution in Test := true
+    parallelExecution in Test := !sys.env.contains("CI")
   )
 
 lazy val skipPublish = Seq(
@@ -263,26 +263,25 @@ val scalafixRules = Seq(
   "NoValInForComprehension"
 ).mkString(" ")
 
-val CICommands = Seq(
-  "clean",
-  "compile",
-  "test",
-  "scripted",
-  "scalafmtCheckAll",
-  s"scalafix --check $scalafixRules",
-  "headerCheck"
-).mkString(";")
+ThisBuild / commands += Command.command("preCI") { st =>
+  s"scalafix --rules $scalafixRules" ::
+    "test:scalafmtAll" ::
+    "compile:scalafmtAll" ::
+    "scalafmtSbt" ::
+    "headerCreate" :: st
+}
 
-val PrepareCICommands = Seq(
-  s"scalafix --rules $scalafixRules",
-  "test:scalafmtAll",
-  "compile:scalafmtAll",
-  "scalafmtSbt",
-  "headerCreate"
-).mkString(";")
-
-addCommandAlias("ci", CICommands)
-
-addCommandAlias("preCI", PrepareCICommands)
+ThisBuild / commands += Command.command("ci") { st =>
+  "clean" ::
+    "compile" ::
+    "test:compile" ::
+    "fastLinkJS" ::
+    "test:fastLinkJS" ::
+    "test" ::
+    "scripted" ::
+    "scalafmtCheckAll" ::
+    s"scalafix --check $scalafixRules" ::
+    "headerCheck" :: st
+}
 
 addCommandAlias("buildSite", "docs2_12/run")

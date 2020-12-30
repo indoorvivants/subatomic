@@ -9,6 +9,7 @@ import weaver.Expectations
 import weaver.{Log => WeaverLog}
 import cats.effect.IO
 import scala.collection.mutable.ListBuffer
+import cats.effect.std.Dispatcher
 
 object SiteTests extends SimpleMutableIOSuite {
 
@@ -143,7 +144,7 @@ object SiteTests extends SimpleMutableIOSuite {
     Site.init(content).changeLogger(s => effectCompat.sync(log.info(s.replace("\n", "  "))))
 
   private def check[C](site: Site[C])(f: os.Path => Expectations): IO[Expectations] = {
-    IO {
+    IO.blocking {
       val destination = os.temp.dir()
 
       site.buildAt(destination)

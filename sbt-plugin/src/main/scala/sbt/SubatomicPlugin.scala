@@ -59,7 +59,7 @@ object SubatomicPlugin extends AutoPlugin {
       subatomicAddDependency := true,
       libraryDependencies ++= {
         if (subatomicAddDependency.value)
-          List("com.indoorvivants" %% "subatomic" % Props.version)
+          List("com.indoorvivants" %% "subatomic-core" % Props.version)
         else Nil
       },
       resourceGenerators in Compile += Def.task {
