@@ -15,7 +15,6 @@ jobs:
         run: sbt ci
         env:
           JAVA_OPTS: "-XX:MaxMetaspaceSize=1g -Xms1g -Xmx4g -Xss2M -XX:+UseG1GC"
-          SBT_OPTS: "-XX:+CMSClassUnloadingEnabled -XX:MaxMetaspaceSize=2g -XX:+UseG1GC -Xmx4g"
           JVM_OPTS: "-XX:MaxMetaspaceSize=1g -Xms1g -Xmx4g -Xss2M -XX:+UseG1GC"
       - name: Publish ${{ github.ref }}
         run: sbt ci-release
