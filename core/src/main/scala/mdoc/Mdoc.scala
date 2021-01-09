@@ -37,12 +37,13 @@ class Mdoc(
     extraCp: List[String] = Nil,
     logger: Logger = Logger.default,
     inheritClasspath: Boolean = true,
+    inheritVariables: Boolean = true,
     variables: Map[String, String] = Map.empty
 ) { self =>
 
   val logging = logger
 
-  lazy val inheritedClasspath: Option[String] = if (inheritClasspath) {
+  lazy val props = {
     val path        = "subatomic.properties"
     val classloader = this.getClass.getClassLoader
     val props       = new Properties()
@@ -54,11 +55,28 @@ class Mdoc(
         logging.logLine(s"error: failed to load $path")
     }
 
+    props
+  }
+
+  lazy val inheritedClasspath: Option[String] = if (inheritClasspath) {
     Option(props.getProperty("classpath"))
   } else None
 
+  lazy val inheritedVariables = if (inheritVariables) {
+    import scala.jdk.CollectionConverters._
+
+    props
+      .stringPropertyNames()
+      .asScala
+      .filter(_.startsWith("variable."))
+      .map { propName =>
+        propName.drop("variable.".length()) -> props.getProperty(propName)
+      }
+      .toMap
+  } else Map.empty[String, String]
+
   lazy val variablesStr: Seq[String] = {
-    variables.map {
+    (inheritedVariables ++ variables).map {
       case (k, v) => s"--site.$k=$v"
     }.toSeq
   }
@@ -84,7 +102,8 @@ class Mdoc(
             _ => {
               val paths = pieces.map(_._2.path)
 
-              val result = processor.processAll(paths, settings.dependencies, pwd)
+              val result =
+                processor.processAll(paths, settings.dependencies, pwd)
 
               result.map(_._2).zip(pieces.map(_._1)).map(_.swap).toMap
             }
@@ -121,6 +140,9 @@ class Mdoc(
       logger.logLine(
         "inherited classpath from subatomic.properties resource"
       )
+
+    if (inheritedVariables.nonEmpty)
+      logger.logLine(s"inherited variables: $inheritedVariables")
 
     val args = filesWithTargets.flatMap {
       case (from, to) =>

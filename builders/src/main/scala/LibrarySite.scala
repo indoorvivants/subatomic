@@ -19,20 +19,27 @@ package builders.librarysite
 
 import subatomic.Discover.MarkdownDocument
 
-import cats.implicits._
-import com.monovore.decline._
 import com.vladsch.flexmark.ext.yaml.front.matter.YamlFrontMatterExtension
+import subatomic.builders._
+import subatomic.builders.librarysite.LibrarySite.Navigation
 
 case class LibrarySite(
-    contentRoot: os.Path,
-    assetsRoot: Option[os.Path] = None,
-    base: SitePath = SiteRoot,
+    override val contentRoot: os.Path,
+    override val assetsRoot: Option[os.Path] = None,
+    override val base: SitePath = SiteRoot,
     name: String,
     copyright: Option[String] = None,
     githubUrl: Option[String] = None,
     tagline: Option[String] = None,
-    customTemplate: Option[Template] = None
-)
+    customTemplate: Option[Template] = None,
+    links: Vector[(String, String)] = Vector.empty,
+    override val highlightJS: HighlightJS = HighlightJS.default
+) extends subatomic.builders.Builder(
+      contentRoot = contentRoot,
+      assetsRoot = assetsRoot,
+      highlightJS = highlightJS,
+      base = base
+    )
 
 object LibrarySite {
 
@@ -40,38 +47,10 @@ object LibrarySite {
       title: String,
       path: os.Path,
       inNavBar: Boolean,
-      mdocDependencies: Set[String] = Set.empty
+      index: Boolean = false,
+      mdocConfig: Option[MdocConfig] = None,
+      depth: Seq[String]
   )
-
-  object cli {
-    case class Config(
-        destination: os.Path,
-        disableMdoc: Boolean,
-        overwrite: Boolean
-    )
-    implicit val pathArgument: Argument[os.Path] =
-      Argument[String].map(s => os.Path.apply(s))
-
-    private val disableMdoc = Opts
-      .flag(
-        "disable-mdoc",
-        "Don't call mdoc. This greatly speeds up things and is useful for iterating on the design"
-      )
-      .orFalse
-
-    private val destination = Opts
-      .option[os.Path](
-        "destination",
-        help = "Absolute path where the static site will be generated"
-      )
-      .withDefault(os.temp.dir())
-
-    private val overwrite = Opts.flag("overwrite", "Overwrite files if present at destination").orFalse
-
-    val command = Command("build site", "builds the site")(
-      (destination, disableMdoc, overwrite).mapN(Config)
-    )
-  }
 
   trait App {
     def extra(site: Site[LibrarySite.Doc]) = site
@@ -95,18 +74,29 @@ object LibrarySite {
       }
     }
   }
+  case class Navigation(
+      topLevel: Vector[NavLink],
+      sameLevel: Option[Vector[NavLink]]
+  )
 
-  def createNavigation(linker: Linker, content: Vector[Doc]): Doc => Vector[NavLink] = {
-    val all = content.filter(_.inNavBar).map {
-      case doc => doc -> NavLink(linker.find(doc), doc.title, selected = false)
-    }
+  def createNavigation(
+      linker: Linker,
+      content: Vector[Doc]
+  ): Doc => Navigation = {
 
     { piece =>
-      all.map {
-        case (`piece`, link) => link.copy(selected = true)
-        case (_, link)       => link
-      }
+      @inline def mark(docs: Vector[Doc]) =
+        docs.map {
+          case `piece` => NavLink(linker.find(piece), piece.title, selected = true)
+          case other   => NavLink(linker.find(other), other.title, selected = false)
+        }
+
+      val topLevel  = content.filter(doc => doc.depth.isEmpty || doc.inNavBar)
+      val sameLevel = if (piece.depth.isEmpty) None else Some(content.filter(_.depth == piece.depth))
+
+      Navigation(mark(topLevel), sameLevel.filter(_.size > 1).map(_.filter(!_.inNavBar)).map(mark))
     }
+
   }
 
   def createSite(
@@ -114,21 +104,38 @@ object LibrarySite {
       buildConfig: cli.Config,
       extra: Site[LibrarySite.Doc] => Site[LibrarySite.Doc]
   ) = {
-    val content = Discover
+    val content: Vector[(SitePath, Doc)] = Discover
       .someMarkdown(siteConfig.contentRoot) {
         case MarkdownDocument(path, filename, attributes) =>
-          val id       = attributes.requiredOne("id")
-          val inNavBar = attributes.optionalOne("in_navigation_bar").map(_.toBoolean).getOrElse(true)
-          val title    = attributes.requiredOne("title")
+          val id = attributes.optionalOne("id").getOrElse(filename)
+
+          val inNavBar = attributes
+            .optionalOne("topnav")
+            .map(_.toBoolean)
+            .getOrElse(false)
+          val title = attributes.requiredOne("title")
+
+          val mdocConfig = MdocConfig.from(attributes)
+
+          val isIndex = filename == "index"
+
+          val relp = (path / os.up).relativeTo(
+            siteConfig.contentRoot
+          )
 
           val sitePath =
-            if (filename != "index")
-              SiteRoot / (path / os.up).relativeTo(siteConfig.contentRoot) / id / "index.html"
-            else SiteRoot / (path / os.up).relativeTo(siteConfig.contentRoot) / "index.html"
+            if (!isIndex)
+              SiteRoot / relp / id / "index.html"
+            else
+              SiteRoot / relp / "index.html"
 
-          sitePath -> Doc(title, path, inNavBar)
+          val document = Doc(title, path, inNavBar, index = isIndex, mdocConfig = mdocConfig, depth = relp.segments)
+
+          sitePath -> document
       }
       .toVector
+      .sortBy(_._1 == SiteRoot / "index.html")
+      .reverse
 
     val markdown = Markdown(
       RelativizeLinksExtension(siteConfig.base.toRelPath),
@@ -139,18 +146,22 @@ object LibrarySite {
 
     val navigation = createNavigation(linker, content.map(_._2))
 
-    val template = siteConfig.customTemplate.getOrElse(Default(siteConfig, linker))
+    val template =
+      siteConfig.customTemplate.getOrElse(Default(siteConfig, linker))
 
     val mdocProcessor =
       if (!buildConfig.disableMdoc)
         MdocProcessor.create[Doc]() {
-          case doc => MdocFile(doc.path, doc.mdocDependencies)
+          case Doc(_, path, _, _, Some(config), _) => MdocFile(path, config.dependencies.toSet)
         }
       else {
         Processor.simple[Doc, MdocResult[Doc]](doc => MdocResult(doc, doc.path))
       }
-
-    def renderMarkdownPage(title: String, file: os.Path, links: Vector[NavLink]) = {
+    def renderMarkdownPage(
+        title: String,
+        file: os.Path,
+        links: Navigation
+    ) = {
       val renderedMarkdown = markdown.renderToString(file)
       val renderedHtml     = template.doc(title, renderedMarkdown, links)
 
@@ -171,13 +182,21 @@ object LibrarySite {
       .populate {
         case (site, content) =>
           content match {
-            case (sitePath, doc: Doc) =>
+            case (sitePath, doc: Doc) if doc.mdocConfig.nonEmpty =>
               site.addProcessed(sitePath, mdocPageRenderer, doc)
+            case (sitePath, doc: Doc) =>
+              site.add(sitePath, renderMarkdownPage(doc.title, doc.path, navigation(doc)))
           }
       }
 
-    extra(baseSite).buildAt(buildConfig.destination, buildConfig.overwrite)
-
+    def addAllAssets(site: Site[Doc]) = {
+      siteConfig.assetsRoot match {
+        case Some(path) => site.copyAll(path, SiteRoot / "assets")
+        case None       => site
+      }
+    }
+    extra(addAllAssets(baseSite))
+      .buildAt(buildConfig.destination, buildConfig.overwrite)
   }
 }
 
@@ -198,30 +217,26 @@ trait Template {
 
   def RawHTML(rawHtml: String) = div(raw(rawHtml))
 
-  def doc(title: String, content: String, links: Vector[NavLink]): String =
+  def doc(title: String, content: String, links: Navigation): String =
     doc(title, RawHTML(content), links)
 
-  def doc(title: String, content: TypedTag[_], links: Vector[NavLink]): String = {
+  def doc(
+      title: String,
+      content: TypedTag[_],
+      links: Navigation
+  ): String = {
     html(
       head(
         scalatags.Text.tags2.title(s"${site.name}: $title"),
-        link(
-          rel := "stylesheet",
-          href := linker.unsafe(_ / "assets" / "highlight-theme.css")
-        ),
-        link(
-          rel := "stylesheet",
-          href := linker.unsafe(_ / "assets" / "styles.css")
-        ),
+        HighlightJS.templateBlock(site.highlightJS),
+        BuilderTemplate.managedScriptsBlock(linker, site.managedScripts),
+        BuilderTemplate.managedStylesBlock(linker, site.managedStyles),
         link(
           rel := "shortcut icon",
           `type` := "image/png",
           href := linker.unsafe(_ / "assets" / "logo.png")
         ),
-        script(src := linker.unsafe(_ / "assets" / "highlight.js")),
-        script(src := linker.unsafe(_ / "assets" / "highlight-scala.js")),
         script(src := linker.unsafe(_ / "assets" / "script.js")),
-        script(src := linker.unsafe(_ / "assets" / "search-index.js")),
         meta(charset := "UTF-8")
       ),
       body(
@@ -238,17 +253,25 @@ trait Template {
     ).render
   }
 
-  def NavigationBar(links: Vector[NavLink]) =
-    div(
-      links.map { link =>
-        val sel = if (link.selected) " nav-selected" else ""
+  def NavigationBar(levels: Navigation) = {
+    def renderNav(lst: Vector[NavLink], baseClass: String) = {
+      lst.map { link =>
+        val sel = if (link.selected) s" $baseClass-selected" else ""
         a(
-          cls := "nav-btn" + sel,
+          cls := s"$baseClass-btn" + sel,
           href := link.url,
           link.title
         )
       }
+    }
+
+    div(
+      renderNav(levels.topLevel, "nav"),
+      levels.sameLevel.map { sameLevel =>
+        div(renderNav(sameLevel, "subnav"))
+      }
     )
+  }
 
   def Header =
     header(
@@ -266,7 +289,10 @@ trait Template {
         site.githubUrl.map { githubUrl =>
           a(
             href := githubUrl,
-            img(src := "https://cdn.svgporn.com/logos/github-icon.svg", cls := "gh-logo")
+            img(
+              src := "https://cdn.svgporn.com/logos/github-icon.svg",
+              cls := "gh-logo"
+            )
           )
         }
       )

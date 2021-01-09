@@ -130,20 +130,24 @@ lazy val searchShared =
 lazy val docs = projectMatrix
   .in(file("docs"))
   .withId("docs")
-  .dependsOn(builders, plugin, searchIndex, searchFrontendPack)
+  .dependsOn(builders, plugin, searchIndex)
   .jvmPlatform(scalaVersions = Seq(Scala_212))
   .enablePlugins(SubatomicPlugin)
   .settings(
     skip in publish := true,
     // To react to asset changes
-    watchSources += WatchSource((baseDirectory in ThisBuild).value / "docs" / "assets"),
-    watchSources += WatchSource((baseDirectory in ThisBuild).value / "docs" / "pages"),
+    watchSources += WatchSource(
+      (baseDirectory in ThisBuild).value / "docs" / "assets"
+    ),
+    watchSources += WatchSource(
+      (baseDirectory in ThisBuild).value / "docs" / "pages"
+    ),
     // To pick up Main.scala in docs/ (without the src/main/scala/ stuff)
     unmanagedSourceDirectories in Compile +=
       (baseDirectory in ThisBuild).value / "docs",
-    libraryDependencies += "com.lihaoyi"  %% "scalatags" % "0.9.1",
-    libraryDependencies += "com.monovore" %% "decline"   % "1.3.0",
-    subatomicAddDependency := false,
+    libraryDependencies += "com.lihaoyi" %% "fansi" % "0.2.7",
+    subatomicBuildersDependency := false,
+    subatomicCoreDependency := false,
     subatomicInheritClasspath := true
   )
   .settings(buildInfoSettings)
@@ -192,8 +196,8 @@ lazy val plugin = projectMatrix
 
 lazy val testSettings =
   Seq(
-    libraryDependencies += "com.disneystreaming" %%% "weaver-cats"       % "0.6.0-M3" % Test,
-    libraryDependencies += "com.disneystreaming" %%% "weaver-scalacheck" % "0.6.0-M3" % Test,
+    libraryDependencies += "com.disneystreaming" %%% "weaver-cats"       % "0.6.0-M4" % Test,
+    libraryDependencies += "com.disneystreaming" %%% "weaver-scalacheck" % "0.6.0-M4" % Test,
     testFrameworks += new TestFramework("weaver.framework.CatsEffect"),
     scalacOptions.in(Test) ~= filterConsoleScalacOptions,
     fork in Test := virtualAxes.value.contains(VirtualAxis.jvm)

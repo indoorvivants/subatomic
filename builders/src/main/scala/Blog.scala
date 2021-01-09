@@ -21,24 +21,27 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
 import subatomic.Discover.MarkdownDocument
-import subatomic.builders.Highlight
+import subatomic.builders._
 
-import cats.implicits._
-import com.monovore.decline._
 import com.vladsch.flexmark.ext.yaml.front.matter.YamlFrontMatterExtension
 
 case class Blog(
-    contentRoot: os.Path,
-    assetsRoot: Option[os.Path] = None,
-    base: SitePath = SiteRoot,
+    override val contentRoot: os.Path,
+    override val assetsRoot: Option[os.Path] = None,
+    override val base: SitePath = SiteRoot,
     name: String,
     copyright: Option[String] = None,
     githubUrl: Option[String] = None,
     tagline: Option[String] = None,
     customTemplate: Option[Template] = None,
     links: Vector[(String, String)] = Vector.empty,
-    highlightJS: Highlight = Highlight.default
-)
+    override val highlightJS: HighlightJS = HighlightJS.default
+) extends subatomic.builders.Builder(
+      contentRoot = contentRoot,
+      assetsRoot = assetsRoot,
+      highlightJS = highlightJS,
+      base = base
+    )
 
 sealed trait Doc {
   val title: String
@@ -61,50 +64,7 @@ case class TagPage(
   override val title = s"Posts tagged with $tag"
 }
 
-case class MdocConfig(
-    dependencies: List[String]
-)
-
-object MdocConfig {
-  def from(attrs: Discover.YamlAttributes): Option[MdocConfig] = {
-    val enabled      = attrs.optionalOne("scala-mdoc").getOrElse("false").toBoolean
-    val dependencies = attrs.optionalOne("scala-mdoc-dependencies").map(_.split(",").toList).getOrElse(Nil)
-
-    if (enabled) Some(MdocConfig(dependencies)) else None
-  }
-}
-
 object Blog {
-
-  object cli {
-    case class Config(
-        destination: os.Path,
-        disableMdoc: Boolean,
-        overwrite: Boolean
-    )
-    implicit val pathArgument: Argument[os.Path] =
-      Argument[String].map(s => os.Path.apply(s))
-
-    private val disableMdoc = Opts
-      .flag(
-        "disable-mdoc",
-        "Don't call mdoc. This greatly speeds up things and is useful for iterating on the design"
-      )
-      .orFalse
-
-    private val destination = Opts
-      .option[os.Path](
-        "destination",
-        help = "Absolute path where the static site will be generated"
-      )
-      .withDefault(os.temp.dir())
-
-    private val overwrite = Opts.flag("overwrite", "Overwrite files if present at destination").orFalse
-
-    val command = Command("build site", "builds the site")(
-      (destination, disableMdoc, overwrite).mapN(Config)
-    )
-  }
 
   trait App {
     def extra(site: Site[Doc]) = site
@@ -148,7 +108,7 @@ object Blog {
       siteConfig: Blog,
       buildConfig: cli.Config,
       extra: Site[Doc] => Site[Doc]
-  ) = {
+  ): Unit = {
     val posts = Discover
       .someMarkdown(siteConfig.contentRoot) {
         case MarkdownDocument(path, filename, attributes) =>
@@ -200,22 +160,12 @@ object Blog {
 
     val navigation = createNavigation(linker, content.map(_._2))
 
-    val managedStyles = siteConfig.assetsRoot
-      .map { path =>
-        os.walk(path).filter(_.ext == "css").map(_.relativeTo(path)).map(rel => SiteRoot / "assets" / rel)
-      }
-      .getOrElse(Nil)
-      .toList
-
-    val managedScripts = siteConfig.assetsRoot
-      .map { path =>
-        os.walk(path).filter(_.ext == "js").map(_.relativeTo(path)).map(rel => SiteRoot / "assets" / rel)
-      }
-      .getOrElse(Nil)
-      .toList
-
     val template = siteConfig.customTemplate.getOrElse(
-      Default(siteConfig, linker, tagPages.map(_._2), managedScripts = managedScripts, managedStyles = managedStyles)
+      Default(
+        siteConfig,
+        linker,
+        tagPages.map(_._2)
+      )
     )
 
     val mdocProcessor =
@@ -302,29 +252,17 @@ case class NavLink(
 case class Default(
     site: Blog,
     linker: Linker,
-    tagPages: Seq[TagPage],
-    managedStyles: Seq[SitePath] = Nil,
-    managedScripts: Seq[SitePath] = Nil
+    tagPages: Seq[TagPage]
 ) extends Template
 
 trait Template {
 
   def site: Blog
   def linker: Linker
-  def managedScripts: Seq[SitePath]
-  def managedStyles: Seq[SitePath]
   def tagPages: Seq[TagPage]
 
   import scalatags.Text.all._
   import scalatags.Text.TypedTag
-
-  def highlightJsBlock = {
-    val styles     = site.highlightJS.styles.map(s => link(rel := "stylesheet", href := s))
-    val scripts    = site.highlightJS.scripts.map(s => script(src := s))
-    val initScript = script(raw(site.highlightJS.initScript))
-
-    (styles ++ scripts) ++ List(initScript)
-  }
 
   def Nav(navigation: Vector[NavLink]) = {
     div(
@@ -339,19 +277,6 @@ trait Template {
 
   def rawHtml(rawHtml: String) = div(raw(rawHtml))
 
-  def managedStylesheetsBlock =
-    managedStyles.map { sp =>
-      link(
-        rel := "stylesheet",
-        href := linker.unsafe(_ => sp)
-      )
-    }
-
-  def managedScriptsBlock =
-    managedScripts.map { sp =>
-      script(src := linker.unsafe(_ => sp))
-    }
-
   def basePage(navigation: Option[Vector[NavLink]], content: TypedTag[_]) = {
     val pageTitle = navigation
       .flatMap(_.find(_.selected))
@@ -362,9 +287,9 @@ trait Template {
     html(
       head(
         scalatags.Text.tags2.title(site.name + ":" + pageTitle),
-        highlightJsBlock,
-        managedStylesheetsBlock,
-        managedScriptsBlock,
+        HighlightJS.templateBlock(site.highlightJS),
+        BuilderTemplate.managedStylesBlock(linker, site.managedStyles),
+        BuilderTemplate.managedScriptsBlock(linker, site.managedScripts),
         meta(charset := "UTF-8"),
         meta(
           name := "viewport",

@@ -18,11 +18,11 @@ package subatomic
 package docs
 
 import subatomic.builders.librarysite._
+import subatomic.builders._
 
 object Docs extends LibrarySite.App {
   override def extra(site: Site[LibrarySite.Doc]) = {
     site
-      .copyAll(os.pwd / "docs" / "assets", SiteRoot / "assets")
       .addCopyOf(SiteRoot / "CNAME", os.pwd / "docs" / "assets" / "CNAME")
   }
 
@@ -30,9 +30,12 @@ object Docs extends LibrarySite.App {
     LibrarySite(
       name = "Subatomic",
       contentRoot = os.pwd / "docs" / "pages",
-      assetsRoot = Some(os.pwd / "assets"),
+      assetsRoot = Some(os.pwd / "docs" / "assets"),
       copyright = Some("© 2020 Anton Sviridov"),
-      githubUrl = Some("https://github.com/indoorvivants/subatomic")
+      githubUrl = Some("https://github.com/indoorvivants/subatomic"),
+      highlightJS = HighlightJS.default.copy(
+        languages = List("scala"),
+        theme = "monokai-sublime"
+      )
     )
-
 }

@@ -53,12 +53,14 @@ object Discover extends App {
     YamlAttributes(data)
   }
 
-  def someMarkdown[C](root: os.Path)(f: PartialFunction[MarkdownDocument, C]): Iterable[C] = {
+  def someMarkdown[C](root: os.Path, maxDepth: Int = Int.MaxValue)(
+      f: PartialFunction[MarkdownDocument, C]
+  ): Iterable[C] = {
     val md = Markdown(YamlFrontMatterExtension.create())
 
     val total = f.lift
 
-    os.walk(root).filter(_.toIO.isFile()).filter(_.ext == "md").flatMap { path =>
+    os.walk(root, maxDepth = maxDepth).filter(_.toIO.isFile()).filter(_.ext == "md").flatMap { path =>
       val filename   = path.baseName
       val attributes = readYaml(path, md)
 

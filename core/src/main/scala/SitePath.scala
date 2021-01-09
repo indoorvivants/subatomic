@@ -35,6 +35,13 @@ case class SitePath(segments: Seq[String]) {
   def prepend(p: os.RelPath) = new SitePath(p.segments ++ segments)
 
   def prepend(p: SitePath) = new SitePath(p.segments ++ segments)
+
+  def unshift: (String, SitePath) =
+    if (segments.isEmpty)
+      throw new IllegalStateException("Cannot unshift on an empty path")
+    else segments.head -> new SitePath(segments.tail)
+
+  def startsWith(sp: SitePath) = segments.startsWith(sp.segments)
 }
 
 trait SiteRoot { self: SitePath => }
@@ -46,4 +53,5 @@ object SitePath {
   }
 
   def fromRelPath(rp: os.RelPath) = new SitePath(rp.segments)
+
 }

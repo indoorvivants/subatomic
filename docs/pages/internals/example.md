@@ -1,6 +1,6 @@
 ---
-id: example
-title: Example
+title: Example from scratch
+scala-mdoc: true
 ---
 
 We're going build a simple website with statically checked Scala code in Markdown.
@@ -175,10 +175,9 @@ Take a look at the whole function, it's excessively commented:
 
 ```scala mdoc
 def createSite(
-    destination: os.Path,
     contentRoot: os.Path = os.pwd,
     siteRoot: SitePath
-) = {
+): Site[Content] = {
   // creating a full site map
   val raw = Content.Pages(contentRoot)
 
@@ -268,18 +267,26 @@ def createSite(
     }
     // copy all static files to be served at /assets/ on our site
     .copyAll(contentRoot / "assets", SiteRoot / "assets")
-    // finally, produce all the files configured by the site
-    .buildAt(destination, overwrite = true)
 }
-```
 
-
-### Building the site
-
-```scala mdoc
-createSite(
-  destination = os.pwd / "site" / "example",
+val site = createSite(
   contentRoot = os.pwd / "docs" / "example",
   siteRoot    = SiteRoot / "example" / "subatomic-example"
 )
+```
+
+
+### Building the site 
+
+```scala mdoc:compile-only
+site.buildAt(
+  destination = os.temp.dir(), 
+  overwrite = true
+)
+```
+
+```scala mdoc:passthrough
+import subatomic.docs._
+
+println(Terminal.show(RunSite(site, os.temp.dir())))
 ```

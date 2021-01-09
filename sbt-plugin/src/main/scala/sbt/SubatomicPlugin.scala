@@ -46,8 +46,17 @@ object SubatomicPlugin extends AutoPlugin {
         "as additional input when running mdoc"
     )
 
-    val subatomicAddDependency = settingKey[Boolean](
-      "Add subatomic as a dependency "
+    val subatomicCoreDependency = settingKey[Boolean](
+      "Add subatomic core as a dependency (ignored if subatomicBuildersDependency is used)"
+    )
+
+    val subatomicBuildersDependency = settingKey[Boolean](
+      "Add subatomic builders as a dependency "
+    )
+
+    val subatomicMdocVariables = settingKey[Map[String, String]](
+      "List of variables that will be passed to mdoc when processing " +
+        "markdown documents"
     )
   }
 
@@ -56,11 +65,20 @@ object SubatomicPlugin extends AutoPlugin {
   override def projectSettings: Seq[Def.Setting[_]] =
     List(
       subatomicInheritClasspath := true,
-      subatomicAddDependency := true,
+      subatomicCoreDependency := true,
+      subatomicBuildersDependency := true,
+      subatomicMdocVariables := Map("VERSION" -> version.value),
       libraryDependencies ++= {
-        if (subatomicAddDependency.value)
-          List("com.indoorvivants" %% "subatomic-core" % Props.version)
-        else Nil
+        (
+          subatomicBuildersDependency.value,
+          subatomicCoreDependency.value
+        ) match {
+          case (true, _) =>
+            List("com.indoorvivants" %% "subatomic-builders" % Props.version)
+          case (_, true) =>
+            List("com.indoorvivants" %% "subatomic-core" % Props.version)
+          case _ => Nil
+        }
       },
       resourceGenerators in Compile += Def.task {
         import scala.collection.mutable
@@ -87,6 +105,11 @@ object SubatomicPlugin extends AutoPlugin {
             "classpath",
             classpath.mkString(java.io.File.pathSeparator)
           )
+
+          subatomicMdocVariables.value.foreach {
+            case (varName, varValue) =>
+              props.setProperty(s"variable.$varName", varValue)
+          }
 
           IO.write(props, "subatomic properties", out)
 

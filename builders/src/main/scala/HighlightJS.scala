@@ -16,7 +16,7 @@
 
 package subatomic.builders
 
-case class Highlight(
+case class HighlightJS(
     version: String = "10.5.0",
     languages: List[String] = List("scala"),
     theme: String = "default"
@@ -41,6 +41,16 @@ case class Highlight(
   """.trim()
 }
 
-object Highlight {
-  def default: Highlight = Highlight()
+object HighlightJS {
+  def default: HighlightJS = HighlightJS()
+
+  def templateBlock(conf: HighlightJS): Seq[scalatags.Text.TypedTag[String]] = {
+    import scalatags.Text.all._
+
+    val styles     = conf.styles.map(s => link(rel := "stylesheet", href := s))
+    val scripts    = conf.scripts.map(s => script(src := s))
+    val initScript = script(raw(conf.initScript))
+
+    (styles ++ scripts) ++ List(initScript)
+  }
 }
