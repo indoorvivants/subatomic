@@ -1,0 +1,41 @@
+<html><head><title>Subatomic: Raw API</title><link rel="stylesheet" href="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.5.0/build/styles/monokai-sublime.min.css" /><script src="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.5.0/build/highlight.min.js"></script><script src="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.5.0/build/languages/scala.min.js"></script><script>hljs.initHighlightingOnLoad();</script><script src="/assets/script.js"></script><link rel="stylesheet" href="/assets/styles.css" /><link rel="shortcut icon" type="image/png" href="/assets/logo.png" /><script src="/assets/script.js"></script><meta charset="UTF-8" /></head><body><div class="container"><header class="main-header"><div class="site-title"><h1><a href="/">Subatomic</a></h1></div><div id="searchContainer" class="searchContainer"></div><div class="site-links"><a href="https://github.com/indoorvivants/subatomic"><img src="https://cdn.svgporn.com/logos/github-icon.svg" class="gh-logo" /></a></div></header><div><a class="nav-btn" href="/index.html">Home</a><a class="nav-btn" href="/builders/index.html">Builders</a><a class="nav-btn" href="/internals/index.html">Internals</a><div><a class="subnav-btn" href="/internals/example/index.html">Example from scratch</a><a class="subnav-btn subnav-selected" href="/internals/raw/index.html">Raw API</a><a class="subnav-btn" href="/internals/classpath/index.html">Mdoc and classpath</a></div></div><hr /><div><p>Under the hood, Subatomic's core idea is &quot;it's all just moving files around&quot; when it comes to building static sites.</p>
+<ul>
+<li>
+<p>Structure of your content is up to you - use Scala's data structures, pattern matching,
+all the usual stuff</p>
+<pre><code class="language-scala">sealed trait Content
+case class StaticPage(title: String, path: os.Path) extends Content
+case class MdocPage(path: os.Path, dependencies: Set[String]) extends Content
+</code></pre>
+</li>
+<li>
+<p>No magic. You need to explicitly tell Subatomic where to put which content.</p>
+<p>The content model is very simple - Subatomic can copy files and it can write text to files. That's it.</p>
+</li>
+</ul>
+<p>Here's a super-short example:</p>
+<pre><code class="language-scala">import subatomic._
+
+type Content = Either[String, Int]
+
+def sitemap: Vector[(SitePath, Content)] = Vector(
+  SiteRoot / &quot;index.html&quot;            -&gt; Left(&quot;Hello world!&quot;),
+  SiteRoot / &quot;the&quot; / &quot;answer.html&quot;   -&gt; Right(25)
+)
+
+val site = Site
+  .init(sitemap)
+  .populate { case (site, content) =&gt; 
+    content match {
+      case (path, Left(string)) =&gt; 
+        site.addPage(path, s&quot;&lt;html&gt;&lt;body&gt;String: $string&lt;/body&gt;&lt;/html&gt;&quot;)
+      case (path, Right(int)) =&gt; 
+        site.addPage(path, s&quot;&lt;html&gt;&lt;body&gt;Integer: $int&lt;/body&gt;&lt;/html&gt;&quot;)
+    }
+  }
+</code></pre>
+<p>And if we want to actually produce files, we can call <code>buildAt</code>:</p>
+<pre><code class="language-scala">site.buildAt(os.temp.dir()) // build in a temp folder
+</code></pre>
+<div class='terminal'><pre><code class = 'nohighlight'>Creating&nbsp;site&nbsp;in&nbsp;<span style='color: green'>/tmp/3912966686027972104</span><br /><br /><span style='color: cyan'>index.html</span><br />&nbsp;&nbsp;&nbsp;&nbsp;<span style='color: red'>^--content--&gt;</span>&nbsp;<span style='color: green'>&lt;html&gt;&lt;body&gt;String:&nbsp;Hello&nbsp;world!&lt;/body&gt;&lt;/html&gt;</span><br /><span style='color: cyan'>the/answer.html</span><br />&nbsp;&nbsp;&nbsp;&nbsp;<span style='color: red'>^--content--&gt;</span>&nbsp;<span style='color: green'>&lt;html&gt;&lt;body&gt;Integer:&nbsp;25&lt;/body&gt;&lt;/html&gt;</span></code></pre></div>
+</div></div><footer>© 2020 Anton Sviridov</footer><script src="/assets/search.js"></script></body></html>

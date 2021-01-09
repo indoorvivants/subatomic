@@ -1,0 +1,90 @@
+<html><head><title>Subatomic: Mdoc and classpath</title><link rel="stylesheet" href="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.5.0/build/styles/monokai-sublime.min.css" /><script src="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.5.0/build/highlight.min.js"></script><script src="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.5.0/build/languages/scala.min.js"></script><script>hljs.initHighlightingOnLoad();</script><script src="/assets/script.js"></script><link rel="stylesheet" href="/assets/styles.css" /><link rel="shortcut icon" type="image/png" href="/assets/logo.png" /><script src="/assets/script.js"></script><meta charset="UTF-8" /></head><body><div class="container"><header class="main-header"><div class="site-title"><h1><a href="/">Subatomic</a></h1></div><div id="searchContainer" class="searchContainer"></div><div class="site-links"><a href="https://github.com/indoorvivants/subatomic"><img src="https://cdn.svgporn.com/logos/github-icon.svg" class="gh-logo" /></a></div></header><div><a class="nav-btn" href="/index.html">Home</a><a class="nav-btn" href="/builders/index.html">Builders</a><a class="nav-btn" href="/internals/index.html">Internals</a><div><a class="subnav-btn" href="/internals/example/index.html">Example from scratch</a><a class="subnav-btn" href="/internals/raw/index.html">Raw API</a><a class="subnav-btn subnav-selected" href="/internals/classpath/index.html">Mdoc and classpath</a></div></div><hr /><div><h4>This is an in-depth explanation of what Subatomic does when added to your build and why it needs to do so. You don't need to know this in 90% of usage scenarios</h4>
+<p>When building a static site for a library there are several things
+we want the site builder to take care of us:</p>
+<ol>
+<li>
+<p>Markdown documents with Scala examples should be compiled and verified, using the classpath of the library we're documenting</p>
+</li>
+<li>
+<p>We want to be able to pass the version from the build into markdown
+documents, so that our installation instructions don't get outdated</p>
+</li>
+</ol>
+<h2>Mdoc and classpath</h2>
+<p>Subatomic manually invokes <a href="https://scalameta.org/mdoc/">Mdoc</a> as a separate Java process, so to make it aware of the classpath of the
+project we're building, we need to configure the build properly.</p>
+<p>Say we have a SBT build as such:</p>
+<p><strong>build.sbt</strong></p>
+<pre><code class="language-scala">lazy val core = project.in(file(&quot;core&quot;)).settings(...)
+lazy val api = project.in(file(&quot;api&quot;)).dependsOn(core)
+</code></pre>
+<p>And we want to create documentation site for it, where snippets use code from both <code>core</code> and <code>api</code>.</p>
+<p>We need to</p>
+<ol>
+<li>
+<p>Create a new <code>docs</code> project:</p>
+<pre><code class="language-scala">lazy val docs = project.in(file(&quot;docs&quot;)).dependsOn(core, api)
+</code></pre>
+</li>
+<li>
+<p>Enable subatomic SBT plugin:</p>
+<p><strong>project/plugins.sbt</strong></p>
+<pre><code class="language-scala">  addSbtPlugin(&quot;com.indoorvivants&quot; % &quot;sbt-plugin&quot; % &quot;@VERSION@&quot;)
+</code></pre>
+<p><strong>build.sbt</strong></p>
+<pre><code class="language-scala"> lazy val docs = 
+   project
+     .in(file(&quot;docs&quot;))
+     .dependsOn(core, api)
+     .enablePlugins(SubatomicPlugin)
+     .settings(
+       subatomicInheritClasspath := true, // default, can be omitted
+       subatomicBuildersDependency := true, // default, can be omitted
+       subatomicMdocVariables := Map(&quot;VERSION&quot; -&gt; version.value) // default, can be omitted
+     )
+</code></pre>
+</li>
+</ol>
+<p>Doing so leads to two things happening:</p>
+<ol>
+<li>
+<p><code>docs</code> project now has dependency on <code>&quot;com.indoorvivants&quot; %% &quot;subatomic-builders&quot; % &quot;@VERSION@&quot;</code> - which brings all the core things Subatomic will need to build the site</p>
+</li>
+<li>
+<p>A <a href="https://www.scala-sbt.org/1.x/docs/Classpaths.html#Unmanaged+vs+managed">managed resource file</a> called <strong>subatomic.properties</strong> is created (and kept updated)</p>
+</li>
+</ol>
+<p>The <strong>subatomic.properties</strong> file can be accessed by Subatomic when building the site and in our example it will contain the following information:</p>
+<pre><code>classpath=...
+variable.VERSION=...
+</code></pre>
+<p>I hope <code>variable.VERSION</code> does not need explanation, so let's see what will <code>classpath</code> contain:</p>
+<ul>
+<li><code>docs</code> dependencies classpath (including Subatomic builders)</li>
+<li><code>docs</code> compiled classes</li>
+<li><code>core</code> dependencies classpath</li>
+<li><code>api</code> dependencies classpath</li>
+<li><code>core</code> compiled classes</li>
+<li><code>api</code> compiled classes</li>
+</ul>
+<p>This contains enough information to be passed to Mdoc so that it can
+compile and run examples in the documentation.</p>
+<p>Note, that because the classpath contains <code>docs</code> own classes, you can add
+some class you need for documentation rendering (for example, subatomic itself uses several classes to render ANSI-coloured outputs), and use it from markdown documents.</p>
+<p>For example:</p>
+<p><strong>docs/src/main/scala/PrettyOutput.scala</strong></p>
+<pre><code class="language-scala">object Prettify {
+  def apply(out: String) =
+    s&quot;&lt;div class='pretty'&gt;$out&lt;/div&gt;&quot;
+}
+</code></pre>
+<p>And in your docs:</p>
+<pre><code class="language-markdown">Pretty-printing:
+
+```scala mdoc:passthrough
+val result = (1 to 25).mkString(&quot;,&quot;)
+
+println(Prettify(result))
+```
+</code></pre>
+</div></div><footer>© 2020 Anton Sviridov</footer><script src="/assets/search.js"></script></body></html>

@@ -78,6 +78,22 @@ a.nav-selected {
   color: whitesmoke
 }
 
+a.subnav-btn {
+  padding: 5px;
+  margin-right: 5px;
+  border-radius: 3px;
+  display: inline-block;
+  text-decoration: none;
+  font-size: 17px;
+}
+
+a.subnav-selected {
+  border-left:0px;
+  background-color: darkslategrey;
+  color: whitesmoke
+}
+
+
 div.site-title {
   align-self: flex-start;
   flex-grow: 4;
@@ -89,4 +105,26 @@ div#searchContainer {
 
 div.site-links {
   align-self: flex-end;
+}
+
+div.terminal {
+  overflow: scroll;
+  color: white;
+  background-color: black;
+}
+
+div.terminal pre {
+  background-color: black;
+  color: white;
+  padding: 20px;
+}
+
+
+/* ----------wide screen ----------- */
+@media screen 
+  and (min-width: 1600px) { 
+    div.container {
+      width: 50%;
+      margin-left: 25%
+    }
 }
