@@ -52,7 +52,7 @@ What do we want to achieve:
 ## Dependencies and imports
 
 ```scala
-import $ivy.`com.indoorvivants::subatomic:0.0.3`
+import $ivy.`com.indoorvivants::subatomic-core:@VERSION@`
 import $ivy.`com.lihaoyi::scalatags:0.9.1`
 ```
 

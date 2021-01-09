@@ -35,13 +35,9 @@ case class Blog(
     tagline: Option[String] = None,
     customTemplate: Option[Template] = None,
     links: Vector[(String, String)] = Vector.empty,
-    override val highlightJS: HighlightJS = HighlightJS.default
-) extends subatomic.builders.Builder(
-      contentRoot = contentRoot,
-      assetsRoot = assetsRoot,
-      highlightJS = highlightJS,
-      base = base
-    )
+    override val highlightJS: HighlightJS = HighlightJS.default,
+    override val assetsFilter: os.Path => Boolean = _ => true
+) extends subatomic.builders.Builder
 
 sealed trait Doc {
   val title: String

@@ -17,8 +17,8 @@
 package subatomic
 package docs
 
-import subatomic.builders.librarysite._
 import subatomic.builders._
+import subatomic.builders.librarysite._
 
 object Docs extends LibrarySite.App {
   override def extra(site: Site[LibrarySite.Doc]) = {
@@ -31,6 +31,7 @@ object Docs extends LibrarySite.App {
       name = "Subatomic",
       contentRoot = os.pwd / "docs" / "pages",
       assetsRoot = Some(os.pwd / "docs" / "assets"),
+      assetsFilter = _.baseName != "CNAME",
       copyright = Some("© 2020 Anton Sviridov"),
       githubUrl = Some("https://github.com/indoorvivants/subatomic"),
       highlightJS = HighlightJS.default.copy(

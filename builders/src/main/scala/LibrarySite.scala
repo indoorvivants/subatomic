@@ -18,15 +18,16 @@ package subatomic
 package builders.librarysite
 
 import subatomic.Discover.MarkdownDocument
-
-import com.vladsch.flexmark.ext.yaml.front.matter.YamlFrontMatterExtension
 import subatomic.builders._
 import subatomic.builders.librarysite.LibrarySite.Navigation
 
+import com.vladsch.flexmark.ext.yaml.front.matter.YamlFrontMatterExtension
+
 case class LibrarySite(
-    override val contentRoot: os.Path,
+    contentRoot: os.Path,
     override val assetsRoot: Option[os.Path] = None,
     override val base: SitePath = SiteRoot,
+    override val assetsFilter: os.Path => Boolean = _ => true,
     name: String,
     copyright: Option[String] = None,
     githubUrl: Option[String] = None,
@@ -34,12 +35,7 @@ case class LibrarySite(
     customTemplate: Option[Template] = None,
     links: Vector[(String, String)] = Vector.empty,
     override val highlightJS: HighlightJS = HighlightJS.default
-) extends subatomic.builders.Builder(
-      contentRoot = contentRoot,
-      assetsRoot = assetsRoot,
-      highlightJS = highlightJS,
-      base = base
-    )
+) extends subatomic.builders.Builder
 
 object LibrarySite {
 
@@ -191,7 +187,7 @@ object LibrarySite {
 
     def addAllAssets(site: Site[Doc]) = {
       siteConfig.assetsRoot match {
-        case Some(path) => site.copyAll(path, SiteRoot / "assets")
+        case Some(path) => site.copyAll(path, SiteRoot / "assets", siteConfig.assetsFilter)
         case None       => site
       }
     }
@@ -231,12 +227,6 @@ trait Template {
         HighlightJS.templateBlock(site.highlightJS),
         BuilderTemplate.managedScriptsBlock(linker, site.managedScripts),
         BuilderTemplate.managedStylesBlock(linker, site.managedStyles),
-        link(
-          rel := "shortcut icon",
-          `type` := "image/png",
-          href := linker.unsafe(_ / "assets" / "logo.png")
-        ),
-        script(src := linker.unsafe(_ / "assets" / "script.js")),
         meta(charset := "UTF-8")
       ),
       body(
@@ -247,8 +237,7 @@ trait Template {
           hr,
           content
         ),
-        Footer,
-        script(src := linker.unsafe(_ / "assets" / "search.js"))
+        Footer
       )
     ).render
   }

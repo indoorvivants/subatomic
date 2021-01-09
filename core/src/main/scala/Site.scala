@@ -60,8 +60,8 @@ case class Site[Content] private (pages: Vector[Entry], content: Iterable[(SiteP
 
   def changeLogger(logger: String => Unit) = copy(logger = new Logger(logger))
 
-  def copyAll(root: os.Path, siteBase: SitePath): Site[Content] = {
-    os.walk(root).filter(_.toIO.isFile()).foldLeft(this) {
+  def copyAll(root: os.Path, siteBase: SitePath, filter: os.Path => Boolean = _ => true): Site[Content] = {
+    os.walk(root).filter(_.toIO.isFile()).filter(filter).foldLeft(this) {
       case (site, file) =>
         val relativePath = file.relativeTo(root)
 

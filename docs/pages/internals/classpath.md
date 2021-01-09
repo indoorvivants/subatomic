@@ -1,6 +1,6 @@
 ---
 title: Mdoc and classpath
-in_navigation_bar: false
+scala-mdoc: true
 ---
 
 #### This is an in-depth explanation of what Subatomic does when added to your build and why it needs to do so. You don't need to know this in 90% of usage scenarios

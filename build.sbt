@@ -171,7 +171,8 @@ lazy val plugin = projectMatrix
   .settings(
     publishLocal := publishLocal
       .dependsOn(
-        publishLocal in core.jvm(Scala_212)
+        publishLocal in core.jvm(Scala_212),
+        publishLocal in builders.jvm(Scala_212)
       )
       .value
   )

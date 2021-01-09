@@ -1,8 +1,8 @@
 ---
 title: Home
 index: true
+scala-mdoc: true
 ---
-
 
 # Installation
 
