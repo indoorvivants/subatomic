@@ -20,6 +20,8 @@ package builders.librarysite
 import subatomic.Discover.MarkdownDocument
 import subatomic.builders._
 import subatomic.builders.librarysite.LibrarySite.Navigation
+import subatomic.search.Document
+import subatomic.search.Section
 
 import com.vladsch.flexmark.ext.yaml.front.matter.YamlFrontMatterExtension
 
@@ -34,7 +36,8 @@ case class LibrarySite(
     tagline: Option[String] = None,
     customTemplate: Option[Template] = None,
     links: Vector[(String, String)] = Vector.empty,
-    override val highlightJS: HighlightJS = HighlightJS.default
+    override val highlightJS: HighlightJS = HighlightJS.default,
+    search: Boolean = true
 ) extends subatomic.builders.Builder
 
 object LibrarySite {
@@ -164,6 +167,36 @@ object LibrarySite {
       Page(renderedHtml)
     }
 
+    val addSearchIndex: Site[Doc] => Site[Doc] = if (siteConfig.search) {
+      val idx = subatomic.search.Indexer
+        .default(content)
+        .processAll {
+          case (_, doc) =>
+            Document(
+              doc.title,
+              linker.find(doc),
+              Vector(Section(doc.title, url = None, os.read(doc.path)))
+            )
+        }
+        .asJsonString
+
+      val lines = idx.grouped(500).map(_.replace("'", "\\'")).map(str => s"'${str}'").mkString(",\n")
+
+      val tmpFile = os.temp {
+        s"""
+        var ln = [$lines];var SearchIndexText = ln.join('')
+        """
+      }
+
+      val tmpFileJS = os.temp(search.SearchFrontendPack.fullJS)
+
+      site =>
+        site
+          .addCopyOf(SiteRoot / "assets" / "search-index.js", tmpFile)
+          .addCopyOf(SiteRoot / "assets" / "search.js", tmpFileJS)
+
+    } else identity
+
     val mdocPageRenderer: Processor[Doc, SiteAsset] = mdocProcessor
       .map { mdocResult =>
         renderMarkdownPage(
@@ -191,7 +224,7 @@ object LibrarySite {
         case None       => site
       }
     }
-    extra(addAllAssets(baseSite))
+    extra(addSearchIndex(addAllAssets(baseSite)))
       .buildAt(buildConfig.destination, buildConfig.overwrite)
   }
 }
@@ -213,6 +246,15 @@ trait Template {
 
   def RawHTML(rawHtml: String) = div(raw(rawHtml))
 
+  def searchScripts = {
+    val paths =
+      if (site.search)
+        List(ScriptPath(SiteRoot / "assets" / "search.js"), ScriptPath(SiteRoot / "assets" / "search-index.js"))
+      else Nil
+
+    BuilderTemplate.managedScriptsBlock(linker, paths)
+  }
+
   def doc(title: String, content: String, links: Navigation): String =
     doc(title, RawHTML(content), links)
 
@@ -227,6 +269,7 @@ trait Template {
         HighlightJS.templateBlock(site.highlightJS),
         BuilderTemplate.managedScriptsBlock(linker, site.managedScripts),
         BuilderTemplate.managedStylesBlock(linker, site.managedStyles),
+        searchScripts,
         meta(charset := "UTF-8")
       ),
       body(

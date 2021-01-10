@@ -36,7 +36,7 @@ lazy val core = projectMatrix
 lazy val builders =
   projectMatrix
     .in(file("builders"))
-    .dependsOn(core)
+    .dependsOn(core, searchIndex, searchFrontendPack)
     .settings(
       name := "subatomic-builders",
       libraryDependencies += "com.lihaoyi"  %% "scalatags" % "0.9.1",
@@ -75,16 +75,27 @@ lazy val searchFrontendPack = projectMatrix
   .jvmPlatform(AllScalaVersions)
   .settings(
     resourceGenerators in Compile +=
-      Def.task {
-        val out = (Compile / resourceManaged).value / "search.js"
+      Def.taskIf {
+        if (sys.env.contains("CI")) {
+          val out = (Compile / resourceManaged).value / "search.js"
 
-        // doesn't matter which Scala version we use, it's compiled to JS anyways
-        val fullOpt =
-          (searchFrontend.js(Scala_213) / Compile / fullOptJS).value.data
+          // doesn't matter which Scala version we use, it's compiled to JS anyways
+          val fullOpt = (searchFrontend.js(Scala_213) / Compile / fullOptJS).value.data
 
-        IO.copyFile(fullOpt, out)
+          IO.copyFile(fullOpt, out)
 
-        List(out)
+          List(out)
+        } else {
+          val out = (Compile / resourceManaged).value / "search.js"
+
+          // doesn't matter which Scala version we use, it's compiled to JS anyways
+          val fullOpt = (searchFrontend.js(Scala_213) / Compile / fastOptJS).value.data
+
+          IO.copyFile(fullOpt, out)
+
+          List(out)
+
+        }
       }.taskValue
   )
 

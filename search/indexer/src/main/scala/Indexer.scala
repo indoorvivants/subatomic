@@ -81,7 +81,6 @@ private[subatomic] class TF_IDF(
   private val termsInDocuments =
     mutable
       .Map[TermIdx, mutable.Map[DocumentIdx, TermDocumentOccurence]]()
-  // .withDefault(_ => mutable.Map[DocumentIdx, TermDocumentOccurence]())
 
   private val documentEntries = mutable.Map[DocumentIdx, DocumentEntry]()
 
@@ -116,10 +115,6 @@ private[subatomic] class TF_IDF(
       termId: TermIdx,
       docId: DocumentIdx
   ): TermDocumentOccurence = {
-    // value.getOrElse(
-    //                   docIdx,
-    //                   TermDocumentOccurence(ZeroTermFreq, Map.empty)
-    //                 )
 
     termsInDocuments.get(termId) match {
       case Some(value) =>

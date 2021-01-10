@@ -33,6 +33,7 @@ object Docs extends LibrarySite.App {
       assetsRoot = Some(os.pwd / "docs" / "assets"),
       assetsFilter = _.baseName != "CNAME",
       copyright = Some("© 2020 Anton Sviridov"),
+      tagline = Some("Watch this space, but please don't use it yet"),
       githubUrl = Some("https://github.com/indoorvivants/subatomic"),
       highlightJS = HighlightJS.default.copy(
         languages = List("scala"),

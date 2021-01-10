@@ -29,7 +29,7 @@ class SearchFrontend private (idx: SearchIndex) {
   def query(s: String) = search.string(s)
 
   val node = {
-    val ip = input()
+    val ip = input(placeholder := "Search...")
     val stream = ip
       .events(onInput)
       .mapTo(ip.ref.value.trim())
@@ -38,13 +38,10 @@ class SearchFrontend private (idx: SearchIndex) {
     val $results = stream.map(query)
 
     div(
+      cls := "searchWrapper",
       ip,
       span(
-        // position := "absolute",
-        // top := "100%",
-        // zIndex := "100",
-        // left := "0px",
-        // right := "auto",
+        cls := "searchResults",
         display <-- $results.map(_.nonEmpty).map(if (_) "block" else "none"),
         ul(
           children <-- $results.map { results =>
@@ -70,8 +67,6 @@ object SearchFrontend extends LaminarApp("searchContainer") {
 
     val frontend = load(js.Dynamic.global.SearchIndexText.asInstanceOf[String])
 
-    div(
-      frontend.node
-    )
+    div(frontend.node)
   }
 }
