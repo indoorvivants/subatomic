@@ -171,7 +171,8 @@ private[subatomic] class TF_IDF(
               case (tok, termFrequency) =>
                 val termIdx = getTermId(tok)
 
-                increaseGlobalTermFrequency(termIdx, termFrequency)
+                if (sectionIdx == SectionIdx(0))
+                  increaseGlobalTermFrequency(termIdx, TermFrequency(1))
 
                 val currentStats = getTermDocumentOccurennce(termIdx, docIdx)
 

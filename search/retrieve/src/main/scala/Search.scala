@@ -46,10 +46,19 @@ class Search(index: SearchIndex) {
             index.globalTermFrequency(termId)
           )
 
+          println(s"DocumentId: $documentId, Term: ${termId}, TF: $TF, IDF: $IDF")
+
           (documentId, TF * IDF)
         } else (documentId, 0.0)
       }
     }
+
+    // println()
+
+    println(
+      s"Search: $s, Tokens: $tokens, validTerms: $validTerms, candidates $candidates (resolved: ${candidates
+        .map(index.documentsMapping.apply)}), rankings: $termDocumentRanks"
+    )
 
     termDocumentRanks
       .groupBy(_._1)

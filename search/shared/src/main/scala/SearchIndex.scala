@@ -101,12 +101,23 @@ object SearchIndex {
   implicit val csWriter: Writer[CollectionSize] =
     IntWriter.comap(_.value)
 
-  implicit val wct: Writer[CharTree] = macroW[CharTree]
-  implicit val rct: Reader[CharTree] = macroR[CharTree]
+  implicit def wct: Writer[CharTree] =
+    macroW[(Map[Char, CharTree], Option[TermIdx])].comap[CharTree](ct => (ct.data, ct.terminal))
 
-  implicit val tdo = macroRW[TermDocumentOccurence]
-  implicit val sec = macroRW[SectionEntry]
-  implicit val doc = macroRW[DocumentEntry]
+  implicit def rct: Reader[CharTree] = macroR[(Map[Char, CharTree], Option[TermIdx])].map(c => CharTree(c._1, c._2))
+
+  implicit val tdoR =
+    macroR[(TermFrequency, Map[SectionIdx, TermFrequency])].map(i => TermDocumentOccurence(i._1, i._2))
+
+  implicit val tdoW = macroW[(TermFrequency, Map[SectionIdx, TermFrequency])].comap[TermDocumentOccurence](t =>
+    (t.frequencyInDocument, t.sectionOccurences)
+  )
+  implicit val secR: Reader[SectionEntry] = macroRW[(String, String)].map(s => SectionEntry(s._1, s._2))
+  implicit val secW: Writer[SectionEntry] = macroW[(String, String)].comap[SectionEntry](s => (s.title, s.url))
+
+  implicit val docR = macroR[(String, String, Map[SectionIdx, SectionEntry])].map(s => DocumentEntry(s._1, s._2, s._3))
+  implicit val docW =
+    macroW[(String, String, Map[SectionIdx, SectionEntry])].comap[DocumentEntry](d => (d.title, d.url, d.sections))
 
   implicit val w: Writer[SearchIndex] = macroW[SearchIndex]
   implicit val r: Reader[SearchIndex] = macroR[SearchIndex]

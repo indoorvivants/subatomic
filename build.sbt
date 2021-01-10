@@ -183,7 +183,10 @@ lazy val plugin = projectMatrix
     publishLocal := publishLocal
       .dependsOn(
         publishLocal in core.jvm(Scala_212),
-        publishLocal in builders.jvm(Scala_212)
+        publishLocal in builders.jvm(Scala_212),
+        publishLocal in searchIndex.jvm(Scala_212),
+        publishLocal in searchFrontendPack.jvm(Scala_212),
+        publishLocal in searchShared.jvm(Scala_212)
       )
       .value
   )
