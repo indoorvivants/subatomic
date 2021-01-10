@@ -194,6 +194,7 @@ object LibrarySite {
         site
           .addCopyOf(SiteRoot / "assets" / "search-index.js", tmpFile)
           .addCopyOf(SiteRoot / "assets" / "search.js", tmpFileJS)
+          .addPage(SiteRoot / "assets" / "subatomic-search.css", BuilderTemplate.searchCSS)
 
     } else identity
 
@@ -246,13 +247,25 @@ trait Template {
 
   def RawHTML(rawHtml: String) = div(raw(rawHtml))
 
-  def searchScripts = {
+  private def searchScripts = {
     val paths =
       if (site.search)
         List(ScriptPath(SiteRoot / "assets" / "search.js"), ScriptPath(SiteRoot / "assets" / "search-index.js"))
       else Nil
 
     BuilderTemplate.managedScriptsBlock(linker, paths)
+  }
+
+  private def searchStyles = {
+    val paths =
+      if (site.search)
+        List(
+          StylesheetPath(SiteRoot / "assets" / "subatomic-search.css"),
+          StylesheetPath(SiteRoot / "assets" / "subatomic-search.css")
+        )
+      else Nil
+
+    BuilderTemplate.managedStylesBlock(linker, paths)
   }
 
   def doc(title: String, content: String, links: Navigation): String =
@@ -270,6 +283,7 @@ trait Template {
         BuilderTemplate.managedScriptsBlock(linker, site.managedScripts),
         BuilderTemplate.managedStylesBlock(linker, site.managedStyles),
         searchScripts,
+        searchStyles,
         meta(charset := "UTF-8")
       ),
       body(

@@ -36,7 +36,8 @@ case class Blog(
     customTemplate: Option[Template] = None,
     links: Vector[(String, String)] = Vector.empty,
     override val highlightJS: HighlightJS = HighlightJS.default,
-    override val assetsFilter: os.Path => Boolean = _ => true
+    override val assetsFilter: os.Path => Boolean = _ => true,
+    search: Boolean = true
 ) extends subatomic.builders.Builder
 
 sealed trait Doc {
@@ -233,7 +234,40 @@ object Blog {
       }
     }
 
-    val extraSteps: Site[Doc] => Site[Doc] = site => extra(addAllAssets(addIndexPage(addArchivePage(site))))
+    val addSearchIndex: Site[Doc] => Site[Doc] = if (siteConfig.search) {
+      import subatomic.search._
+      val idx = subatomic.search.Indexer
+        .default(content)
+        .processSome {
+          case (_, post: Post) =>
+            Document(
+              post.title,
+              linker.find(post),
+              Vector(Section(post.title, url = None, content = os.read(post.path)))
+            )
+        }
+        .asJsonString
+
+      val lines = idx.grouped(500).map(_.replace("'", "\\'")).map(str => s"'${str}'").mkString(",\n")
+
+      val tmpFile = os.temp {
+        s"""
+        var ln = [$lines];var SearchIndexText = ln.join('')
+        """
+      }
+
+      val tmpFileJS = os.temp(search.SearchFrontendPack.fullJS)
+
+      site =>
+        site
+          .addCopyOf(SiteRoot / "assets" / "search-index.js", tmpFile)
+          .addCopyOf(SiteRoot / "assets" / "search.js", tmpFileJS)
+          .addPage(SiteRoot / "assets" / "subatomic-search.css", BuilderTemplate.searchCSS)
+
+    } else identity
+
+    val extraSteps: Site[Doc] => Site[Doc] = site =>
+      extra(addSearchIndex(addAllAssets(addIndexPage(addArchivePage(site)))))
 
     extraSteps(baseSite).buildAt(buildConfig.destination, buildConfig.overwrite)
   }
@@ -273,6 +307,27 @@ trait Template {
 
   def rawHtml(rawHtml: String) = div(raw(rawHtml))
 
+  def searchScripts = {
+    val paths =
+      if (site.search)
+        List(ScriptPath(SiteRoot / "assets" / "search.js"), ScriptPath(SiteRoot / "assets" / "search-index.js"))
+      else Nil
+
+    BuilderTemplate.managedScriptsBlock(linker, paths)
+  }
+
+  def searchStyles = {
+    val paths =
+      if (site.search)
+        List(
+          StylesheetPath(SiteRoot / "assets" / "subatomic-search.css"),
+          StylesheetPath(SiteRoot / "assets" / "subatomic-search.css")
+        )
+      else Nil
+
+    BuilderTemplate.managedStylesBlock(linker, paths)
+  }
+
   def basePage(navigation: Option[Vector[NavLink]], content: TypedTag[_]) = {
     val pageTitle = navigation
       .flatMap(_.find(_.selected))
@@ -286,6 +341,8 @@ trait Template {
         HighlightJS.templateBlock(site.highlightJS),
         BuilderTemplate.managedStylesBlock(linker, site.managedStyles),
         BuilderTemplate.managedScriptsBlock(linker, site.managedScripts),
+        searchScripts,
+        searchStyles,
         meta(charset := "UTF-8"),
         meta(
           name := "viewport",
@@ -301,6 +358,7 @@ trait Template {
             hr,
             about,
             staticNav,
+            div(id := "searchContainer", cls := "searchContainer"),
             hr,
             h4("tags"),
             tagCloud,

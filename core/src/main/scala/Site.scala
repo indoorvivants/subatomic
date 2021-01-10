@@ -169,7 +169,7 @@ object Site {
     }
 
     val rightSide = asset match {
-      case Page(content) => trim(content, 50)
+      case Page(content) => trim(content, 50).replace("\n", "\\n")
 
       case CopyOf(source)     => source.toString
       case CreatedFile(at, _) => at.toString()
