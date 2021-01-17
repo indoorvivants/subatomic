@@ -61,6 +61,7 @@ case class SearchIndex private (
     globalTermFrequency: Map[TermIdx, GlobalTermFrequency],
     termMapping: Map[TermName, TermIdx],
     documentTerms: Map[DocumentIdx, Map[TermIdx, TermDocumentOccurence]],
+    sectionMapping: Map[DocumentIdx, List[SectionIdx]],
     collectionSize: CollectionSize,
     charTree: CharTree
 ) {

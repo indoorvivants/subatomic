@@ -7,13 +7,23 @@ import weaver.SimpleMutableIOSuite
 object IndexerTests extends SimpleMutableIOSuite {
 
   val content = Vector(
-    "/"            -> "lorem ipsum dolor amet lorem",
-    "/hello"       -> "lorem dolor",
-    "/hello/world" -> "amet ipsum amet dolor"
+    "/" ->
+      List("section1" -> "lorem ipsum dolor amet lorem"),
+    "/hello"       -> List("section1" -> "lorem dolor"),
+    "/hello/world" -> List("section1" -> "amet ipsum amet dolor")
   )
 
   val idx = Indexer.default(content).processAll {
-    case (path, text) => Document.section(s"Document at $path", path, text)
+    case (path, sections) => //Document.section(s"Document at $path", path, text)
+
+      Document(
+        s"Document at $path",
+        path,
+        sections.map {
+          case (title, content) =>
+            Section(title, None, content)
+        }.toVector
+      )
   }
 
   pureTest("all documents have entry in the index") {

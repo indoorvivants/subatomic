@@ -30,32 +30,52 @@ class SearchFrontend private (idx: SearchIndex) {
 
   val node = {
     val ip = input(placeholder := "Search...")
-    val stream = ip
+    val $stream = ip
       .events(onInput)
       .mapTo(ip.ref.value.trim())
       .startWith("")
 
-    val $results = stream.map(query)
+    val $results = $stream.map(query)
 
     div(
       cls := "searchWrapper",
       ip,
       span(
         cls := "searchResults",
-        display <-- $results.map(_.nonEmpty).map(if (_) "block" else "none"),
+        display <-- $results.map(_.entries.nonEmpty).map(if (_) "block" else "none"),
         ul(
           children <-- $results.map { results =>
-            results.map {
-              case (document, score) =>
-                li(
-                  a(href := document.url, document.title),
-                  " ",
-                  small(score.formatted("%.2f").toString())
-                )
+            println(results)
+            results.entries.map {
+              case (ResultsEntry(document, all @ (oneSection :: others)), _) =>
+                if (oneSection.title == document.title && oneSection.url == document.url)
+                  p(
+                    b(a(href := document.url, document.title)),
+                    renderSections(others)
+                  )
+                else {
+                  p(
+                    b(document.title),
+                    renderSections(all)
+                  )
+                }
+              case _ => i("no results")
             }
           }
         )
       )
+    )
+  }
+
+  def renderSections(sections: List[SectionEntry]) = {
+    ul(
+      sections.map { section =>
+        li(
+          span(
+            a(href := section.url, section.title)
+          )
+        )
+      }
     )
   }
 }

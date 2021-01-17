@@ -3,7 +3,7 @@ title: Mdoc and classpath
 scala-mdoc: true
 ---
 
-#### This is an in-depth explanation of what Subatomic does when added to your build and why it needs to do so. You don't need to know this in 90% of usage scenarios
+**This is an in-depth explanation of what Subatomic does when added to your build and why it needs to do so. You don't need to know this in 90% of usage scenarios**
 
 When building a static site for a library there are several things
 we want the site builder to take care of us:

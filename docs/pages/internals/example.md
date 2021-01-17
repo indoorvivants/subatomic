@@ -169,7 +169,7 @@ class Template(linker: Linker) {
 will produce resulting HTML as a String.
 
 
-## Configurting the site
+## Configuring the site
 
 Take a look at the whole function, it's excessively commented:
 

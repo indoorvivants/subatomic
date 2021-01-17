@@ -32,4 +32,22 @@ object CliTest extends weaver.SimpleIOSuite {
       )
     }
   }
+
+  pureTest("CLI supports --test-search-cli flag") {
+    exists(run("--test-search-cli")) { config =>
+      expect(config.testSearch.contains(cli.Interactive))
+    }
+  }
+
+  pureTest("CLI doesn't default to test search mode") {
+    exists(run()) { config =>
+      expect(config.testSearch.isEmpty)
+    }
+  }
+
+  pureTest("CLI supports --test-search-query flag") {
+    exists(run("--test-search-query", "bla bla")) { config =>
+      expect(config.testSearch.contains(cli.Query("bla bla")))
+    }
+  }
 }

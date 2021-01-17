@@ -36,7 +36,7 @@ lazy val core = projectMatrix
 lazy val builders =
   projectMatrix
     .in(file("builders"))
-    .dependsOn(core, searchIndex, searchFrontendPack)
+    .dependsOn(core, searchIndex, searchFrontendPack, searchRetrieve)
     .settings(
       name := "subatomic-builders",
       libraryDependencies += "com.lihaoyi"  %% "scalatags" % "0.9.1",
@@ -137,6 +137,9 @@ lazy val searchShared =
     .settings(testSettings)
     .settings(buildInfoSettings)
     .enablePlugins(BuildInfoPlugin)
+    .settings(
+      excludeFilter.in(headerSources) := HiddenFileFilter || "*Stemmer.scala"
+    )
 
 lazy val docs = projectMatrix
   .in(file("docs"))
@@ -186,7 +189,8 @@ lazy val plugin = projectMatrix
         publishLocal in builders.jvm(Scala_212),
         publishLocal in searchIndex.jvm(Scala_212),
         publishLocal in searchFrontendPack.jvm(Scala_212),
-        publishLocal in searchShared.jvm(Scala_212)
+        publishLocal in searchShared.jvm(Scala_212),
+        publishLocal in searchRetrieve.jvm(Scala_212)
       )
       .value
   )
@@ -214,8 +218,7 @@ lazy val testSettings =
     libraryDependencies += "com.disneystreaming" %%% "weaver-cats"       % "0.6.0-M4" % Test,
     libraryDependencies += "com.disneystreaming" %%% "weaver-scalacheck" % "0.6.0-M4" % Test,
     testFrameworks += new TestFramework("weaver.framework.CatsEffect"),
-    scalacOptions.in(Test) ~= filterConsoleScalacOptions,
-    fork in Test := virtualAxes.value.contains(VirtualAxis.jvm)
+    scalacOptions.in(Test) ~= filterConsoleScalacOptions
   )
 
 lazy val skipPublish = Seq(

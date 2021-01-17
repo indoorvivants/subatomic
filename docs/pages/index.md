@@ -26,7 +26,7 @@ Now you can use one of the [builders](/builders) to build your site!
 
 ## Ammonite
 
-Only reason to use SBT plugin is to handle classpath propagation from your build (see [internals](/internals) for explanation).
+Only reason to use SBT plugin is to handle classpath propagation from your build (see [internals](/internals/classpath) for explanation).
 
 If you don't want that and want to control your mdoc dependencies
 from within the documents, you could just use the builders API directly from Ammonite:

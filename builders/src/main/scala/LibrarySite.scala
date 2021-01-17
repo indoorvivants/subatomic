@@ -17,13 +17,22 @@
 package subatomic
 package builders.librarysite
 
+import scala.collection.mutable.ArrayBuffer
+
 import subatomic.Discover.MarkdownDocument
 import subatomic.builders._
 import subatomic.builders.librarysite.LibrarySite.Navigation
 import subatomic.search.Document
 import subatomic.search.Section
 
+import com.vladsch.flexmark.ast.FencedCodeBlock
+import com.vladsch.flexmark.ast.Heading
+import com.vladsch.flexmark.ext.anchorlink.AnchorLinkExtension
 import com.vladsch.flexmark.ext.yaml.front.matter.YamlFrontMatterExtension
+import com.vladsch.flexmark.ext.yaml.front.matter.YamlFrontMatterNode
+import com.vladsch.flexmark.html.renderer.HeaderIdGenerator
+import com.vladsch.flexmark.util.ast.Node
+import com.vladsch.flexmark.util.ast.TextContainer
 
 case class LibrarySite(
     contentRoot: os.Path,
@@ -138,7 +147,8 @@ object LibrarySite {
 
     val markdown = Markdown(
       RelativizeLinksExtension(siteConfig.base.toRelPath),
-      YamlFrontMatterExtension.create()
+      YamlFrontMatterExtension.create(),
+      AnchorLinkExtension.create()
     )
 
     val linker = new Linker(content, siteConfig.base)
@@ -167,20 +177,64 @@ object LibrarySite {
       Page(renderedHtml)
     }
 
-    val addSearchIndex: Site[Doc] => Site[Doc] = if (siteConfig.search) {
-      val idx = subatomic.search.Indexer
-        .default(content)
-        .processAll {
-          case (_, doc) =>
-            Document(
-              doc.title,
-              linker.find(doc),
-              Vector(Section(doc.title, url = None, os.read(doc.path)))
-            )
-        }
-        .asJsonString
+    def extractMarkdownSections(documentTitle: String, baseUrl: String, p: os.Path): Vector[Section] = {
+      type Result = Either[
+        (String, String),
+        String
+      ]
 
-      val lines = idx.grouped(500).map(_.replace("'", "\\'")).map(str => s"'${str}'").mkString(",\n")
+      val document = markdown.read(p)
+
+      val generator = new HeaderIdGenerator.Factory().create()
+
+      generator.generateIds(document)
+
+      val sect = markdown
+        .recursiveCollect[Result](document) {
+          case head: Heading =>
+            markdown.Collector.Collect(Seq(Left(head.getText().toStringOrNull() -> head.getAnchorRefId())))
+          case t: TextContainer =>
+            markdown.Collector.Collect(Seq(Right(t.getChars().toStringOrNull())))
+          case _: FencedCodeBlock | _: YamlFrontMatterNode => markdown.Collector.Skip
+          case _: Node                                     => markdown.Collector.Recurse()
+        }
+
+      var currentSection: String => Section = Section(documentTitle, None, _)
+
+      val sections = ArrayBuffer[Section]()
+
+      val collectedText = new StringBuilder
+
+      sect.foreach {
+        case Left((title, id)) =>
+          sections.append(currentSection(collectedText.result()))
+          collectedText.clear()
+          currentSection = Section(title, Some(baseUrl + s"#$id"), _)
+        case Right(content) =>
+          collectedText.append(content + "\n")
+      }
+
+      if (collectedText.nonEmpty) sections.append(currentSection(collectedText.result()))
+
+      sections.toVector
+    }
+
+    lazy val idx = subatomic.search.Indexer
+      .default(content)
+      .processSome {
+        case (_, doc) =>
+          Document(
+            doc.title,
+            linker.find(doc),
+            extractMarkdownSections(doc.title, linker.find(doc), doc.path)
+          )
+      }
+
+    val addSearchIndex: Site[Doc] => Site[Doc] = if (siteConfig.search) {
+
+      val indexJson = idx.asJsonString
+
+      val lines = indexJson.grouped(500).map(_.replace("'", "\\'")).map(str => s"'${str}'").mkString(",\n")
 
       val tmpFile = os.temp {
         s"""
@@ -225,8 +279,17 @@ object LibrarySite {
         case None       => site
       }
     }
-    extra(addSearchIndex(addAllAssets(baseSite)))
-      .buildAt(buildConfig.destination, buildConfig.overwrite)
+
+    if (siteConfig.search && buildConfig.testSearch.isDefined) {
+      buildConfig.testSearch match {
+        case Some(cli.Interactive) => subatomic.search.Search.cli(idx)
+        case Some(cli.Query(q))    => subatomic.search.Search.query(idx, q)
+        case None                  =>
+      }
+
+    } else
+      extra(addSearchIndex(addAllAssets(baseSite)))
+        .buildAt(buildConfig.destination, buildConfig.overwrite)
   }
 }
 

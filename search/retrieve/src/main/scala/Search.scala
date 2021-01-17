@@ -17,58 +17,117 @@
 package subatomic
 package search
 
-class Search(index: SearchIndex) {
-  def string(s: String): Vector[(DocumentEntry, Double)] = {
+import scala.io.StdIn
+
+case class SearchResults(
+    entries: Vector[(ResultsEntry, Double)]
+)
+
+case class ResultsEntry(
+    document: DocumentEntry,
+    sections: List[SectionEntry]
+)
+
+class Search(index: SearchIndex, debug: Boolean = false) {
+  @inline def debugPrint(s: Any) = {
+    if (debug) println(s)
+  }
+
+  def string(s: String): SearchResults = {
     val tokens = DefaultTokenizer(s)
 
-    val terms = tokens.flatMap { tok =>
+    val terms = tokens.distinct.flatMap { tok =>
       for {
-        termIdx      <- index.resolveTerm(tok)
+        termIdx <- index.resolveTerm(tok)
+        _ = debugPrint(s"token $tok resolved to $termIdx")
         docsWithTerm <- index.termsInDocuments.get(termIdx.value)
+        _ = debugPrint(s"documents with $tok: $docsWithTerm")
       } yield termIdx.value -> docsWithTerm
     }
 
     val validTerms = terms.map(_._1)
     val candidates = terms.flatMap(_._2.keys)
 
+    val sectionRef = scala.collection.mutable.HashMap[(DocumentIdx, SectionIdx), Double]()
+
     val termDocumentRanks = candidates.flatMap { documentId =>
-      val documentTerms = index.documentTerms(documentId)
+      val documentTerms = getDocumentTerms(documentId)
 
       validTerms.map { termId =>
-        if (documentTerms.contains(termId)) {
-          val TF = Algorithms.augmented_Term_Frequency(
-            termId,
-            documentTerms.map { case (k, v) => k -> v.frequencyInDocument }
-          )
+        documentTerms.get(termId) match {
+          case Some(tdo) =>
+            val TF = Algorithms.augmented_Term_Frequency(
+              termId,
+              documentTerms.map { case (k, v) => k -> v.frequencyInDocument }
+            )
 
-          val IDF = Algorithms.inverse_Document_Frequency(
-            index.collectionSize,
-            index.globalTermFrequency(termId)
-          )
+            val IDF = Algorithms.inverse_Document_Frequency(
+              index.collectionSize,
+              getGlobalTermFrequency(termId)
+            )
 
-          println(s"DocumentId: $documentId, Term: ${termId}, TF: $TF, IDF: $IDF")
+            debugPrint(s"DocumentId: $documentId, Term: ${termId}, TF: $TF, IDF: $IDF")
 
-          (documentId, TF * IDF)
-        } else (documentId, 0.0)
+            val TERM_SCORE = TF * IDF
+
+            tdo.sectionOccurences.map {
+              case (sectionIdx, frequencyInSection) =>
+                val key = (documentId, sectionIdx)
+                debugPrint(
+                  s"Updating ($documentId, $sectionIdx) for $termId with ${frequencyInSection.value * TERM_SCORE}"
+                )
+                sectionRef.update(
+                  key,
+                  frequencyInSection.value * TERM_SCORE + sectionRef.getOrElseUpdate(key, 0.0)
+                )
+            }
+
+            (documentId, TERM_SCORE)
+          case None => (documentId, 0.0)
+        }
       }
     }
 
-    // println()
-
-    println(
-      s"Search: $s, Tokens: $tokens, validTerms: $validTerms, candidates $candidates (resolved: ${candidates
-        .map(index.documentsMapping.apply)}), rankings: $termDocumentRanks"
-    )
-
-    termDocumentRanks
+    val entries = termDocumentRanks
       .groupBy(_._1)
       .map {
-        case (documentId, ranks) =>
-          index.documentsMapping(documentId) -> ranks.map(_._2).sum
+        case (documentIdx, ranks) =>
+          val document = index.documentsMapping(documentIdx)
+          val documentSections =
+            document.sections.keys.toVector
+              .map(sid => sid -> sectionRef.getOrElse((documentIdx, sid), 0.0))
+              // .filter(_._2 != 0.0)
+              .sortBy(-1 * _._2)
+              .take(3)
+              .map(_._1)
+
+          debugPrint(s"document: ${document.title}, sections: ${documentSections}")
+
+          debugPrint(s"document: ${document.title}, Section ref: $sectionRef")
+
+          val resultEntry = ResultsEntry(
+            document,
+            documentSections.map(document.sections).toList
+          )
+
+          resultEntry -> ranks.map(_._2).sum
       }
       .toVector
       .sortBy(-1 * _._2)
+      .filter(_._1.sections.nonEmpty)
+
+    SearchResults(entries)
   }
+
+  def getDocumentSections(documentId: DocumentIdx): List[SectionIdx] =
+    index.sectionMapping(documentId)
+
+  def getDocumentTerms(documentId: DocumentIdx): Map[TermIdx, TermDocumentOccurence] =
+    index.documentTerms(documentId)
+
+  def getGlobalTermFrequency(termId: TermIdx): GlobalTermFrequency =
+    index.globalTermFrequency(termId)
+
 }
 
 object Algorithms {
@@ -87,5 +146,46 @@ object Algorithms {
       globalTermFrequency: GlobalTermFrequency
   ) = {
     math.log(numDocuments.value.toDouble / globalTermFrequency.value.toDouble)
+  }
+}
+
+object Search {
+  def query(idx: SearchIndex, q: String) = {
+    val search  = new Search(idx, true)
+    val results = search.string(q)
+    renderResults(results)
+  }
+  def cli(idx: SearchIndex) = {
+    val search = new Search(idx, true)
+
+    var cmd = ""
+
+    println("Type :q to exit")
+
+    while (cmd != ":q") {
+      print("query > ")
+      cmd = StdIn.readLine().trim()
+
+      if (cmd != ":q") {
+        val results = search.string(cmd)
+        renderResults(results)
+      }
+    }
+  }
+
+  private def renderResults(
+      res: SearchResults
+  ) = {
+    if (res.entries.isEmpty) println("NO RESULTS")
+    else
+      res.entries.foreach {
+        case (ResultsEntry(document, sections), score) =>
+          println(Console.BOLD + score.toString() + Console.RESET + " " + document.title)
+
+          sections.foreach {
+            case SectionEntry(title, _) =>
+              println("   - " + title)
+          }
+      }
   }
 }

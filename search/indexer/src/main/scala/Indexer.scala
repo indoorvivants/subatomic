@@ -29,7 +29,13 @@ case class Section(
     title: String,
     url: Option[String],
     content: String
-)
+) {
+  override def toString() = {
+    val cont = content.replace("\n", Console.BOLD + "\\n" + Console.RESET)
+
+    s"Section($title, $url, $cont)"
+  }
+}
 
 object Document {
   def section(title: String, url: String, content: String) = {
@@ -45,13 +51,14 @@ object Document {
 
 class Indexer[ContentType](
     content: Iterable[ContentType],
-    tokenizer: String => Vector[String] = DefaultTokenizer
+    tokenizer: String => Vector[String] = DefaultTokenizer,
+    debug: Boolean = false
 ) {
   def processSome(
       extract: PartialFunction[ContentType, Document]
   ): SearchIndex = {
     val total  = extract.lift
-    val tf_idf = new TF_IDF(content.size, tokenizer)
+    val tf_idf = new TF_IDF(content.size, tokenizer, debug)
     content.foreach {
       case cnt =>
         total(cnt).foreach { tf_idf.add }
@@ -67,14 +74,21 @@ class Indexer[ContentType](
 
 object Indexer {
   def default[ContentType](
-      content: Iterable[ContentType]
-  ): Indexer[ContentType] = new Indexer(content)
+      content: Iterable[ContentType],
+      debug: Boolean = false
+  ): Indexer[ContentType] = new Indexer(content, debug = debug)
 }
 
 private[subatomic] class TF_IDF(
     collectionSize: Int,
-    tokenizer: String => Vector[String]
+    tokenizer: String => Vector[String],
+    debug: Boolean = false
 ) {
+
+  @inline def debugPrint(s: Any) = {
+    if (debug) println(s)
+  }
+
   private val documentIndexes     = mutable.Map[Document, DocumentIdx]()
   private val globalTermFrequency = mutable.Map[TermIdx, GlobalTermFrequency]()
   private val termsMapping        = mutable.Map[TermName, TermIdx]()
@@ -83,6 +97,7 @@ private[subatomic] class TF_IDF(
       .Map[TermIdx, mutable.Map[DocumentIdx, TermDocumentOccurence]]()
 
   private val documentEntries = mutable.Map[DocumentIdx, DocumentEntry]()
+  private val sectionEntries  = mutable.Map[DocumentIdx, List[SectionIdx]]()
 
   private val ZeroTermFreq = TermFrequency(0)
 
@@ -158,11 +173,14 @@ private[subatomic] class TF_IDF(
 
     addDocumentEntry(docIdx, documentEntry)
 
+    debugPrint(s"----\nIndexing $docIdx $document\n----")
+
     document.sections.zipWithIndex
       .map { case (s, i) => s -> SectionIdx(i) }
       .foreach {
         case (Section(_, _, text), sectionIdx) =>
-          val tokens = tokenizer(text)
+          val tokens             = tokenizer(text)
+          val documentRegistered = mutable.Set[TermIdx]()
 
           tokens
             .groupBy(identity)
@@ -171,8 +189,10 @@ private[subatomic] class TF_IDF(
               case (tok, termFrequency) =>
                 val termIdx = getTermId(tok)
 
-                if (sectionIdx == SectionIdx(0))
+                if (!documentRegistered.contains(termIdx)) {
                   increaseGlobalTermFrequency(termIdx, TermFrequency(1))
+                  documentRegistered.add(termIdx)
+                }
 
                 val currentStats = getTermDocumentOccurennce(termIdx, docIdx)
 
@@ -218,6 +238,7 @@ private[subatomic] class TF_IDF(
       globalTermFrequency.toMap,
       termsMapping.toMap,
       invertTermsToDocuments,
+      sectionEntries.toMap,
       CollectionSize(collectionSize),
       CharTree.build(termsMapping)
     )

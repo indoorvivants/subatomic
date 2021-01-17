@@ -21,10 +21,16 @@ import cats.implicits._
 import com.monovore.decline._
 
 object cli {
+
+  sealed trait TestSearchConfig extends Product with Serializable
+  case object Interactive       extends TestSearchConfig
+  case class Query(q: String)   extends TestSearchConfig
+
   case class Config(
       destination: os.Path,
       disableMdoc: Boolean,
-      overwrite: Boolean
+      overwrite: Boolean,
+      testSearch: Option[TestSearchConfig]
   )
   implicit val pathArgument: Argument[os.Path] =
     Argument[String].map(s => os.Path.apply(s))
@@ -35,6 +41,22 @@ object cli {
       "Don't call mdoc. This greatly speeds up things and is useful for iterating on the design"
     )
     .orFalse
+
+  private val testSearchInteractive = Opts
+    .flag(
+      "test-search-cli",
+      "Drop into a CLI to test the search over your content"
+    )
+    .as[TestSearchConfig](Interactive)
+
+  private val testSearchQuery = Opts
+    .option[String](
+      "test-search-query",
+      "run a query through search"
+    )
+    .map[TestSearchConfig](Query(_))
+
+  private val testsearchConfig = testSearchInteractive.orElse(testSearchQuery).map(Option(_)).withDefault(None)
 
   private val destination = Opts
     .option[os.Path](
@@ -47,6 +69,6 @@ object cli {
     Opts.flag("overwrite", "Overwrite files if present at destination").orFalse
 
   val command = Command("build site", "builds the site")(
-    (destination, disableMdoc, overwrite).mapN(Config)
+    (destination, disableMdoc, overwrite, testsearchConfig).mapN(Config)
   )
 }

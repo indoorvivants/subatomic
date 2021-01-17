@@ -39,7 +39,7 @@ object TokenizerTests extends SimpleMutableIOSuite {
 
   pureTest("handles possessive") {
     assert(
-      tokens("subatomic's Scala's") == Vector("subatomic's", "scala's")
+      tokens("subatomic's Scala's") == Vector("subatomic'", "scala'")
     )
   }
 }

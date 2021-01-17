@@ -28,7 +28,7 @@ object DefaultTokenizer extends (String => Vector[String]) {
     val acc    = new StringBuilder
 
     def appendMaybe(str: String) = {
-      if (!Stopwords.list(str)) tokens.append(str)
+      if (!Stopwords.list(str)) tokens.append(PorterStemmer.stem(str))
     }
 
     var lastChar = Option.empty[Char]
