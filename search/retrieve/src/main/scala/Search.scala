@@ -96,7 +96,7 @@ class Search(index: SearchIndex, debug: Boolean = false) {
           val documentSections =
             document.sections.keys.toVector
               .map(sid => sid -> sectionRef.getOrElse((documentIdx, sid), 0.0))
-              // .filter(_._2 != 0.0)
+              .filter(_._2 != 0.0)
               .sortBy(-1 * _._2)
               .take(3)
               .map(_._1)
@@ -145,7 +145,7 @@ object Algorithms {
       numDocuments: CollectionSize,
       globalTermFrequency: GlobalTermFrequency
   ) = {
-    math.log(numDocuments.value.toDouble / globalTermFrequency.value.toDouble)
+    math.log(numDocuments.value.toDouble / (globalTermFrequency.value.toDouble + 1.0))
   }
 }
 
