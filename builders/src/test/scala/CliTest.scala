@@ -1,17 +1,30 @@
 package subatomic
 package builders
 
+import subatomic.builders.cli.BuildConfig
+import subatomic.builders.cli.SearchConfig
+
 object CliTest extends weaver.SimpleIOSuite {
-  private def run(args: String*) = cli.command.parse(args)
+  private def runBuild(args: String*) =
+    cli.command.parse("build" +: args).flatMap {
+      case bld: BuildConfig => Right(bld)
+      case other            => Left(s"Expected build config, got $other instead")
+    }
+
+  private def runSearch(args: String*) =
+    cli.command.parse("search" +: args).flatMap {
+      case bld: SearchConfig => Right(bld)
+      case other             => Left(s"Expected build config, got $other instead")
+    }
 
   pureTest("CLI supports --disable-mdoc flag") {
-    exists(run("--disable-mdoc")) { config =>
+    exists(runBuild("--disable-mdoc")) { config =>
       expect(config.disableMdoc == true)
     }
   }
 
   pureTest("CLI supports --overwrite flag") {
-    exists(run("--overwrite")) { config =>
+    exists(runBuild("--force")) { config =>
       expect(config.overwrite == true)
     }
   }
@@ -19,13 +32,13 @@ object CliTest extends weaver.SimpleIOSuite {
   pureTest("CLI supports --destination flag") {
     val dest = os.temp.dir()
 
-    exists(run(s"--destination", dest.toString())) { config =>
+    exists(runBuild(s"--destination", dest.toString())) { config =>
       expect(config.destination == dest)
     }
   }
 
   pureTest("CLI options are all optional") {
-    exists(run()) { config =>
+    exists(runBuild()) { config =>
       expect.all(
         config.disableMdoc == false,
         config.overwrite == false
@@ -34,20 +47,14 @@ object CliTest extends weaver.SimpleIOSuite {
   }
 
   pureTest("CLI supports --test-search-cli flag") {
-    exists(run("--test-search-cli")) { config =>
-      expect(config.testSearch.contains(cli.Interactive))
-    }
-  }
-
-  pureTest("CLI doesn't default to test search mode") {
-    exists(run()) { config =>
-      expect(config.testSearch.isEmpty)
+    exists(runSearch("--interactive")) { config =>
+      expect(config.mode == cli.Interactive)
     }
   }
 
   pureTest("CLI supports --test-search-query flag") {
-    exists(run("--test-search-query", "bla bla")) { config =>
-      expect(config.testSearch.contains(cli.Query("bla bla")))
+    exists(runSearch("--query", "bla bla")) { config =>
+      expect(config.mode == cli.Query("bla bla"))
     }
   }
 }

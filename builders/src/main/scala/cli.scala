@@ -22,18 +22,24 @@ import com.monovore.decline._
 
 object cli {
 
-  sealed trait TestSearchConfig extends Product with Serializable
-  case object Interactive       extends TestSearchConfig
-  case class Query(q: String)   extends TestSearchConfig
+  sealed trait TestSearchMode extends Product with Serializable
+  case object Interactive     extends TestSearchMode
+  case class Query(q: String) extends TestSearchMode
 
-  case class Config(
+  sealed trait CommandConfig extends Product with Serializable
+
+  case class BuildConfig(
       destination: os.Path,
       disableMdoc: Boolean,
-      overwrite: Boolean,
-      testSearch: Option[TestSearchConfig]
-  )
+      overwrite: Boolean
+  ) extends CommandConfig
+
+  case class SearchConfig(mode: TestSearchMode, debug: Boolean) extends CommandConfig
+
   implicit val pathArgument: Argument[os.Path] =
     Argument[String].map(s => os.Path.apply(s))
+
+  private val debug = Opts.flag("debug", "Output debugging information").orFalse
 
   private val disableMdoc = Opts
     .flag(
@@ -44,19 +50,20 @@ object cli {
 
   private val testSearchInteractive = Opts
     .flag(
-      "test-search-cli",
+      "interactive",
       "Drop into a CLI to test the search over your content"
     )
-    .as[TestSearchConfig](Interactive)
+    .as[TestSearchMode](Interactive)
 
   private val testSearchQuery = Opts
     .option[String](
-      "test-search-query",
+      "query",
       "run a query through search"
     )
-    .map[TestSearchConfig](Query(_))
+    .map[TestSearchMode](Query(_))
 
-  private val testsearchConfig = testSearchInteractive.orElse(testSearchQuery).map(Option(_)).withDefault(None)
+  private val testsearchConfig =
+    (testSearchInteractive.orElse(testSearchQuery), debug).mapN[CommandConfig](SearchConfig(_, _))
 
   private val destination = Opts
     .option[os.Path](
@@ -66,9 +73,15 @@ object cli {
     .withDefault(os.temp.dir())
 
   private val overwrite =
-    Opts.flag("overwrite", "Overwrite files if present at destination").orFalse
+    Opts.flag("force", "Overwrite files if present at destination").orFalse
 
-  val command = Command("build site", "builds the site")(
-    (destination, disableMdoc, overwrite, testsearchConfig).mapN(Config)
+  val build = Opts.subcommand("build", "Build the site")(
+    (destination, disableMdoc, overwrite).mapN[CommandConfig](BuildConfig)
   )
+
+  val search = Opts.subcommand("search", "Test the generated search index")(
+    testsearchConfig
+  )
+
+  val command = Command("subatomic", "static site builder")(build orElse search)
 }
