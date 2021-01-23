@@ -76,12 +76,14 @@ object Blog {
         case Left(value) =>
           println(value)
           sys.exit(-1)
-        case Right(buildConfig) =>
+        case Right(buildConfig: BuildConfig) =>
           createSite(
             config,
             buildConfig,
             extra _
           )
+        case Right(search: SearchConfig) =>
+          println(search)
       }
     }
   }
@@ -103,7 +105,7 @@ object Blog {
 
   def createSite(
       siteConfig: Blog,
-      buildConfig: cli.Config,
+      buildConfig: cli.BuildConfig,
       extra: Site[Doc] => Site[Doc]
   ): Unit = {
     val posts = Discover

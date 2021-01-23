@@ -22,7 +22,8 @@ case class SubatomicError(msg: String) extends RuntimeException with NoStackTrac
   override def toString = {
     val maxLineLength = msg.linesIterator.map(_.length).max
     val header        = "-" * maxLineLength
-    val newMsg        = header + "\n" + msg + "\n" + header
+    val fireMsg       = msg.linesIterator.map(_.trim).map("🔥 " + _).mkString("\n")
+    val newMsg        = header + "\n" + fireMsg + "\n" + header
     Logger._redLines("\n" + newMsg)
   }
 }
@@ -35,9 +36,9 @@ object SubatomicError {
     |
     | $p 
     |
-    | already exists, but overwrite is set to false
+    | already exists, but `force` mode is set to false
     |
-    | If you're using a Builder from CLI - pass --overwrite flag
+    | If you're using a Builder from CLI - pass --force flag
     | If you're invoking the API manually, set overwrite when calling buildAt:
     |
     | .buildAt(destination, ${Logger._bold("overwrite = true")})

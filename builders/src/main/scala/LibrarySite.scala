@@ -17,22 +17,12 @@
 package subatomic
 package builders.librarysite
 
-import scala.collection.mutable.ArrayBuffer
-
 import subatomic.Discover.MarkdownDocument
 import subatomic.builders._
 import subatomic.builders.librarysite.LibrarySite.Navigation
-import subatomic.search.Document
-import subatomic.search.Section
 
-import com.vladsch.flexmark.ast.FencedCodeBlock
-import com.vladsch.flexmark.ast.Heading
 import com.vladsch.flexmark.ext.anchorlink.AnchorLinkExtension
 import com.vladsch.flexmark.ext.yaml.front.matter.YamlFrontMatterExtension
-import com.vladsch.flexmark.ext.yaml.front.matter.YamlFrontMatterNode
-import com.vladsch.flexmark.html.renderer.HeaderIdGenerator
-import com.vladsch.flexmark.util.ast.Node
-import com.vladsch.flexmark.util.ast.TextContainer
 
 case class LibrarySite(
     contentRoot: os.Path,
@@ -43,7 +33,7 @@ case class LibrarySite(
     copyright: Option[String] = None,
     githubUrl: Option[String] = None,
     tagline: Option[String] = None,
-    customTemplate: Option[Template] = None,
+    customTemplate: (LibrarySite, Linker) => Template = (s, l) => new Default(s, l),
     links: Vector[(String, String)] = Vector.empty,
     override val highlightJS: HighlightJS = HighlightJS.default,
     search: Boolean = true
@@ -73,15 +63,19 @@ object LibrarySite {
         case Left(value) =>
           println(value)
           sys.exit(-1)
-        case Right(buildConfig) =>
+        case Right(buildConfig: BuildConfig) =>
           createSite(
             config,
             buildConfig,
             extra _
           )
+
+        case Right(search: SearchConfig) =>
+          testSearch(config, search)
       }
     }
   }
+
   case class Navigation(
       topLevel: Vector[NavLink],
       sameLevel: Option[Vector[NavLink]]
@@ -107,12 +101,8 @@ object LibrarySite {
 
   }
 
-  def createSite(
-      siteConfig: LibrarySite,
-      buildConfig: cli.Config,
-      extra: Site[LibrarySite.Doc] => Site[LibrarySite.Doc]
-  ) = {
-    val content: Vector[(SitePath, Doc)] = Discover
+  def discoverContent(siteConfig: LibrarySite) = {
+    Discover
       .someMarkdown(siteConfig.contentRoot) {
         case MarkdownDocument(path, filename, attributes) =>
           val id = attributes.optionalOne("id").getOrElse(filename)
@@ -144,19 +134,30 @@ object LibrarySite {
       .toVector
       .sortBy(_._1 == SiteRoot / "index.html")
       .reverse
+  }
 
-    val markdown = Markdown(
+  def markdownParser(siteConfig: LibrarySite) = {
+    Markdown(
       RelativizeLinksExtension(siteConfig.base.toRelPath),
       YamlFrontMatterExtension.create(),
       AnchorLinkExtension.create()
     )
+  }
+
+  def createSite(
+      siteConfig: LibrarySite,
+      buildConfig: cli.BuildConfig,
+      extra: Site[LibrarySite.Doc] => Site[LibrarySite.Doc]
+  ) = {
+
+    val content  = discoverContent(siteConfig)
+    val markdown = markdownParser(siteConfig)
 
     val linker = new Linker(content, siteConfig.base)
 
     val navigation = createNavigation(linker, content.map(_._2))
 
-    val template =
-      siteConfig.customTemplate.getOrElse(Default(siteConfig, linker))
+    val template = siteConfig.customTemplate(siteConfig, linker)
 
     val mdocProcessor =
       if (!buildConfig.disableMdoc)
@@ -176,81 +177,6 @@ object LibrarySite {
 
       Page(renderedHtml)
     }
-
-    def extractMarkdownSections(documentTitle: String, baseUrl: String, p: os.Path): Vector[Section] = {
-      type Result = Either[
-        (String, String),
-        String
-      ]
-
-      val document = markdown.read(p)
-
-      val generator = new HeaderIdGenerator.Factory().create()
-
-      generator.generateIds(document)
-
-      val sect = markdown
-        .recursiveCollect[Result](document) {
-          case head: Heading =>
-            markdown.Collector.Collect(Seq(Left(head.getText().toStringOrNull() -> head.getAnchorRefId())))
-          case t: TextContainer =>
-            markdown.Collector.Collect(Seq(Right(t.getChars().toStringOrNull())))
-          case _: FencedCodeBlock | _: YamlFrontMatterNode => markdown.Collector.Skip
-          case _: Node                                     => markdown.Collector.Recurse()
-        }
-
-      var currentSection: String => Section = Section(documentTitle, None, _)
-
-      val sections = ArrayBuffer[Section]()
-
-      val collectedText = new StringBuilder
-
-      sect.foreach {
-        case Left((title, id)) =>
-          sections.append(currentSection(collectedText.result()))
-          collectedText.clear()
-          currentSection = Section(title, Some(baseUrl + s"#$id"), _)
-        case Right(content) =>
-          collectedText.append(content + "\n")
-      }
-
-      if (collectedText.nonEmpty) sections.append(currentSection(collectedText.result()))
-
-      sections.toVector
-    }
-
-    lazy val idx = subatomic.search.Indexer
-      .default(content)
-      .processSome {
-        case (_, doc) =>
-          Document(
-            doc.title,
-            linker.find(doc),
-            extractMarkdownSections(doc.title, linker.find(doc), doc.path)
-          )
-      }
-
-    val addSearchIndex: Site[Doc] => Site[Doc] = if (siteConfig.search) {
-
-      val indexJson = idx.asJsonString
-
-      val lines = indexJson.grouped(500).map(_.replace("'", "\\'")).map(str => s"'${str}'").mkString(",\n")
-
-      val tmpFile = os.temp {
-        s"""
-        var ln = [$lines];var SearchIndexText = ln.join('')
-        """
-      }
-
-      val tmpFileJS = os.temp(search.SearchFrontendPack.fullJS)
-
-      site =>
-        site
-          .addCopyOf(SiteRoot / "assets" / "search-index.js", tmpFile)
-          .addCopyOf(SiteRoot / "assets" / "search.js", tmpFileJS)
-          .addPage(SiteRoot / "assets" / "subatomic-search.css", BuilderTemplate.searchCSS)
-
-    } else identity
 
     val mdocPageRenderer: Processor[Doc, SiteAsset] = mdocProcessor
       .map { mdocResult =>
@@ -273,23 +199,34 @@ object LibrarySite {
           }
       }
 
-    def addAllAssets(site: Site[Doc]) = {
-      siteConfig.assetsRoot match {
-        case Some(path) => site.copyAll(path, SiteRoot / "assets", siteConfig.assetsFilter)
-        case None       => site
-      }
+    val builderSteps = new BuilderSteps(markdown)
+
+    val steps = List[Site[Doc] => Site[Doc]](
+      builderSteps.addSearchIndex[Doc](linker, doc => BuilderSteps.SearchableDocument(doc.title, doc.path), content),
+      builderSteps.addAllAssets[Doc](siteConfig.assetsRoot, siteConfig.assetsFilter),
+      extra
+    )
+
+    val process = steps.foldLeft(identity[Site[Doc]] _) { case (step, next) => step andThen next }
+
+    process(baseSite).buildAt(buildConfig.destination, buildConfig.overwrite)
+  }
+
+  def testSearch(siteConfig: LibrarySite, searchConfig: cli.SearchConfig) = {
+    val content = discoverContent(siteConfig)
+
+    val linker   = new Linker(content, siteConfig.base)
+    val markdown = markdownParser(siteConfig)
+
+    val builderSteps = new BuilderSteps(markdown)
+
+    val idx =
+      builderSteps.buildSearchIndex[Doc](linker, doc => BuilderSteps.SearchableDocument(doc.title, doc.path))(content)
+
+    searchConfig.mode match {
+      case cli.Interactive => subatomic.search.Search.cli(idx, searchConfig.debug)
+      case cli.Query(q)    => subatomic.search.Search.query(idx, q, searchConfig.debug)
     }
-
-    if (siteConfig.search && buildConfig.testSearch.isDefined) {
-      buildConfig.testSearch match {
-        case Some(cli.Interactive) => subatomic.search.Search.cli(idx)
-        case Some(cli.Query(q))    => subatomic.search.Search.query(idx, q)
-        case None                  =>
-      }
-
-    } else
-      extra(addSearchIndex(addAllAssets(baseSite)))
-        .buildAt(buildConfig.destination, buildConfig.overwrite)
   }
 }
 
