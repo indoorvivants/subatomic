@@ -5,9 +5,9 @@ import cats.Show
 import org.scalacheck.Gen
 import weaver.PureIOSuite
 import weaver.SimpleMutableIOSuite
-import weaver.scalacheck.IOCheckers
+import weaver.scalacheck.Checkers
 
-object CharTreeTests extends SimpleMutableIOSuite with IOCheckers {
+object CharTreeTests extends SimpleMutableIOSuite with Checkers {
   override def maxParallelism: Int = 1
 
   val MostCommonEnglishBigrams =
@@ -39,7 +39,7 @@ object CharTreeTests extends SimpleMutableIOSuite with IOCheckers {
   implicit val showDs: Show[(CharTree, List[(TermName, TermIdx)])] =
     Show.fromToString
 
-  simpleTest("CharTree build and retrieval") {
+  test("CharTree build and retrieval") {
     forall(gen) {
       case ((chartree, dataset)) =>
         val resolutions = dataset.map {

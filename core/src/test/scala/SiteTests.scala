@@ -46,7 +46,7 @@ object SiteTests extends weaver.IOSuite {
     val destination = os.temp.dir()
     site.buildAt(destination) // should succeed
 
-    expect(Try(site.buildAt(destination)).isFailure) // second time it fails
+    IO(expect(Try(site.buildAt(destination)).isFailure)) // second time it fails
   }
 
   test("overwrites when explicitly told to") { (_, log) =>
@@ -58,7 +58,7 @@ object SiteTests extends weaver.IOSuite {
     val destination = os.temp.dir()
     site.buildAt(destination) // should succeed
 
-    expect(Try(site.buildAt(destination, overwrite = true)).isSuccess) // second time it fails
+    IO(expect(Try(site.buildAt(destination, overwrite = true)).isSuccess)) // second time it fails
   }
 
   test("copyAll - recursively copying assets") { (res, log) =>
@@ -94,7 +94,7 @@ object SiteTests extends weaver.IOSuite {
     }
   }
 
-  test("addProcessed - delays evaluation") { (res, log) =>
+  test("adrdProcessed - delays evaluation") { (res, log) =>
     var evaluations = 0
 
     val processor = Processor.simple[String, SiteAsset](stuff => { evaluations += 1; Page(stuff) })

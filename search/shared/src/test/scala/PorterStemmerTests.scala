@@ -5,9 +5,9 @@ import cats.Show
 import org.scalacheck.Gen
 import weaver.PureIOSuite
 import weaver.SimpleMutableIOSuite
-import weaver.scalacheck.IOCheckers
+import weaver.scalacheck.Checkers
 
-object PorterStemmerTests extends SimpleMutableIOSuite with IOCheckers {
+object PorterStemmerTests extends SimpleMutableIOSuite with Checkers {
   import PorterStemmer.stem
   pureTest("stems?") {
     expect.all(
