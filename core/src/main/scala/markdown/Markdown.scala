@@ -20,11 +20,15 @@ import scala.annotation.tailrec
 import scala.collection.mutable.ArrayBuffer
 import scala.jdk.CollectionConverters._
 
+import com.vladsch.flexmark.ast.FencedCodeBlock
 import com.vladsch.flexmark.ast.Heading
+import com.vladsch.flexmark.ext.yaml.front.matter.YamlFrontMatterNode
 import com.vladsch.flexmark.html.HtmlRenderer
+import com.vladsch.flexmark.html.renderer.HeaderIdGenerator
 import com.vladsch.flexmark.parser.Parser
 import com.vladsch.flexmark.util.ast.Document
 import com.vladsch.flexmark.util.ast.Node
+import com.vladsch.flexmark.util.ast.TextContainer
 import com.vladsch.flexmark.util.data.MutableDataSet
 import com.vladsch.flexmark.util.misc.Extension
 
@@ -113,8 +117,51 @@ class Markdown(extensions: List[Extension]) {
 
   def recursiveCollect[A](content: String)(f: PartialFunction[Node, Collector[A]]): Vector[A] =
     recursiveCollect(parser.parse(content))(f)
+  import Markdown.Section
+
+  def extractMarkdownSections(documentTitle: String, baseUrl: String, p: os.Path): Vector[Section] = {
+    type Result = Either[
+      (String, String),
+      String
+    ]
+
+    val document = read(p)
+
+    val generator = new HeaderIdGenerator.Factory().create()
+
+    generator.generateIds(document)
+
+    val sect = recursiveCollect[Result](document) {
+      case head: Heading =>
+        Collector.Collect(Seq(Left(head.getText().toStringOrNull() -> head.getAnchorRefId())))
+      case t: TextContainer =>
+        Collector.Collect(Seq(Right(t.getChars().toStringOrNull())))
+      case _: FencedCodeBlock | _: YamlFrontMatterNode => Collector.Skip
+      case _: Node                                     => Collector.Recurse()
+    }
+
+    var currentSection: String => Section = Section(documentTitle, None, _)
+
+    val sections = ArrayBuffer[Section]()
+
+    val collectedText = new StringBuilder
+
+    sect.foreach {
+      case Left((title, id)) =>
+        sections.append(currentSection(collectedText.result()))
+        collectedText.clear()
+        currentSection = Section(title, Some(baseUrl + s"#$id"), _)
+      case Right(content) =>
+        collectedText.append(content + "\n")
+    }
+
+    if (collectedText.nonEmpty) sections.append(currentSection(collectedText.result()))
+
+    sections.toVector
+  }
 }
 
 object Markdown {
+  case class Section(title: String, url: Option[String], text: String)
   def apply(extensions: Extension*) = new Markdown(extensions.toList)
 }

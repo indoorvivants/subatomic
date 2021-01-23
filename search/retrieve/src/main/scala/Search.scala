@@ -135,28 +135,34 @@ object Algorithms {
       term: TermIdx,
       document: Map[TermIdx, TermFrequency]
   ) = {
-    val maxFreq = document.maxBy(_._2.value.toDouble)._2.value.toDouble
-    val freq    = document(term).value.toDouble
+    if (document.isEmpty || !document.contains(term)) 0.0
+    else {
+      val maxFreq = document.maxBy(_._2.value.toDouble)._2.value.toDouble
+      val freq    = document(term).value.toDouble
 
-    0.5 + 0.5 * (freq / maxFreq)
+      0.5 + 0.5 * (freq / maxFreq)
+    }
   }
 
   def inverse_Document_Frequency(
       numDocuments: CollectionSize,
       globalTermFrequency: GlobalTermFrequency
   ) = {
-    math.log(numDocuments.value.toDouble / (globalTermFrequency.value.toDouble + 1.0))
+    if (globalTermFrequency.value == numDocuments.value)
+      math.log(numDocuments.value.toDouble / (numDocuments.value.toDouble + 1.0))
+    else
+      math.log(numDocuments.value.toDouble / globalTermFrequency.value.toDouble)
   }
 }
 
 object Search {
-  def query(idx: SearchIndex, q: String) = {
-    val search  = new Search(idx, true)
+  def query(idx: SearchIndex, q: String, debug: Boolean) = {
+    val search  = new Search(idx, debug)
     val results = search.string(q)
     renderResults(results)
   }
-  def cli(idx: SearchIndex) = {
-    val search = new Search(idx, true)
+  def cli(idx: SearchIndex, debug: Boolean) = {
+    val search = new Search(idx, debug)
 
     var cmd = ""
 
