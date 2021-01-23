@@ -31,7 +31,7 @@ object Docs extends LibrarySite.App {
   def config =
     LibrarySite(
       name = "Subatomic",
-      contentRoot = os.pwd / "docs" / "pages",
+      contentRoot = os.pwd / "docs" / "pages" / "internals",
       assetsRoot = Some(os.pwd / "docs" / "assets"),
       copyright = Some("© 2020 Anton Sviridov"),
       githubUrl = Some("https://github.com/indoorvivants/subatomic"),
@@ -55,7 +55,7 @@ And running the script will provide a detailed overview of
 the static files being created:
 
 ```bash
-$ amm subatomic-site.sc --disable-mdoc
+$ amm subatomic-site.sc build --disable-mdoc
 ```
 
 ```scala mdoc:passthrough

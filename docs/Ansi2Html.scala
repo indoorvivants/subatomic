@@ -133,7 +133,7 @@ object RunSite {
       override def config = base.config
     }
 
-    newSite.main(arguments.toArray)
+    newSite.main(("build" +: arguments).toArray)
 
     sb.result()
 

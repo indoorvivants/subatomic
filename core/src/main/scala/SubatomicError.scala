@@ -44,4 +44,16 @@ object SubatomicError {
     | .buildAt(destination, ${Logger._bold("overwrite = true")})
       """.trim.stripMargin
     )
+  def mdocInvocationError(reason: String, files: Seq[String]) =
+    SubatomicError(s"""
+   | Failed to invoke Mdoc
+   | 
+   | $reason
+   |
+   | The following files were passed to mdoc:
+   | 
+   | ${files.mkString("\n")}
+   |
+   | Not sure I can provide better error than that :(
+   """.trim.stripMargin)
 }

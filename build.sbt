@@ -305,7 +305,7 @@ ThisBuild / commands += Command.command("ci") { st =>
     "headerCheck" :: st
 }
 
-addCommandAlias("buildSite", "docs2_12/run")
+addCommandAlias("buildSite", "docs2_12/run build")
 
 ThisBuild / concurrentRestrictions ++= {
   if (sys.env.contains("CI")) Seq(Tags.limitAll(2)) else Seq.empty

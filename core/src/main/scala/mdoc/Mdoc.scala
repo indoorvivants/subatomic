@@ -158,13 +158,21 @@ class Mdoc(
       fetchCp(dependencies) + inheritedClasspath.map(":" + _).getOrElse("")
     )
 
-    os
-      .proc(base ++ args)
-      .call(
-        pwd.getOrElse(tmpLocation),
-        stderr = ProcessOutput.Readlines(logger.at("ERR")._println),
-        stdout = ProcessOutput.Readlines(logger.at("OUT")._println)
-      )
+    scala.util.Try(
+      os
+        .proc(base ++ args)
+        .call(
+          pwd.getOrElse(tmpLocation),
+          stderr = ProcessOutput.Readlines(logger.at("ERR")._println),
+          stdout = ProcessOutput.Readlines(logger.at("OUT")._println)
+        )
+    ) match {
+      case scala.util.Success(_) =>
+      case scala.util.Failure(ex) =>
+        throw SubatomicError.mdocInvocationError(ex.toString(), files.map(_.toString()))
+    }
+
+    os.write.over(os.pwd / "mdoc-invocation.txt", (base ++ args).mkString(" "))
 
     filesWithTargets
   }
@@ -215,6 +223,7 @@ class Mdoc(
       f.toString()
     ) ++ variablesStr
 
+    println("I'm going stuff")
     os
       .proc(args)
       .call(
