@@ -33,11 +33,11 @@ class BuilderSteps(markdown: Markdown) {
       }
     }
 
-  def buildSearchIndex[Doc](linker: Linker, d: Doc => SearchableDocument)(
+  def buildSearchIndex[Doc](linker: Linker, d: PartialFunction[Doc, SearchableDocument])(
       content: Vector[(SitePath, Doc)]
   ): subatomic.search.SearchIndex = {
     subatomic.search.Indexer.default(content).processSome {
-      case (_, raw) =>
+      case (_, raw) if d.isDefinedAt(raw) =>
         val doc = d(raw)
         val markdownSections =
           markdown.extractMarkdownSections(doc.title, linker.find(raw), doc.path)
@@ -51,7 +51,7 @@ class BuilderSteps(markdown: Markdown) {
 
   def addSearchIndex[Doc](
       linker: Linker,
-      d: Doc => BuilderSteps.SearchableDocument,
+      d: PartialFunction[Doc, BuilderSteps.SearchableDocument],
       content: Vector[(SitePath, Doc)]
   ): Site[Doc] => Site[Doc] = {
 

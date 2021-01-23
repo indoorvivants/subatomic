@@ -202,7 +202,8 @@ object LibrarySite {
     val builderSteps = new BuilderSteps(markdown)
 
     val steps = List[Site[Doc] => Site[Doc]](
-      builderSteps.addSearchIndex[Doc](linker, doc => BuilderSteps.SearchableDocument(doc.title, doc.path), content),
+      builderSteps
+        .addSearchIndex[Doc](linker, { case doc => BuilderSteps.SearchableDocument(doc.title, doc.path) }, content),
       builderSteps.addAllAssets[Doc](siteConfig.assetsRoot, siteConfig.assetsFilter),
       extra
     )
@@ -221,7 +222,8 @@ object LibrarySite {
     val builderSteps = new BuilderSteps(markdown)
 
     val idx =
-      builderSteps.buildSearchIndex[Doc](linker, doc => BuilderSteps.SearchableDocument(doc.title, doc.path))(content)
+      builderSteps
+        .buildSearchIndex[Doc](linker, { case doc => BuilderSteps.SearchableDocument(doc.title, doc.path) })(content)
 
     searchConfig.mode match {
       case cli.Interactive => subatomic.search.Search.cli(idx, searchConfig.debug)

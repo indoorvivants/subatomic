@@ -173,7 +173,7 @@ will produce resulting HTML as a String.
 
 Take a look at the whole function, it's excessively commented:
 
-```scala mdoc
+```scala mdoc:silent
 def createSite(
     contentRoot: os.Path = os.pwd,
     siteRoot: SitePath

@@ -84,6 +84,7 @@ object Blog {
           )
         case Right(search: SearchConfig) =>
           println(search)
+        // testSearch(config, search)
       }
     }
   }
@@ -103,12 +104,14 @@ object Blog {
     }
   }
 
-  def createSite(
-      siteConfig: Blog,
-      buildConfig: cli.BuildConfig,
-      extra: Site[Doc] => Site[Doc]
-  ): Unit = {
-    val posts = Discover
+  def markdownParser(siteConfig: Blog) =
+    Markdown(
+      RelativizeLinksExtension(siteConfig.base.toRelPath),
+      YamlFrontMatterExtension.create()
+    )
+
+  def discoverContent(siteConfig: Blog) = {
+    Discover
       .someMarkdown(siteConfig.contentRoot) {
         case MarkdownDocument(path, filename, attributes) =>
           val date        = LocalDate.parse(attributes.requiredOne("date"))
@@ -135,6 +138,15 @@ object Blog {
       }
       .toVector
 
+  }
+
+  def createSite(
+      siteConfig: Blog,
+      buildConfig: cli.BuildConfig,
+      extra: Site[Doc] => Site[Doc]
+  ): Unit = {
+    val posts = discoverContent(siteConfig)
+
     val tagPages = posts
       .map(_._2)
       .collect {
@@ -150,11 +162,6 @@ object Blog {
 
     val content = posts ++ tagPages
 
-    val markdown = Markdown(
-      RelativizeLinksExtension(siteConfig.base.toRelPath),
-      YamlFrontMatterExtension.create()
-    )
-
     val linker = new Linker(content, siteConfig.base)
 
     val navigation = createNavigation(linker, content.map(_._2))
@@ -166,6 +173,8 @@ object Blog {
         tagPages.map(_._2)
       )
     )
+
+    val markdown = markdownParser(siteConfig)
 
     val mdocProcessor =
       if (!buildConfig.disableMdoc)
@@ -229,47 +238,23 @@ object Blog {
       site.addPage(SiteRoot / "archive.html", template.archivePage(blogPosts).render)
     }
 
-    def addAllAssets(site: Site[Doc]) = {
-      siteConfig.assetsRoot match {
-        case Some(path) => site.copyAll(path, SiteRoot / "assets")
-        case None       => site
-      }
-    }
+    val builderSteps = new BuilderSteps(markdown)
 
-    val addSearchIndex: Site[Doc] => Site[Doc] = if (siteConfig.search) {
-      import subatomic.search._
-      val idx = subatomic.search.Indexer
-        .default(content)
-        .processSome {
-          case (_, post: Post) =>
-            Document(
-              post.title,
-              linker.find(post),
-              Vector(Section(post.title, url = None, content = os.read(post.path)))
-            )
-        }
-        .asJsonString
+    val steps = List[Site[Doc] => Site[Doc]](
+      builderSteps.addSearchIndex[Doc](
+        linker,
+        {
+          case p: Post => BuilderSteps.SearchableDocument(p.title, p.path)
+        },
+        content
+      ),
+      builderSteps.addAllAssets[Doc](siteConfig.assetsRoot, siteConfig.assetsFilter),
+      extra
+    )
 
-      val lines = idx.grouped(500).map(_.replace("'", "\\'")).map(str => s"'${str}'").mkString(",\n")
+    val process = steps.foldLeft(identity[Site[Doc]] _) { case (step, next) => step andThen next }
 
-      val tmpFile = os.temp {
-        s"""
-        var ln = [$lines];var SearchIndexText = ln.join('')
-        """
-      }
-
-      val tmpFileJS = os.temp(search.SearchFrontendPack.fullJS)
-
-      site =>
-        site
-          .addCopyOf(SiteRoot / "assets" / "search-index.js", tmpFile)
-          .addCopyOf(SiteRoot / "assets" / "search.js", tmpFileJS)
-          .addPage(SiteRoot / "assets" / "subatomic-search.css", BuilderTemplate.searchCSS)
-
-    } else identity
-
-    val extraSteps: Site[Doc] => Site[Doc] = site =>
-      extra(addSearchIndex(addAllAssets(addIndexPage(addArchivePage(site)))))
+    val extraSteps: Site[Doc] => Site[Doc] = site => process(addIndexPage(addArchivePage(site)))
 
     extraSteps(baseSite).buildAt(buildConfig.destination, buildConfig.overwrite)
   }
