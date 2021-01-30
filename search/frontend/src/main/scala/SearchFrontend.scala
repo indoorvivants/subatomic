@@ -45,7 +45,6 @@ class SearchFrontend private (idx: SearchIndex) {
         display <-- $results.map(_.entries.nonEmpty).map(if (_) "block" else "none"),
         ul(
           children <-- $results.map { results =>
-            println(results)
             results.entries.map {
               case (ResultsEntry(document, all @ (oneSection :: others)), _) =>
                 if (oneSection.title == document.title && oneSection.url == document.url)

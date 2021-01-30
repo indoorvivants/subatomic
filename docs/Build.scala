@@ -17,6 +17,8 @@
 package subatomic
 package docs
 
+import java.time.LocalDate
+
 import subatomic.builders._
 import subatomic.builders.librarysite._
 
@@ -26,13 +28,15 @@ object Docs extends LibrarySite.App {
       .addCopyOf(SiteRoot / "CNAME", os.pwd / "docs" / "assets" / "CNAME")
   }
 
+  val currentYear = LocalDate.now().getYear()
+
   def config =
     LibrarySite(
       name = "Subatomic",
       contentRoot = os.pwd / "docs" / "pages",
       assetsRoot = Some(os.pwd / "docs" / "assets"),
       assetsFilter = _.baseName != "CNAME",
-      copyright = Some("© 2020 Anton Sviridov"),
+      copyright = Some(s"© 2020-$currentYear Anton Sviridov"),
       tagline = Some("Watch this space, but please don't use it yet"),
       githubUrl = Some("https://github.com/indoorvivants/subatomic"),
       highlightJS = HighlightJS.default.copy(

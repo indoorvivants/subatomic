@@ -150,7 +150,8 @@ object LibrarySite {
       extra: Site[LibrarySite.Doc] => Site[LibrarySite.Doc]
   ) = {
 
-    val content  = discoverContent(siteConfig)
+    val content = discoverContent(siteConfig)
+
     val markdown = markdownParser(siteConfig)
 
     val linker = new Linker(content, siteConfig.base)
@@ -167,6 +168,7 @@ object LibrarySite {
       else {
         Processor.simple[Doc, MdocResult[Doc]](doc => MdocResult(doc, doc.path))
       }
+
     def renderMarkdownPage(
         title: String,
         file: os.Path,

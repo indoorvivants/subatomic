@@ -83,8 +83,7 @@ object Blog {
             extra _
           )
         case Right(search: SearchConfig) =>
-          println(search)
-        // testSearch(config, search)
+          testSearch(config, search)
       }
     }
   }
@@ -110,8 +109,8 @@ object Blog {
       YamlFrontMatterExtension.create()
     )
 
-  def discoverContent(siteConfig: Blog) = {
-    Discover
+  def discoverContent(siteConfig: Blog): Vector[(SitePath, Doc)] = {
+    val posts = Discover
       .someMarkdown(siteConfig.contentRoot) {
         case MarkdownDocument(path, filename, attributes) =>
           val date        = LocalDate.parse(attributes.requiredOne("date"))
@@ -138,15 +137,6 @@ object Blog {
       }
       .toVector
 
-  }
-
-  def createSite(
-      siteConfig: Blog,
-      buildConfig: cli.BuildConfig,
-      extra: Site[Doc] => Site[Doc]
-  ): Unit = {
-    val posts = discoverContent(siteConfig)
-
     val tagPages = posts
       .map(_._2)
       .collect {
@@ -160,7 +150,15 @@ object Blog {
           SiteRoot / "tags" / s"$tag.html" -> TagPage(tag, posts.map(_._2).toList)
       }
 
-    val content = posts ++ tagPages
+    posts ++ tagPages
+  }
+
+  def createSite(
+      siteConfig: Blog,
+      buildConfig: cli.BuildConfig,
+      extra: Site[Doc] => Site[Doc]
+  ): Unit = {
+    val content = discoverContent(siteConfig)
 
     val linker = new Linker(content, siteConfig.base)
 
@@ -170,7 +168,9 @@ object Blog {
       Default(
         siteConfig,
         linker,
-        tagPages.map(_._2)
+        content.map(_._2).collect {
+          case t: TagPage => t
+        }
       )
     )
 
@@ -257,6 +257,24 @@ object Blog {
     val extraSteps: Site[Doc] => Site[Doc] = site => process(addIndexPage(addArchivePage(site)))
 
     extraSteps(baseSite).buildAt(buildConfig.destination, buildConfig.overwrite)
+  }
+
+  def testSearch(siteConfig: Blog, searchConfig: cli.SearchConfig) = {
+    val content = discoverContent(siteConfig)
+
+    val linker   = new Linker(content, siteConfig.base)
+    val markdown = markdownParser(siteConfig)
+
+    val builderSteps = new BuilderSteps(markdown)
+
+    val idx =
+      builderSteps
+        .buildSearchIndex[Doc](linker, { case p: Post => BuilderSteps.SearchableDocument(p.title, p.path) })(content)
+
+    searchConfig.mode match {
+      case cli.Interactive => subatomic.search.Search.cli(idx, searchConfig.debug)
+      case cli.Query(q)    => subatomic.search.Search.query(idx, q, searchConfig.debug)
+    }
   }
 }
 
