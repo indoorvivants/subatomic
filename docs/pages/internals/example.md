@@ -58,8 +58,6 @@ import $ivy.`com.lihaoyi::scalatags:0.9.1`
 
 ```scala mdoc
 import subatomic._
-
-import ammonite.ops._
 ```
 
 ## Defining content models
