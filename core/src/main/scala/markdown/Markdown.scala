@@ -34,11 +34,11 @@ import com.vladsch.flexmark.util.misc.Extension
 
 class Markdown(extensions: List[Extension]) {
   private val opts = extensions match {
-    case l if l.nonEmpty =>
+    case _ :: _ =>
       new MutableDataSet()
         .set(
           Parser.EXTENSIONS,
-          l.asJava
+          extensions.asJava
         )
     case Nil => new MutableDataSet()
   }

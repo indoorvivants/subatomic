@@ -1,11 +1,11 @@
 package subatomic
 package search
 
-import weaver.SimpleMutableIOSuite
-import weaver.scalacheck.Checkers
 import org.scalacheck.Gen
+import org.scalacheck.Prop._
 
-object SearchTests extends SimpleMutableIOSuite with Checkers {
+class SearchSuite extends munit.FunSuite with munit.ScalaCheckSuite {
+
   val content = Vector(
     "/"            -> "lorem ipsum dolor amet lorem",
     "/hello"       -> "lorem dolor",
@@ -33,36 +33,37 @@ object SearchTests extends SimpleMutableIOSuite with Checkers {
     search.string(query).entries.toMap.find(_._1.document.url == documentUrl).map(_._2).getOrElse(-10000.0)
   }
 
-  pureTest("search by one word") {
-    expect(
-      foundUrls("lorem") == Set(
+  test("search by one word") {
+    assertEquals(
+      foundUrls("lorem"),
+      Set(
         "/",
         "/hello"
       )
     )
   }
 
-  pureTest("search by two words") {
-    expect(
-      foundUrls("ipsum amet") == Set(
+  test("search by two words") {
+    assertEquals(
+      foundUrls("ipsum amet"),
+      Set(
         "/",
         "/hello/world"
       )
     )
   }
 
-  pureTest("ranking") {
-    expect(
+  test("ranking") {
+    assert(
       ranking("amet", "/") > ranking("amet", "/hello")
     )
   }
 
-  test("results are always in the correct order") {
-    forall(queryGen) { query =>
+  property("results are always in the correct order") {
+    forAll(queryGen) { query =>
       val results = search.string(query)
 
-      expect(results.entries.sortBy(-1 * _._2) == results.entries)
+      assertEquals(results.entries.sortBy(-1 * _._2), results.entries)
     }
   }
-
 }

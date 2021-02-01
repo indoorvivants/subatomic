@@ -11,7 +11,8 @@ lazy val root = project
       searchShared.projectRefs,
       searchFrontend.projectRefs,
       searchFrontendPack.projectRefs,
-      searchRetrieve.projectRefs
+      searchRetrieve.projectRefs,
+      searchCli.projectRefs
     ).flatten: _*
   )
   .settings(skipPublish)
@@ -23,9 +24,9 @@ lazy val core = projectMatrix
     libraryDependencies ++= Seq(
       "io.get-coursier"        %% "coursier"                % "2.0.0-RC6-24",
       "com.vladsch.flexmark"    % "flexmark-all"            % "0.62.2",
-      "com.lihaoyi"            %% "ammonite-ops"            % "2.2.0",
+      "com.lihaoyi"            %% "os-lib"                  % "0.7.2",
       "io.lemonlabs"           %% "scala-uri"               % "3.0.0",
-      "org.scala-lang.modules" %% "scala-collection-compat" % "2.2.0"
+      "org.scala-lang.modules" %% "scala-collection-compat" % "2.4.1"
     )
   )
   .jvmPlatform(scalaVersions = AllScalaVersions)
@@ -47,19 +48,10 @@ lazy val builders =
     .enablePlugins(BuildInfoPlugin)
     .settings(buildInfoSettings)
 
-lazy val searchIndex =
-  projectMatrix
-    .in(file("search/indexer"))
-    .dependsOn(searchShared)
-    .settings(name := "subatomic-search-indexer")
-    .jvmPlatform(AllScalaVersions)
-    .jsPlatform(AllScalaVersions, batchModeOnCI)
-    .settings(testSettings)
-    .settings(buildInfoSettings)
-
 lazy val searchAll = project
   .aggregate(
     (searchIndex.projectRefs ++
+      searchCli.projectRefs ++
       searchShared.projectRefs ++
       searchRetrieve.projectRefs ++
       searchFrontendPack.projectRefs): _*
@@ -102,7 +94,7 @@ lazy val searchFrontendPack = projectMatrix
 lazy val searchFrontend =
   projectMatrix
     .in(file("search/frontend"))
-    .dependsOn(searchRetrieve, searchIndex % "compile->test")
+    .dependsOn(searchRetrieve, searchIndex)
     .settings(name := "subatomic-search-frontend")
     .settings(
       libraryDependencies += "com.raquo" %%% "laminar" % "0.11.0",
@@ -113,16 +105,45 @@ lazy val searchFrontend =
     .settings(buildInfoSettings)
     .settings(batchModeOnCI)
 
+lazy val searchCli =
+  projectMatrix
+    .in(file("search/cli"))
+    .dependsOn(searchIndex, searchRetrieve)
+    .settings(
+      name := "subatomic-search-cli",
+      libraryDependencies += "com.lihaoyi" %%% "os-lib" % "0.7.2",
+      scalacOptions += "-Wconf:cat=unused-imports:wv",
+      scalacOptions += "-Wconf:cat=unused-imports&site=subatomic.search.cli.SearchCLI:s,any:wv",
+      libraryDependencies += "org.scala-lang.modules" %% "scala-collection-compat" % "2.4.1"
+    )
+    .enablePlugins(JavaAppPackaging)
+    .jvmPlatform(AllScalaVersions)
+    .nativePlatform(AllScalaVersions)
+    .settings(testSettings)
+    .settings(buildInfoSettings)
+
+lazy val searchIndex =
+  projectMatrix
+    .in(file("search/indexer"))
+    .dependsOn(searchShared)
+    .settings(name := "subatomic-search-indexer")
+    .jvmPlatform(AllScalaVersions)
+    .jsPlatform(AllScalaVersions, batchModeOnCI)
+    .nativePlatform(AllScalaVersions)
+    .settings(munitTestSettings)
+    .settings(buildInfoSettings)
+
 lazy val searchRetrieve =
   projectMatrix
     .in(file("search/retrieve"))
-    .dependsOn(searchIndex % "compile->test")
+    .dependsOn(searchIndex)
     .settings(
       name := "subatomic-search-retrieve"
     )
     .jvmPlatform(AllScalaVersions)
     .jsPlatform(AllScalaVersions, batchModeOnCI)
-    .settings(testSettings)
+    .nativePlatform(AllScalaVersions)
+    .settings(munitTestSettings)
     .settings(buildInfoSettings)
 
 lazy val searchShared =
@@ -130,11 +151,12 @@ lazy val searchShared =
     .in(file("search/shared"))
     .settings(
       name := "subatomic-search-shared",
-      libraryDependencies += "com.lihaoyi" %%% "upickle" % "1.2.2"
+      libraryDependencies += "com.lihaoyi" %%% "upickle" % "1.2.3"
     )
     .jvmPlatform(AllScalaVersions)
     .jsPlatform(AllScalaVersions, batchModeOnCI)
-    .settings(testSettings)
+    .nativePlatform(AllScalaVersions)
+    .settings(munitTestSettings)
     .settings(buildInfoSettings)
     .enablePlugins(BuildInfoPlugin)
     .settings(
@@ -213,13 +235,27 @@ lazy val plugin = projectMatrix
   )
   .enablePlugins(ScriptedPlugin, SbtPlugin)
 
+def ifNot[A](cond: Boolean, s: Seq[A]) = if (cond) Seq.empty else s
+
 lazy val testSettings =
   Seq(
-    libraryDependencies += "com.disneystreaming" %%% "weaver-cats"       % "0.6.0-M6" % Test,
-    libraryDependencies += "com.disneystreaming" %%% "weaver-scalacheck" % "0.6.0-M6" % Test,
+    libraryDependencies ++= ifNot(
+      virtualAxes.value.contains(VirtualAxis.native),
+      Seq(
+        "com.disneystreaming" %%% "weaver-cats"       % "0.6.0-M6" % Test,
+        "com.disneystreaming" %%% "weaver-scalacheck" % "0.6.0-M6" % Test
+      )
+    ),
     testFrameworks += new TestFramework("weaver.framework.CatsEffect"),
     scalacOptions.in(Test) ~= filterConsoleScalacOptions
   )
+
+lazy val munitTestSettings = Seq(
+  libraryDependencies += "org.scalameta" %%% "munit"            % "0.7.21" % Test,
+  libraryDependencies += "org.scalameta" %%% "munit-scalacheck" % "0.7.21" % Test,
+  testFrameworks += new TestFramework("munit.Framework"),
+  Test / scalaJSLinkerConfig ~= { _.withModuleKind(ModuleKind.CommonJSModule) }
+)
 
 lazy val skipPublish = Seq(
   skip in publish := true

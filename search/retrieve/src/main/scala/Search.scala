@@ -191,6 +191,7 @@ object Search {
           sections.foreach {
             case SectionEntry(title, _) =>
               println("   - " + title)
+              println()
           }
       }
   }

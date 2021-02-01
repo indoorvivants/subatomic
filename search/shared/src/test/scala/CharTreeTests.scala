@@ -1,14 +1,10 @@
 package subatomic
 package search
 
-import cats.Show
 import org.scalacheck.Gen
-import weaver.PureIOSuite
-import weaver.SimpleMutableIOSuite
-import weaver.scalacheck.Checkers
+import org.scalacheck.Prop._
 
-object CharTreeTests extends SimpleMutableIOSuite with Checkers {
-  override def maxParallelism: Int = 1
+class CharTreeTests extends munit.FunSuite with munit.ScalaCheckSuite {
 
   val MostCommonEnglishBigrams =
     ("th,en,ng,he,ed,of,in,to,al,er,it,de,an,ou,se," +
@@ -36,11 +32,8 @@ object CharTreeTests extends SimpleMutableIOSuite with Checkers {
 
   val seed = scala.util.Random.nextLong()
 
-  implicit val showDs: Show[(CharTree, List[(TermName, TermIdx)])] =
-    Show.fromToString
-
-  test("CharTree build and retrieval") {
-    forall(gen) {
+  property("CharTree build and retrieval") {
+    forAll(gen) {
       case ((chartree, dataset)) =>
         val resolutions = dataset.map {
           case (tn, tidx) =>
@@ -52,7 +45,7 @@ object CharTreeTests extends SimpleMutableIOSuite with Checkers {
             result.contains(expected)
         }
 
-        expect(notFound.isEmpty)
+        assert(notFound.isEmpty)
     }
   }
 }

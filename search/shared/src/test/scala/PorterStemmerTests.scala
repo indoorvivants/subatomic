@@ -1,19 +1,11 @@
 package subatomic
 package search
 
-import cats.Show
-import org.scalacheck.Gen
-import weaver.PureIOSuite
-import weaver.SimpleMutableIOSuite
-import weaver.scalacheck.Checkers
-
-object PorterStemmerTests extends SimpleMutableIOSuite with Checkers {
+class PorterStemmerTests extends munit.FunSuite {
   import PorterStemmer.stem
-  pureTest("stems?") {
-    expect.all(
-      stem("doing") == "do",
-      stem("interesting") == "interest",
-      stem("better") == "better"
-    )
+  test("stems?") {
+    assert(stem("doing") == "do")
+    assert(stem("interesting") == "interest")
+    assert(stem("better") == "better")
   }
 }
