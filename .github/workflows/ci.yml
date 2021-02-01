@@ -16,10 +16,16 @@ jobs:
       - uses: olafurpg/setup-scala@v10
         with:
           java-version: adopt@1.8
+      - name: Setup Scala Native environment
+        run: |
+            sudo apt-get update
+            sudo apt install clang
       - name: Test
         run: sbt ci
         env:
           JAVA_OPTS: "-XX:MaxMetaspaceSize=1g -Xms1g -Xmx4g -Xss2M -XX:+UseG1GC"
           JVM_OPTS: "-XX:MaxMetaspaceSize=1g -Xms1g -Xmx4g -Xss2M -XX:+UseG1GC"
+      - name: Native link
+        run: sbt nativeLink
       - name: Check site build
         run: sbt buildSite

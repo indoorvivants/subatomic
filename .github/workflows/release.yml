@@ -11,6 +11,10 @@ jobs:
       - uses: olafurpg/setup-scala@v10
       - uses: olafurpg/setup-gpg@v3
       - run: git fetch --unshallow
+      - name: Setup Scala Native environment
+        run: |
+            sudo apt-get update
+            sudo apt install clang
       - name: Test
         run: sbt ci
         env:
