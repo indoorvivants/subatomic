@@ -25,7 +25,7 @@ jobs:
         env:
           JAVA_OPTS: "-XX:MaxMetaspaceSize=1g -Xms1g -Xmx4g -Xss2M -XX:+UseG1GC"
           JVM_OPTS: "-XX:MaxMetaspaceSize=1g -Xms1g -Xmx4g -Xss2M -XX:+UseG1GC"
-      - name: Native link
-        run: sbt nativeLink
+      # - name: Native link
+      #   run: sbt nativeLink
       - name: Check site build
         run: sbt buildSite

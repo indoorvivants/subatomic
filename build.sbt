@@ -114,7 +114,7 @@ lazy val searchCli =
       libraryDependencies += "com.lihaoyi" %%% "os-lib" % "0.7.2",
       scalacOptions += "-Wconf:cat=unused-imports:wv",
       scalacOptions += "-Wconf:cat=unused-imports&site=subatomic.search.cli.SearchCLI:s,any:wv",
-      libraryDependencies += "org.scala-lang.modules" %% "scala-collection-compat" % "2.4.1"
+      libraryDependencies += "org.scala-lang.modules" %%% "scala-collection-compat" % "2.4.1"
     )
     .enablePlugins(JavaAppPackaging)
     .jvmPlatform(AllScalaVersions)
