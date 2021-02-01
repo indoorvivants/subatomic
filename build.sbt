@@ -48,19 +48,6 @@ lazy val builders =
     .enablePlugins(BuildInfoPlugin)
     .settings(buildInfoSettings)
 
-lazy val searchAll = project
-  .aggregate(
-    (searchIndex.projectRefs ++
-      searchCli.projectRefs ++
-      searchShared.projectRefs ++
-      searchRetrieve.projectRefs ++
-      searchFrontendPack.projectRefs): _*
-  )
-  .settings(
-    skip in publish := true,
-    skip in publishLocal := true
-  )
-
 lazy val searchFrontendPack = projectMatrix
   .in(file("search/pack"))
   .settings(name := "subatomic-search-frontend-pack")

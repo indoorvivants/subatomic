@@ -223,7 +223,6 @@ class Mdoc(
       f.toString()
     ) ++ variablesStr
 
-    println("I'm going stuff")
     os
       .proc(args)
       .call(
