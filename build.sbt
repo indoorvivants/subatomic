@@ -1,5 +1,7 @@
 import BuildSettings._
 
+scalaVersion := Scala_213
+
 lazy val root = project
   .aggregate(
     Seq(
@@ -284,6 +286,7 @@ lazy val buildInfoSettings = {
 
 inThisBuild(
   List(
+    scalaVersion := Scala_213,
     scalafixDependencies += "com.github.liancheng" %% "organize-imports" % "0.4.0",
     semanticdbEnabled := true,
     semanticdbVersion := scalafixSemanticdb.revision,
