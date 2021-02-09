@@ -39,6 +39,10 @@ object Props {
   }
 }
 
+sealed trait SubatomicMdocPlugin               extends Product with Serializable
+case class DependencyMdocPlugin(mid: ModuleID) extends SubatomicMdocPlugin
+case class ClassesMdocPlugin(folder: File)     extends SubatomicMdocPlugin
+// case class ProjectDependency(proj: Project)    extends SubatomicMdocPlugin
 object SubatomicPlugin extends AutoPlugin {
   object autoImport {
     val subatomicInheritClasspath = settingKey[Boolean](
@@ -58,6 +62,16 @@ object SubatomicPlugin extends AutoPlugin {
       "List of variables that will be passed to mdoc when processing " +
         "markdown documents"
     )
+
+    val subatomicSelfClassPath = settingKey[Boolean](
+      "Add this module's classes to the Mdoc launcher"
+    )
+
+    val subatomicMdocPlugins = settingKey[List[SubatomicMdocPlugin]]("")
+
+    def subatomicMdocPlugin(mid: ModuleID): SubatomicMdocPlugin = DependencyMdocPlugin(mid)
+    def subatomicMdocPlugin(classes: File): SubatomicMdocPlugin = ClassesMdocPlugin(classes)
+    // def subatomicMdocPlugin(proj: Project): SubatomicMdocPlugin = ProjectDependency(proj)
   }
 
   import autoImport._
@@ -67,6 +81,8 @@ object SubatomicPlugin extends AutoPlugin {
       subatomicInheritClasspath := true,
       subatomicCoreDependency := true,
       subatomicBuildersDependency := true,
+      subatomicSelfClassPath := false,
+      subatomicMdocPlugins := List.empty,
       subatomicMdocVariables := Map("VERSION" -> version.value),
       libraryDependencies ++= {
         (
@@ -83,27 +99,72 @@ object SubatomicPlugin extends AutoPlugin {
       resourceGenerators in Compile += Def.task {
         import scala.collection.mutable
 
+        val depRes   = dependencyResolution.in(update).value
+        val updc     = updateConfiguration.in(update).value
+        val uwconfig = unresolvedWarningConfiguration.in(update).value
+
+        def getJars(mid: ModuleID) = {
+
+          val modDescr = depRes.wrapDependencyInModule(mid)
+
+          depRes
+            .update(
+              modDescr,
+              updc,
+              uwconfig,
+              streams.value.log
+            )
+            .map(_.allFiles)
+            .fold(uw => throw uw.resolveException, identity)
+        }
+
         val out =
           managedResourceDirectories
             .in(Compile)
             .value
             .head / "subatomic.properties"
         val classpath = mutable.ListBuffer.empty[File]
+
         // Can't use fullClasspath.value because it introduces cyclic dependency between
         // compilation and resource generation.
-        classpath ++= dependencyClasspath
+        val allClasspathEntries = dependencyClasspath
           .in(Compile)
           .value
           .iterator
           .map(_.data)
+          .toList
+
+        // println(allClasspathEntries)
+
+        classpath ++= allClasspathEntries
+
         classpath += classDirectory.in(Compile).value
+        val subDeps = subatomicMdocPlugins.value.flatMap {
+          case DependencyMdocPlugin(mid) => getJars(mid)
+          case ClassesMdocPlugin(cls)    => Vector(cls)
+          // case ProjectDependency(proj) =>
+          //   val filter = ScopeFilter(inProjects(proj), inConfigurations(Compile))
+
+          //   val allClasspathEntries = dependencyClasspath.all(filter).value.flatMap(_.iterator.map(_.data)).toVector
+
+          //   allClasspathEntries
+        }
+
+        val launcherClasspath = allClasspathEntries ++ List(classDirectory.in(Compile).value) ++ subDeps
 
         if (subatomicInheritClasspath.value) {
           val props = new java.util.Properties()
 
+          val dependencyPaths = if (subatomicSelfClassPath.value) classpath ++ launcherClasspath else classpath
+
           props.setProperty(
             "classpath",
-            classpath.mkString(java.io.File.pathSeparator)
+            dependencyPaths.mkString(java.io.File.pathSeparator)
+          )
+
+          props.setProperty(
+            "launcherClasspath",
+            launcherClasspath.mkString(java.io.File.pathSeparator)
           )
 
           subatomicMdocVariables.value.foreach {

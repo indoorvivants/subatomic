@@ -33,7 +33,7 @@ case class MdocFile(
 
 class Mdoc(
     scalaBinaryVersion: String = BuildInfo.scalaBinaryVersion,
-    mdocVersion: String = "2.2.9",
+    mdocVersion: String = "2.2.17",
     extraCp: List[String] = Nil,
     logger: Logger = Logger.default,
     inheritClasspath: Boolean = true,
@@ -61,6 +61,11 @@ class Mdoc(
   lazy val inheritedClasspath: Option[String] = if (inheritClasspath) {
     Option(props.getProperty("classpath"))
   } else None
+
+  lazy val launcherClasspath: Option[String] =
+    if (inheritClasspath)
+      Option(props.getProperty("launcherClasspath"))
+    else None
 
   lazy val inheritedVariables = if (inheritVariables) {
     import scala.jdk.CollectionConverters._
@@ -149,10 +154,12 @@ class Mdoc(
         Seq("--in", from.toString, "--out", to.toString) ++ variablesStr
     }
 
+    val launcherJVM = mainCp + launcherClasspath.map(":" + _).getOrElse("")
+
     val base = Seq(
       "java",
       "-classpath",
-      mainCp,
+      launcherJVM,
       "mdoc.Main",
       "--classpath",
       fetchCp(dependencies) + inheritedClasspath.map(":" + _).getOrElse("")
@@ -209,11 +216,12 @@ class Mdoc(
       logger.logLine(
         "inherited classpath from subatomic.properties resource"
       )
+    val launcherJVM = mainCp + launcherClasspath.map(":" + _).getOrElse("")
 
     val args = Seq(
       "java",
       "-classpath",
-      mainCp,
+      launcherJVM,
       "mdoc.Main",
       "--classpath",
       fetchCp(dependencies) + inheritedClasspath.map(":" + _).getOrElse(""),
@@ -222,6 +230,8 @@ class Mdoc(
       "--out",
       f.toString()
     ) ++ variablesStr
+
+    println(args.mkString(" "))
 
     os
       .proc(args)

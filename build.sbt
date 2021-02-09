@@ -3,7 +3,6 @@ import BuildSettings._
 lazy val root = project
   .aggregate(
     Seq(
-      docs.projectRefs,
       plugin.projectRefs,
       core.projectRefs,
       builders.projectRefs,
@@ -17,17 +16,25 @@ lazy val root = project
   )
   .settings(skipPublish)
 
+val flexmarkModules = Seq(
+  "",
+  "-ext-yaml-front-matter",
+  "-ext-anchorlink"
+).map(mName => "com.vladsch.flexmark" % s"flexmark$mName" % "0.62.2")
+
 lazy val core = projectMatrix
   .in(file("core"))
   .settings(
     name := "subatomic-core",
     libraryDependencies ++= Seq(
       "io.get-coursier"        %% "coursier"                % "2.0.0-RC6-24",
-      "com.vladsch.flexmark"    % "flexmark-all"            % "0.62.2",
       "com.lihaoyi"            %% "os-lib"                  % "0.7.2",
       "io.lemonlabs"           %% "scala-uri"               % "3.0.0",
       "org.scala-lang.modules" %% "scala-collection-compat" % "2.4.1"
     )
+  )
+  .settings(
+    libraryDependencies ++= flexmarkModules
   )
   .jvmPlatform(scalaVersions = AllScalaVersions)
   .settings(testSettings)
@@ -150,13 +157,12 @@ lazy val searchShared =
       excludeFilter.in(headerSources) := HiddenFileFilter || "*Stemmer.scala"
     )
 
-lazy val docs = projectMatrix
+lazy val docs = project
   .in(file("docs"))
-  .withId("docs")
-  .dependsOn(builders, plugin, searchIndex)
-  .jvmPlatform(scalaVersions = Seq(Scala_212))
+  .dependsOn(builders.jvm(Scala_212), plugin.jvm(Scala_212), searchIndex.jvm(Scala_212))
   .enablePlugins(SubatomicPlugin)
   .settings(
+    scalaVersion := Scala_212,
     skip in publish := true,
     // To react to asset changes
     watchSources += WatchSource(
@@ -171,9 +177,10 @@ lazy val docs = projectMatrix
     libraryDependencies += "com.lihaoyi" %% "fansi" % "0.2.7",
     subatomicBuildersDependency := false,
     subatomicCoreDependency := false,
-    subatomicInheritClasspath := true
+    subatomicInheritClasspath := true,
+    subatomicMdocPlugins += subatomicMdocPlugin((builders.jvm(Scala_212) / classDirectory).in(Compile).value)
   )
-  .settings(buildInfoSettings)
+/* .settings(buildInfoSettings) */
 
 lazy val plugin = projectMatrix
   .in(file("sbt-plugin"))
@@ -328,7 +335,7 @@ ThisBuild / commands += Command.command("ci") { st =>
     "headerCheck" :: st
 }
 
-addCommandAlias("buildSite", "docs2_12/run build")
+addCommandAlias("buildSite", "docs/run build")
 
 ThisBuild / concurrentRestrictions ++= {
   if (sys.env.contains("CI")) Seq(Tags.limitAll(2)) else Seq.empty
