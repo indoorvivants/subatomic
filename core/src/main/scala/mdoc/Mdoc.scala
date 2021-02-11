@@ -123,7 +123,7 @@ class Mdoc(
       files: Seq[os.Path],
       dependencies: Set[String],
       pwd: Option[os.Path]
-  ) = {
+  ): Seq[(os.Path, os.Path)] = {
 
     val logger      = logging.at("MDOC(batch)")
     val tmpLocation = os.temp.dir()
@@ -197,51 +197,8 @@ class Mdoc(
     new PreparedMdoc[T](self, groupedByDependencies.toMap, pwd)
   }
 
-  def process(
-      file: os.Path,
-      dependencies: Set[String]
-  ): os.Path = {
-    val f = os.temp()
-
-    val pwd = f / os.up
-
-    val logger = logging.at("MDOC")
-
-    logger.logLine(file.toString())
-
-    if (dependencies.nonEmpty)
-      logger.logLine(s"dependencies ${dependencies.mkString(", ")}")
-
-    if (inheritedClasspath.nonEmpty)
-      logger.logLine(
-        "inherited classpath from subatomic.properties resource"
-      )
-    val launcherJVM = mainCp + launcherClasspath.map(":" + _).getOrElse("")
-
-    val args = Seq(
-      "java",
-      "-classpath",
-      launcherJVM,
-      "mdoc.Main",
-      "--classpath",
-      fetchCp(dependencies) + inheritedClasspath.map(":" + _).getOrElse(""),
-      "--in",
-      file.toString(),
-      "--out",
-      f.toString()
-    ) ++ variablesStr
-
-    println(args.mkString(" "))
-
-    os
-      .proc(args)
-      .call(
-        pwd,
-        stderr = ProcessOutput.Readlines(logger.at("ERR")._println),
-        stdout = ProcessOutput.Readlines(logger.at("OUT")._println)
-      )
-
-    f
+  def process(file: os.Path, dependencies: Set[String]): os.Path = {
+    processAll(Seq(file), dependencies, None).head._2
   }
 
   private val mdocDep = DependencyParser
