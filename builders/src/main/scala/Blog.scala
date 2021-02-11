@@ -24,6 +24,7 @@ import subatomic.Discover.MarkdownDocument
 import subatomic.builders._
 
 import com.vladsch.flexmark.ext.yaml.front.matter.YamlFrontMatterExtension
+import com.vladsch.flexmark.ext.anchorlink.AnchorLinkExtension
 
 case class Blog(
     override val contentRoot: os.Path,
@@ -106,7 +107,8 @@ object Blog {
   def markdownParser(siteConfig: Blog) =
     Markdown(
       RelativizeLinksExtension(siteConfig.base.toRelPath),
-      YamlFrontMatterExtension.create()
+      YamlFrontMatterExtension.create(),
+      AnchorLinkExtension.create()
     )
 
   def discoverContent(siteConfig: Blog): Vector[(SitePath, Doc)] = {
