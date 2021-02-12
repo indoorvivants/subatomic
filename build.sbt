@@ -49,9 +49,9 @@ lazy val builders =
     .dependsOn(core, searchIndex, searchFrontendPack, searchRetrieve)
     .settings(
       name := "subatomic-builders",
-      libraryDependencies += "com.lihaoyi"  %% "scalatags" % "0.9.1",
-      libraryDependencies += "com.github.japgolly.scalacss" %% "core" % "0.7.0",
-      libraryDependencies += "com.monovore" %% "decline"   % "1.3.0"
+      libraryDependencies += "com.lihaoyi"                  %% "scalatags" % "0.9.1",
+      libraryDependencies += "com.github.japgolly.scalacss" %% "core"      % "0.7.0",
+      libraryDependencies += "com.monovore"                 %% "decline"   % "1.3.0"
     )
     .jvmPlatform(AllScalaVersions)
     .settings(testSettings)

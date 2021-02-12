@@ -23,8 +23,8 @@ import java.time.format.DateTimeFormatter
 import subatomic.Discover.MarkdownDocument
 import subatomic.builders._
 
-import com.vladsch.flexmark.ext.yaml.front.matter.YamlFrontMatterExtension
 import com.vladsch.flexmark.ext.anchorlink.AnchorLinkExtension
+import com.vladsch.flexmark.ext.yaml.front.matter.YamlFrontMatterExtension
 
 case class Blog(
     override val contentRoot: os.Path,
