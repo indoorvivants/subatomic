@@ -1,0 +1,33 @@
+<html><head><title>Subatomic: Scala.js support </title><link rel="stylesheet" href="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.5.0/build/styles/monokai-sublime.min.css" /><script src="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.5.0/build/highlight.min.js"></script><script src="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.5.0/build/languages/scala.min.js"></script><script>hljs.initHighlightingOnLoad();</script><script src="/assets/script.js"></script><link rel="stylesheet" href="/assets/template.css" /><script src="/assets/search.js"></script><script src="/assets/search-index.js"></script><link rel="stylesheet" href="/assets/subatomic-search.css" /><meta charset="UTF-8" /></head><body><div class="container"><header class="main-header"><div class="site-title"><h1><a href="/">Subatomic</a></h1><small>Watch this space, but please don't use it yet</small></div><div id="searchContainer" class="searchContainer"></div><div class="site-links"><a href="https://github.com/indoorvivants/subatomic"><img src="https://cdn.svgporn.com/logos/github-icon.svg" class="gh-logo" /></a></div></header><div><a class="nav-btn" href="/index.html">Home</a><a class="nav-btn" href="/builders/index.html">Builders</a><a class="nav-btn" href="/internals/index.html">Internals</a><a class="nav-btn" href="/search/index.html">Search </a><a class="nav-btn nav-selected" href="/scalajs/index.html">Scala.js support </a></div><hr /><div><p>Out of the box we support Mdoc's <a href="https://scalameta.org/mdoc/docs/js.html">ability</a> to render Scala.js snippets</p>
+<p>All you need to do is to have this setting turned on in the head of
+your Markdown document:</p>
+<pre><code>scala-mdoc-js: true
+scala-mdoc-js-dependencies: com.raquo::laminar_sjs1:0.11.0
+</code></pre>
+<p><code>scala-mdoc-js-dependencies</code> is optional, and can be used to add
+dependencies that will be used to compile your snippets.</p>
+<p>Dependencies apply on per-file basis only.</p>
+<p>For example, here's a snippet from <a href="http://laminar.dev/examples/time">Laminar's own website</a>, used verbatim to render this page:</p>
+<pre><code class="language-scala">import com.raquo.laminar.api.L._
+import org.scalajs.dom
+
+val clickBus = new EventBus[Unit]
+
+val $maybeAlert = EventStream.merge(
+  clickBus.events.mapTo(Some(span(&quot;Just clicked!&quot;))),
+  clickBus.events.flatMap { _ =&gt;
+    EventStream.fromValue(None, emitOnce = true).delay(500)
+  }
+)
+
+val app = div(
+  button(onClick.mapTo(()) --&gt; clickBus, &quot;Click me&quot;),
+  child.maybe &lt;-- $maybeAlert
+)
+
+render(node, app)
+</code></pre>
+<div id="mdoc-html-run0" data-mdoc-js></div>
+<script type="text/javascript" src="scalajs.md.js" defer></script>
+<script type="text/javascript" src="mdoc.js" defer></script>
+</div></div><footer>© 2020-2021 Anton Sviridov</footer></body></html>
