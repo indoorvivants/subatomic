@@ -44,7 +44,9 @@ class BuilderSteps(markdown: Markdown) {
         subatomic.search.Document(
           doc.title,
           linker.find(raw),
-          markdownSections.map { case Markdown.Section(title, url, text) => subatomic.search.Section(title, url, text) }
+          markdownSections.map {
+            case Markdown.Section(title, url, text) => subatomic.search.Section(title, url, title + "\n\n" + text)
+          }
         )
     }
   }

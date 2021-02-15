@@ -342,5 +342,5 @@ ThisBuild / commands += Command.command("ci") { st =>
 addCommandAlias("buildSite", "docs/run build")
 
 ThisBuild / concurrentRestrictions ++= {
-  if (sys.env.contains("CI")) Seq(Tags.limitAll(2)) else Seq.empty
+  if (sys.env.contains("CI")) Seq(Tags.limitAll(4)) else Seq.empty
 }
