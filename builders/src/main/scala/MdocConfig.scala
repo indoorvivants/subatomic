@@ -29,3 +29,19 @@ object MdocConfig {
     if (enabled) Some(MdocConfig(dependencies)) else None
   }
 }
+
+case class MdocJSConfig(
+    dependencies: List[String],
+    scalajs: String
+)
+
+object MdocJSConfig {
+  def from(attrs: Discover.YamlAttributes): Option[MdocJSConfig] = {
+
+    val enabled        = attrs.optionalOne("scala-mdoc-js").getOrElse("false").toBoolean
+    val dependencies   = attrs.optionalOne("scala-mdoc-js-dependencies").map(_.split(",").toList).getOrElse(Nil)
+    val scalaJSVersion = attrs.optionalOne("scala-mdoc-js-version").getOrElse("1.1.0")
+
+    if (enabled) Some(MdocJSConfig(dependencies, scalaJSVersion)) else None
+  }
+}

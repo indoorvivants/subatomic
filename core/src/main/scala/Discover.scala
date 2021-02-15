@@ -21,9 +21,17 @@ import scala.jdk.CollectionConverters._
 import com.vladsch.flexmark.ext.yaml.front.matter.AbstractYamlFrontMatterVisitor
 import com.vladsch.flexmark.ext.yaml.front.matter.YamlFrontMatterExtension
 
+private[subatomic] trait FileContext {
+  def path: os.Path
+}
+
 object Discover extends App {
-  case class YamlAttributes(data: Map[String, List[String]]) {
-    def requiredOne(field: String): String         = data(field).head
+  case class YamlAttributes(data: Map[String, List[String]], path: os.Path) {
+    def requiredOne(field: String): String =
+      data
+        .get(field)
+        .flatMap(_.headOption)
+        .getOrElse(throw SubatomicError.fileConfiguration(path, _.fieldMissing(field)))
     def optionalOne(field: String): Option[String] = data.get(field).map(_.head)
 
     def requiredMany(field: String): List[String]         = data(field)
@@ -38,10 +46,10 @@ object Discover extends App {
   )
 
   def readYaml(path: os.Path, md: Markdown): YamlAttributes = {
-    readYaml(os.read(path), md)
+    readYaml(os.read(path), md, path)
   }
 
-  def readYaml(content: String, md: Markdown): YamlAttributes = {
+  def readYaml(content: String, md: Markdown, path: os.Path): YamlAttributes = {
     val doc = md.read(content)
 
     val visitor = new AbstractYamlFrontMatterVisitor()
@@ -50,7 +58,7 @@ object Discover extends App {
 
     val data = visitor.getData().asScala.map { case (k, v) => k -> v.asScala.toList }.toMap
 
-    YamlAttributes(data)
+    YamlAttributes(data, path)
   }
 
   def someMarkdown[C](root: os.Path, maxDepth: Int = Int.MaxValue)(

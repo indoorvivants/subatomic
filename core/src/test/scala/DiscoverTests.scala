@@ -75,6 +75,6 @@ object DiscoverTests extends SimpleMutableIOSuite {
 
   def check(content: String)(f: YamlAttributes => Expectations) = {
     val md = Markdown(YamlFrontMatterExtension.create())
-    f(Discover.readYaml(content, md))
+    f(Discover.readYaml(content, md, os.pwd / "test-path.md"))
   }
 }

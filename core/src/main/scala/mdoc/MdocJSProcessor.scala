@@ -26,16 +26,52 @@ case class MdocJSResult[C](
 class MdocJSProcessor[C] private (mdoc: MdocJS, pwd: os.Path, toMdocFile: PartialFunction[C, MdocFile])
     extends Processor[C, MdocJSResult[C]] {
 
+  private type Key = Set[String]
+
+  private val internalFiles    = scala.collection.mutable.Map.empty[Key, Map[C, MdocFile]]
+  private val internalTriggers = scala.collection.mutable.Map.empty[C, Key]
+  private val internalResults  = scala.collection.mutable.Map.empty[Key, Map[C, MdocJSResult[C]]]
+
   val toMdocFileTotal = toMdocFile.lift
 
-  override def register(content: C): Unit = {}
+  def extractKey(f: MdocFile): Key = f.dependencies
+
+  override def register(content: C): Unit = {
+    println(content); println(toMdocFileTotal(content))
+    toMdocFileTotal(content).foreach { mdocFile =>
+      val key = extractKey(mdocFile)
+
+      internalTriggers.update(content, key)
+      internalFiles.update(key, internalFiles.getOrElse(key, Map.empty).updated(content, mdocFile))
+    }
+  }
 
   override def retrieve(content: C): MdocJSResult[C] = {
 
-    val mdocFile = toMdocFile(content)
-    val result   = mdoc.process(pwd, mdocFile.path, mdocFile.dependencies)
+    val triggerKey = internalTriggers(content)
 
-    MdocJSResult(content, result.mdFile, result.mdjsFile, result.mdocFile)
+    if (!internalResults.contains(triggerKey)) {
+      val filesToProcess = internalFiles(triggerKey)
+
+      val result = mdoc.processAll(pwd, filesToProcess.map(_._2).map(_.path).toSeq, triggerKey).toMap
+
+      val results = filesToProcess.map {
+        case (content, mdocFile) =>
+          val mdjsResult = result(mdocFile.path)
+
+          content -> MdocJSResult(content, mdjsResult.mdFile, mdjsResult.mdjsFile, mdjsResult.mdocFile)
+
+      }
+
+      internalResults.update(triggerKey, results)
+    }
+
+    internalResults(triggerKey)(content)
+
+    // val mdocFile = toMdocFile(content)
+    // val result   = mdoc.processAll(pwd, Seq(mdocFile.path), mdocFile.dependencies).head._2
+
+    // MdocJSResult(content, result.mdFile, result.mdjsFile, result.mdocFile)
   }
 }
 

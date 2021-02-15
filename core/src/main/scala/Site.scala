@@ -16,11 +16,6 @@
 
 package subatomic
 
-import scala.concurrent.Await
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
-import scala.concurrent.duration.Duration
-
 sealed trait SiteAsset                                extends Product with Serializable
 case class Page(content: String)                      extends SiteAsset
 case class CopyOf(source: os.Path)                    extends SiteAsset
@@ -53,6 +48,7 @@ case class Site[Content] private (pages: Vector[Entry], content: Iterable[(SiteP
   }
 
   def addProcessed[C1 <: Content](processor: Processor[C1, Map[SitePath, SiteAsset]], content: C1) = {
+    processor.register(content)
     addDelayedAssets(() => processor.retrieve(content), content.toString())
   }
 
@@ -91,15 +87,10 @@ case class Site[Content] private (pages: Vector[Entry], content: Iterable[(SiteP
         writeAsset(sitePath, asset, destination, overwrite)
     }
 
-    val delayed = Await.result(
-      Future.sequence(pages.collect {
-        case d @ Delayed(_, asset, _) =>
-          Future { Left(d -> asset()) }
-        case d @ DelayedMany(assets, _) =>
-          Future { Right(d -> assets()) }
-      }),
-      Duration.Inf
-    )
+    val delayed = pages.collect {
+      case d @ Delayed(_, asset, _)   => Left(d -> asset())
+      case d @ DelayedMany(assets, _) => Right(d -> assets())
+    }
 
     delayed.foreach {
       case Left((Delayed(sitePath, _, original), assetResult)) =>

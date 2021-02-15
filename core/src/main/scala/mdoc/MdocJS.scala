@@ -100,6 +100,57 @@ class MdocJS(
       .mkString(":")
   }
 
+  def processAll(
+      _pwd: os.Path,
+      files: Seq[os.Path],
+      dependencies: Iterable[String]
+  ): Seq[(os.Path, ScalaJSResult)] = {
+    val tempDir = os.temp.dir()
+    val opts    = optsFolder(dependencies)
+
+    val logger = logging.at("MDOC.JS")
+
+    val deps =
+      if (dependencies.nonEmpty) s" [${dependencies.mkString(", ")}]" else ""
+
+    logger.logLine(s"$files, dependencies: $deps")
+
+    val mapping = files.map { p =>
+      val tmp = os.temp.dir(dir = tempDir)
+
+      p -> tmp / p.last
+    }.toMap
+
+    val argmap = mapping.toSeq.flatMap {
+      case (from, to) =>
+        Seq("--in", from.toString, "--out", to.toString)
+    }
+
+    os.proc(
+      "java",
+      "-classpath",
+      runnerCp + ":" + opts,
+      "mdoc.Main",
+      "--classpath",
+      fetchCp(dependencies),
+      argmap
+    ).call(
+      _pwd,
+      stderr = ProcessOutput.Readlines(logger.at("ERR")._println),
+      stdout = ProcessOutput.Readlines(logger.at("OUT")._println)
+    )
+
+    println(argmap)
+
+    mapping.toSeq.map {
+      case (source, target) =>
+        val tgDir = target / os.up
+
+        source -> ScalaJSResult(target, tgDir / (source.last + ".js"), tgDir / "mdoc.js")
+    }
+
+  }
+
   def process(
       _pwd: os.Path,
       file: os.Path,

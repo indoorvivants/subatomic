@@ -1,5 +1,11 @@
 This is an example of compiling Scala.js to JavaScript and running in interactively in the browser:
 
+
+```scala mdoc
+val x = println("Hello")
+```
+
+
 ```scala mdoc:js
 import com.raquo.laminar.api.L._
 

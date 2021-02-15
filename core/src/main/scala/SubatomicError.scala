@@ -18,17 +18,36 @@ package subatomic
 
 import scala.util.control.NoStackTrace
 
-case class SubatomicError(msg: String) extends RuntimeException with NoStackTrace {
+case class SubatomicError(msg: String) extends RuntimeException(msg) with NoStackTrace {
   override def toString = {
     val maxLineLength = msg.linesIterator.map(_.length).max
     val header        = "-" * maxLineLength
     val fireMsg       = msg.linesIterator.map(_.trim).map("🔥 " + _).mkString("\n")
     val newMsg        = header + "\n" + fireMsg + "\n" + header
-    Logger._redLines("\n" + newMsg)
+    Logger._redLines("\n " + newMsg)
   }
 }
 
 object SubatomicError {
+
+  trait messages {
+    def fieldMissing(fieldName: String) =
+      s"Required field ${Logger._bold(fieldName)} is missing"
+  }
+
+  object messages extends messages
+
+  def fileConfiguration(p: os.Path, err: messages => String) =
+    SubatomicError(
+      s"""
+    | Problem with configuration in
+    |
+    | $p 
+    |
+    | ${err(messages)}
+      """.trim.stripMargin
+    )
+
   def dangerousOverwriting(p: os.Path) =
     SubatomicError(
       s"""
