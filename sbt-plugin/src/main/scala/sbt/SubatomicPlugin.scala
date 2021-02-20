@@ -39,10 +39,15 @@ object Props {
   }
 }
 
-sealed trait SubatomicMdocPlugin               extends Product with Serializable
-case class DependencyMdocPlugin(mid: ModuleID) extends SubatomicMdocPlugin
-case class ClassesMdocPlugin(folder: File)     extends SubatomicMdocPlugin
-// case class ProjectDependency(proj: Project)    extends SubatomicMdocPlugin
+sealed trait DocDependency extends Product with Serializable {
+  def group: String
+}
+case class ModuleDocDependency(mid: ModuleID, group: String)          extends DocDependency
+case class ClassesDocDependency(folder: File, group: String)          extends DocDependency
+case class ProjectDocDependency(ref: ProjectReference, group: String) extends DocDependency
+case class ThisProjectClasses(group: String)                          extends DocDependency
+case class ThisProjectDependencies(group: String)                     extends DocDependency
+
 object SubatomicPlugin extends AutoPlugin {
   object autoImport {
     val subatomicInheritClasspath = settingKey[Boolean](
@@ -63,15 +68,15 @@ object SubatomicPlugin extends AutoPlugin {
         "markdown documents"
     )
 
-    val subatomicSelfClassPath = settingKey[Boolean](
-      "Add this module's classes to the Mdoc launcher"
-    )
+    val subatomicDependencies = settingKey[List[DocDependency]]("")
 
-    val subatomicMdocPlugins = settingKey[List[SubatomicMdocPlugin]]("")
-
-    def subatomicMdocPlugin(mid: ModuleID): SubatomicMdocPlugin = DependencyMdocPlugin(mid)
-    def subatomicMdocPlugin(classes: File): SubatomicMdocPlugin = ClassesMdocPlugin(classes)
-    // def subatomicMdocPlugin(proj: Project): SubatomicMdocPlugin = ProjectDependency(proj)
+    object Subatomic {
+      def dependency(mid: ModuleID, group: String = "default"): DocDependency       = ModuleDocDependency(mid, group)
+      def classes(classes: File, group: String = "default"): DocDependency          = ClassesDocDependency(classes, group)
+      def project(proj: ProjectReference, group: String = "default"): DocDependency = ProjectDocDependency(proj, group)
+      def thisProjectClasses(group: String)                                         = ThisProjectClasses(group)
+      def thisProjectDependencies(group: String)                                    = ThisProjectDependencies(group)
+    }
   }
 
   import autoImport._
@@ -81,8 +86,7 @@ object SubatomicPlugin extends AutoPlugin {
       subatomicInheritClasspath := true,
       subatomicCoreDependency := true,
       subatomicBuildersDependency := true,
-      subatomicSelfClassPath := false,
-      subatomicMdocPlugins := List.empty,
+      subatomicDependencies := List(ThisProjectClasses("default"), ThisProjectDependencies("default")),
       subatomicMdocVariables := Map("VERSION" -> version.value),
       libraryDependencies ++= {
         (
@@ -97,14 +101,12 @@ object SubatomicPlugin extends AutoPlugin {
         }
       },
       resourceGenerators in Compile += Def.task {
-        import scala.collection.mutable
-
-        val depRes   = dependencyResolution.in(update).value
-        val updc     = updateConfiguration.in(update).value
-        val uwconfig = unresolvedWarningConfiguration.in(update).value
 
         def getJars(mid: ModuleID) = {
 
+          val depRes   = dependencyResolution.in(update).value
+          val updc     = updateConfiguration.in(update).value
+          val uwconfig = unresolvedWarningConfiguration.in(update).value
           val modDescr = depRes.wrapDependencyInModule(mid)
 
           depRes
@@ -123,59 +125,72 @@ object SubatomicPlugin extends AutoPlugin {
             .in(Compile)
             .value
             .head / "subatomic.properties"
-        val classpath = mutable.ListBuffer.empty[File]
 
-        // Can't use fullClasspath.value because it introduces cyclic dependency between
-        // compilation and resource generation.
-        val allClasspathEntries = dependencyClasspath
-          .in(Compile)
-          .value
-          .iterator
-          .map(_.data)
-          .toList
+        val classpath = {
+          val mut = List.newBuilder[(String, File)]
 
-        // println(allClasspathEntries)
+          subatomicDependencies.value.collect {
+            case ModuleDocDependency(mid, gr)  => mut ++= getJars(mid).map(gr -> _)
+            case ClassesDocDependency(cls, gr) => mut += gr -> cls
+            case ThisProjectClasses(gr)        => mut += gr -> (Compile / classDirectory).value
+            case ThisProjectDependencies(gr) =>
+              mut ++= dependencyClasspath
+                .in(Compile)
+                .value
+                .iterator
+                .map(file => gr -> file.data)
 
-        classpath ++= allClasspathEntries
-
-        classpath += classDirectory.in(Compile).value
-        val subDeps = subatomicMdocPlugins.value.flatMap {
-          case DependencyMdocPlugin(mid) => getJars(mid)
-          case ClassesMdocPlugin(cls)    => Vector(cls)
-          // case ProjectDependency(proj) =>
-          //   val filter = ScopeFilter(inProjects(proj), inConfigurations(Compile))
-
-          //   val allClasspathEntries = dependencyClasspath.all(filter).value.flatMap(_.iterator.map(_.data)).toVector
-
-          //   allClasspathEntries
-        }
-
-        val launcherClasspath = allClasspathEntries ++ List(classDirectory.in(Compile).value) ++ subDeps
-
-        if (subatomicInheritClasspath.value) {
-          val props = new java.util.Properties()
-
-          val dependencyPaths = if (subatomicSelfClassPath.value) classpath ++ launcherClasspath else classpath
-
-          props.setProperty(
-            "classpath",
-            dependencyPaths.mkString(java.io.File.pathSeparator)
-          )
-
-          props.setProperty(
-            "launcherClasspath",
-            launcherClasspath.mkString(java.io.File.pathSeparator)
-          )
-
-          subatomicMdocVariables.value.foreach {
-            case (varName, varValue) =>
-              props.setProperty(s"variable.$varName", varValue)
           }
 
-          IO.write(props, "subatomic properties", out)
+          mut.result()
+        }
 
-          List(out)
-        } else Nil
+        // val projs: Seq[ProjectReference] = subatomicDocDependencies.value.collect {
+        //   case ProjectDocDependency(proj) => proj
+        // }
+
+        // val scp = ScopeFilter(
+        //   inProjects(projs: _*),
+        //   inConfigurations(Compile)
+        // )
+
+        // println(scp)
+
+        // println(classDirectory.all(scp).value)
+
+        //
+        // [error] (plugin2_12 / Compile / compileIncremental) java.lang.IllegalArgumentException: Could not find proxy for val scp
+        // : sbt.ScopeFilter.Base in List(value scp, method $anonfun$projectSettings$8, method projectSettings, object SubatomicPlu
+        // gin, package subatomic, package <root>) (currentOwner= method $anonfun$projectSettings$7 )
+        // [error] Total time: 2 s, completed 19 Feb 2021, 10:41:15
+
+        val props = new java.util.Properties()
+
+        subatomicMdocVariables.value.foreach {
+          case (varName, varValue) =>
+            props.setProperty(s"variable.$varName", varValue)
+        }
+
+        if (subatomicInheritClasspath.value) {
+
+          classpath.groupBy(_._1).foreach {
+            case (groupName, clsp) =>
+              props.setProperty(
+                s"classpath.$groupName",
+                clsp.map(_._2).mkString(java.io.File.pathSeparator)
+              )
+
+              props.setProperty(
+                s"launcherClasspath.$groupName",
+                clsp.map(_._2).mkString(java.io.File.pathSeparator)
+              )
+          }
+
+        }
+
+        IO.write(props, "subatomic properties", out)
+
+        List(out)
       }
     )
 }
