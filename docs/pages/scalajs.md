@@ -1,8 +1,9 @@
 ---
 id: scalajs
 title: Scala.js support 
-scala-mdoc-js: true
-scala-mdoc-js-dependencies: com.raquo::laminar_sjs1:0.11.0
+mdoc: true
+mdoc-js: true
+mdoc-dependencies: com.raquo::laminar_sjs1:0.11.0
 ---
 
 

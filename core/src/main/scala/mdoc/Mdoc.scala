@@ -27,18 +27,82 @@ import os.ProcessOutput
 
 case class MdocFile(
     path: os.Path,
-    dependencies: Set[String] = Set.empty,
-    inheritedClasspath: Boolean = true
+    config: MdocConfiguration
 )
 
+case class ScalaJSConfig(
+    version: String,
+    domVersion: String
+)
+
+object ScalaJSConfig {
+  def default = ScalaJSConfig(version = "1.3.0", "1.0.0")
+
+  def fromAttrs(attrs: Discover.YamlAttributes): Option[ScalaJSConfig] = {
+    val enabled    = attrs.optionalOne("mdoc-js").map(_.toBoolean).getOrElse(false)
+    val version    = attrs.optionalOne("mdoc-js-scalajs").map(_.trim).getOrElse(default.version)
+    val domVersion = attrs.optionalOne("mdoc-js-dom-version").map(_.trim).getOrElse(default.domVersion)
+
+    if (enabled) Some(ScalaJSConfig(version, domVersion)) else None
+  }
+}
+
+case class MdocConfiguration(
+    scalaBinaryVersion: String,
+    mdocVersion: String,
+    inheritClasspath: Boolean,
+    inheritVariables: Boolean,
+    variables: Map[String, String],
+    group: String,
+    extraDependencies: Set[String],
+    scalajsConfig: Option[ScalaJSConfig]
+)
+
+object MdocConfiguration {
+  def default =
+    MdocConfiguration(
+      scalaBinaryVersion = BuildInfo.scalaBinaryVersion,
+      mdocVersion = "2.2.18",
+      inheritClasspath = true,
+      inheritVariables = true,
+      variables = Map.empty,
+      group = "default",
+      extraDependencies = Set.empty,
+      scalajsConfig = None
+    )
+
+  def fromAttrs(attrs: Discover.YamlAttributes): Option[MdocConfiguration] = {
+    val defaultConfig = default
+    val enabled       = attrs.optionalOne("mdoc").getOrElse("false").toBoolean
+    val dependencies = attrs
+      .optionalOne("mdoc-dependencies")
+      .map(_.split(",").toList.map(_.trim).toSet)
+      .getOrElse(default.extraDependencies)
+
+    val scalaVersion = attrs.optionalOne("mdoc-scala").map(_.trim).getOrElse(defaultConfig.scalaBinaryVersion)
+    val group        = attrs.optionalOne("mdoc-group").map(_.trim).getOrElse(defaultConfig.group)
+    val version      = attrs.optionalOne("mdoc-version").map(_.trim).getOrElse(defaultConfig.mdocVersion)
+
+    val scalajs = ScalaJSConfig.fromAttrs(attrs: Discover.YamlAttributes)
+
+    val config = defaultConfig.copy(
+      scalaBinaryVersion = scalaVersion,
+      group = group,
+      mdocVersion = version,
+      extraDependencies = dependencies,
+      scalajsConfig = scalajs
+    )
+
+    // println(config)
+    // println(attrs)
+
+    if (enabled) Some(config) else None
+  }
+}
+
 class Mdoc(
-    scalaBinaryVersion: String = BuildInfo.scalaBinaryVersion,
-    mdocVersion: String = "2.2.17",
-    extraCp: List[String] = Nil,
     logger: Logger = Logger.default,
-    inheritClasspath: Boolean = true,
-    inheritVariables: Boolean = true,
-    variables: Map[String, String] = Map.empty
+    config: MdocConfiguration = MdocConfiguration.default
 ) { self =>
 
   val logging = logger
@@ -58,16 +122,16 @@ class Mdoc(
     props
   }
 
-  lazy val inheritedClasspath: Option[String] = if (inheritClasspath) {
-    Option(props.getProperty("classpath"))
+  lazy val inheritedClasspath: Option[String] = if (config.inheritClasspath) {
+    Option(props.getProperty(s"classpath.${config.group}"))
   } else None
 
   lazy val launcherClasspath: Option[String] =
-    if (inheritClasspath)
-      Option(props.getProperty("launcherClasspath"))
+    if (config.inheritClasspath)
+      Option(props.getProperty(s"launcherClasspath.${config.group}"))
     else None
 
-  lazy val inheritedVariables = if (inheritVariables) {
+  lazy val inheritedVariables = if (config.inheritVariables) {
     import scala.jdk.CollectionConverters._
 
     props
@@ -81,7 +145,7 @@ class Mdoc(
   } else Map.empty[String, String]
 
   lazy val variablesStr: Seq[String] = {
-    (inheritedVariables ++ variables).map {
+    (inheritedVariables ++ config.variables).map {
       case (k, v) => s"--site.$k=$v"
     }.toSeq
   }
@@ -190,7 +254,7 @@ class Mdoc(
   ) = {
     val groupedByDependencies = files
       .groupBy { mf =>
-        mf._2.dependencies
+        mf._2.config.extraDependencies
       }
       .map { case (deps, values) => MdocSettings(deps) -> values.toVector }
 
@@ -202,7 +266,7 @@ class Mdoc(
   }
 
   private val mdocDep = DependencyParser
-    .dependency(s"org.scalameta::mdoc:$mdocVersion", scalaBinaryVersion)
+    .dependency(s"org.scalameta::mdoc:${config.mdocVersion}", config.scalaBinaryVersion)
     .getOrElse(throw new Exception("Unspeakable has happened"))
 
   private lazy val mainCp = {
@@ -210,7 +274,7 @@ class Mdoc(
     (Fetch()
       .addDependencies(mdocDep)
       .run()
-      .map(_.getAbsolutePath()) ++ extraCp)
+      .map(_.getAbsolutePath()))
       .mkString(":")
   }
 
@@ -218,7 +282,7 @@ class Mdoc(
     Fetch()
       .addDependencies(
         deps.toSeq
-          .map(DependencyParser.dependency(_, scalaBinaryVersion))
+          .map(DependencyParser.dependency(_, config.scalaBinaryVersion))
           .map(_.left.map(new RuntimeException(_)).toTry.get): _*
       )
       .run()

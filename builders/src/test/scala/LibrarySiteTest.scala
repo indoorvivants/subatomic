@@ -38,7 +38,7 @@ object LibrarySiteTest extends SimpleIOSuite with BuildersHelpers {
 
     val testDependency = "org.typelevel::cats:2.3.1"
     val mdocPage = page(
-      Map("title" -> "mdoc", "scala-mdoc" -> "true", "scala-mdoc-dependencies" -> testDependency),
+      Map("title" -> "mdoc", "mdoc" -> "true", "mdoc-dependencies" -> testDependency),
       "test mdoc"
     )
 
@@ -53,7 +53,7 @@ object LibrarySiteTest extends SimpleIOSuite with BuildersHelpers {
 
     expect.all(
       content.get(SiteRoot / "base" / "index.html").exists(_.mdocConfig.isEmpty),
-      content.get(SiteRoot / "mdoc" / "index.html").exists(_.mdocConfig.exists(_.dependencies.contains(testDependency)))
+      content.get(SiteRoot / "mdoc" / "index.html").exists(_.mdocConfig.exists(_.extraDependencies.contains(testDependency)))
     )
   }
 }

@@ -16,21 +16,10 @@
 
 package subatomic
 
-import subatomic.internal.BuildInfo
-
 import coursier.Fetch
 import coursier.core.Dependency
 import coursier.parse.DependencyParser
 import os.ProcessOutput
-
-case class ScalaJsConfiguration(
-    version: String = "1.1.1",
-    domVersion: String = "1.0.0"
-)
-
-object ScalaJsConfiguration {
-  val default = ScalaJsConfiguration()
-}
 
 case class ScalaJSResult(
     mdFile: os.Path,
@@ -39,16 +28,16 @@ case class ScalaJSResult(
 )
 
 class MdocJS(
-    scalaBinaryVersion: String = BuildInfo.scalaBinaryVersion,
-    mdocVersion: String = "2.2.9",
-    scalajsConfiguration: ScalaJsConfiguration = ScalaJsConfiguration.default,
+    config: MdocConfiguration,
     logger: Logger = Logger.default
 ) {
+
+  val scalajsConfiguration = config.scalajsConfig.getOrElse(ScalaJSConfig.default)
 
   val logging = logger
 
   private lazy val runnerCp = cp(
-    unsafeParse(s"org.scalameta::mdoc-js:$mdocVersion")
+    unsafeParse(s"org.scalameta::mdoc-js:${config.mdocVersion}")
   )
 
   private lazy val jsClasspath = cp(
@@ -60,7 +49,7 @@ class MdocJS(
     )
   )
 
-  val fullScala = scalaBinaryVersion match {
+  val fullScala = config.scalaBinaryVersion match {
     case "2.12" => "2.12.12"
     case "2.13" => "2.13.3"
   }
@@ -92,7 +81,7 @@ class MdocJS(
     Fetch()
       .addDependencies(
         deps.toSeq
-          .map(DependencyParser.dependency(_, scalaBinaryVersion))
+          .map(DependencyParser.dependency(_, config.scalaBinaryVersion))
           .map(_.left.map(new RuntimeException(_)).toTry.get): _*
       )
       .run()
@@ -103,8 +92,8 @@ class MdocJS(
   def processAll(
       _pwd: os.Path,
       files: Seq[os.Path],
-      dependencies: Iterable[String]
   ): Seq[(os.Path, ScalaJSResult)] = {
+    val dependencies = config.extraDependencies
     val tempDir = os.temp.dir()
     val opts    = optsFolder(dependencies)
 
@@ -139,8 +128,6 @@ class MdocJS(
       stderr = ProcessOutput.Readlines(logger.at("ERR")._println),
       stdout = ProcessOutput.Readlines(logger.at("OUT")._println)
     )
-
-    println(argmap)
 
     mapping.toSeq.map {
       case (source, target) =>
@@ -203,7 +190,7 @@ class MdocJS(
     DependencyParser
       .dependency(
         d,
-        scalaBinaryVersion
+        config.scalaBinaryVersion
       )
       .getOrElse(throw new Exception("Unspeakable has happened"))
       .withTransitive(transitive)

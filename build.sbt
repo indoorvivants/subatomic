@@ -181,7 +181,6 @@ lazy val docs = project
     subatomicBuildersDependency := false,
     subatomicCoreDependency := false,
     subatomicInheritClasspath := true,
-    subatomicMdocPlugins += subatomicMdocPlugin((builders.jvm(Scala_212) / classDirectory).in(Compile).value)
   )
 /* .settings(buildInfoSettings) */
 
@@ -306,7 +305,9 @@ inThisBuild(
         "keynmol@gmail.com",
         url("https://blog.indoorvivants.com")
       )
-    )
+    ),
+    version := sys.env
+      .getOrElse("VERSION_OVERRIDE", version.value)
   )
 )
 

@@ -51,9 +51,11 @@ case class Post(
     date: LocalDate,
     description: Option[String],
     tags: List[String],
-    mdocConfig: Option[MdocConfig],
+    mdocConfig: Option[MdocConfiguration],
     archived: Boolean
-) extends Doc
+) extends Doc {
+  def scalajsEnabled: Boolean = mdocConfig.exists(_.scalajsConfig.nonEmpty)
+}
 
 case class TagPage(
     tag: String,
@@ -123,7 +125,7 @@ object Blog {
 
           val sitePath = SiteRoot / (date.format(DateTimeFormatter.ISO_LOCAL_DATE) + "-" + filename + ".html")
 
-          val mdocConfig = MdocConfig.from(attributes)
+          val mdocConfig = MdocConfiguration.fromAttrs(attributes)
 
           val post = Post(
             title,
@@ -181,12 +183,24 @@ object Blog {
     val mdocProcessor =
       if (!buildConfig.disableMdoc)
         MdocProcessor.create[Post]() {
-          case Post(_, path, _, _, _, Some(config), _) => MdocFile(path, config.dependencies.toSet)
+          case Post(_, path, _, _, _, Some(config), _) if config.scalajsConfig.nonEmpty => MdocFile(path, config)
         }
       else {
         Processor.simple[Post, MdocResult[Post]](doc => MdocResult(doc, doc.path))
       }
 
+    val mdocJSProcessor: Processor[Post, (Post, Option[MdocJSResult[Post]])] =
+      if (!buildConfig.disableMdoc)
+        MdocJSProcessor
+          .create[Post]() {
+            case Post(_, path, _, _, _, Some(config), _) if config.scalajsConfig.nonEmpty => MdocFile(path, config)
+          }
+          .map { result =>
+            result.original -> Option(result)
+          }
+      else {
+        Processor.simple(doc => doc -> None)
+      }
     def renderPost(title: String, tags: Seq[String], file: os.Path, links: Vector[NavLink]) = {
       val renderedMarkdown = markdown.renderToString(file)
       val renderedHtml =
@@ -209,14 +223,43 @@ object Blog {
           navigation(mdocResult.original)
         )
       }
+    val mdocJSPageRenderer: Processor[Post, Map[SitePath => SitePath, SiteAsset]] = mdocJSProcessor
+      .map { res =>
+        res match {
+
+          case (doc, Some(mdocResult)) =>
+            Map(
+              (identity[SitePath] _) ->
+                renderPost(doc.title, doc.tags, mdocResult.markdownFile, navigation(doc)),
+              ((sp: SitePath) => sp.up / mdocResult.jsSnippetsFile.last) ->
+                CopyOf(mdocResult.jsSnippetsFile),
+              ((sp: SitePath) => sp.up / mdocResult.jsInitialisationFile.last) ->
+                CopyOf(
+                  mdocResult.jsInitialisationFile
+                )
+            )
+
+          case (doc, None) =>
+            Map(
+              (identity[SitePath] _) -> renderPost(doc.title, doc.tags, doc.path, navigation(doc))
+            )
+        }
+      }
 
     val baseSite = Site
       .init(content)
       .populate {
         case (site, content) =>
           content match {
-            case (sitePath, doc: Post) if doc.mdocConfig.nonEmpty =>
+            case (sitePath, doc: Post) if doc.mdocConfig.nonEmpty && !doc.scalajsEnabled =>
               site.addProcessed(sitePath, mdocPageRenderer, doc)
+            case (sitePath, doc: Post) if doc.mdocConfig.nonEmpty =>
+              site.addProcessed(
+                mdocJSPageRenderer.map { mk =>
+                  mk.map { case (k, v) => k.apply(sitePath) -> v }
+                },
+                doc
+              )
             case (sitePath, doc: Post) =>
               site.add(sitePath, renderPost(doc.title, doc.tags, doc.path, navigation(doc)))
             case (sitePath, doc: TagPage) =>

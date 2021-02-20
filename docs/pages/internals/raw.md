@@ -1,6 +1,6 @@
 ---
 title: Raw API
-scala-mdoc: true
+mdoc: true
 ---
 
 Under the hood, Subatomic's core idea is "it's all just moving files around" when it comes to building static sites.

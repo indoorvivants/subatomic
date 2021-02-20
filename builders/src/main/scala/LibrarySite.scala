@@ -47,10 +47,11 @@ object LibrarySite {
       path: os.Path,
       inNavBar: Boolean,
       index: Boolean = false,
-      mdocConfig: Option[MdocConfig] = None,
-      mdocJSConfig: Option[MdocJSConfig] = None,
+      mdocConfig: Option[MdocConfiguration] = None,
       depth: Seq[String]
-  )
+  ) {
+    def scalajsEnabled = mdocConfig.exists(_.scalajsConfig.nonEmpty)
+  }
 
   trait App {
     def extra(site: Site[LibrarySite.Doc]) = site
@@ -116,8 +117,7 @@ object LibrarySite {
 
           val title = attributes.requiredOne("title")
 
-          val mdocConfig   = MdocConfig.from(attributes)
-          val mdocJSConfig = MdocJSConfig.from(attributes)
+          val mdocConfig = MdocConfiguration.fromAttrs(attributes)
 
           val isIndex = filename == "index"
 
@@ -137,7 +137,6 @@ object LibrarySite {
             inNavBar,
             index = isIndex,
             mdocConfig = mdocConfig,
-            mdocJSConfig = mdocJSConfig,
             depth = relp.segments
           )
 
@@ -175,7 +174,7 @@ object LibrarySite {
     val mdocProcessor =
       if (!buildConfig.disableMdoc)
         MdocProcessor.create[Doc]() {
-          case Doc(_, path, _, _, Some(config), None, _) => MdocFile(path, config.dependencies.toSet)
+          case Doc(_, path, _, _, Some(config), _) if config.scalajsConfig.isEmpty => MdocFile(path, config)
         }
       else {
         Processor.simple[Doc, MdocResult[Doc]](doc => MdocResult(doc, doc.path))
@@ -185,12 +184,10 @@ object LibrarySite {
       if (!buildConfig.disableMdoc)
         MdocJSProcessor
           .create[Doc]() {
-            case Doc(_, path, _, _, None, Some(config), _) => MdocFile(path, config.dependencies.toSet)
+            case Doc(_, path, _, _, Some(config), _) if config.scalajsConfig.nonEmpty => MdocFile(path, config)
           }
           .map { result =>
             result.original -> Option(result)
-          // println(result)
-          // Map.empty[SitePath, SiteAsset]
           }
       else {
         Processor.simple(doc => doc -> None)
@@ -244,10 +241,10 @@ object LibrarySite {
       .populate {
         case (site, content) =>
           content match {
-            case (sitePath, doc: Doc) if doc.mdocConfig.nonEmpty && doc.mdocJSConfig.isEmpty =>
+            case (sitePath, doc: Doc) if doc.mdocConfig.nonEmpty && !doc.scalajsEnabled =>
               site.addProcessed(sitePath, mdocPageRenderer, doc)
 
-            case (sitePath, doc: Doc) if doc.mdocJSConfig.nonEmpty =>
+            case (sitePath, doc: Doc) if doc.scalajsEnabled =>
               site.addProcessed(
                 mdocJSPageRenderer.map { mk =>
                   mk.map { case (k, v) => k.apply(sitePath) -> v }

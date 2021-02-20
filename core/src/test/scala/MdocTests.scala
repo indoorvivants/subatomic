@@ -29,8 +29,9 @@ object MdocTests extends MutableIOSuite {
         result: String => Expectations
     ): IO[Expectations] = {
       val logger = new Logger(s => log.info(s.replace("\n", "  ")).unsafeRunSync())
+      val config = MdocConfiguration.default.copy(extraDependencies = dependencies, variables = variables)
       val mdoc =
-        new Mdoc(logger = logger, variables = variables)
+        new Mdoc(logger, config)
 
       val tmpFile = os.temp(content, suffix = ".md")
 

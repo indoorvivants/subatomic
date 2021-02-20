@@ -23,37 +23,40 @@ case class MdocJSResult[C](
     jsInitialisationFile: os.Path
 )
 
-class MdocJSProcessor[C] private (mdoc: MdocJS, pwd: os.Path, toMdocFile: PartialFunction[C, MdocFile])
+class MdocJSProcessor[C] private (pwd: os.Path, toMdocFile: PartialFunction[C, MdocFile])
     extends Processor[C, MdocJSResult[C]] {
 
-  private type Key = Set[String]
+  private type Key = MdocConfiguration
 
   private val internalFiles    = scala.collection.mutable.Map.empty[Key, Map[C, MdocFile]]
   private val internalTriggers = scala.collection.mutable.Map.empty[C, Key]
   private val internalResults  = scala.collection.mutable.Map.empty[Key, Map[C, MdocJSResult[C]]]
+  private val internalMdocs    = scala.collection.mutable.Map.empty[Key, MdocJS]
 
   val toMdocFileTotal = toMdocFile.lift
 
-  def extractKey(f: MdocFile): Key = f.dependencies
+  def extractKey(f: MdocFile): Key = f.config
 
   override def register(content: C): Unit = {
-    println(content); println(toMdocFileTotal(content))
     toMdocFileTotal(content).foreach { mdocFile =>
       val key = extractKey(mdocFile)
 
       internalTriggers.update(content, key)
       internalFiles.update(key, internalFiles.getOrElse(key, Map.empty).updated(content, mdocFile))
+      internalMdocs.update(key, new MdocJS(key))
     }
   }
 
   override def retrieve(content: C): MdocJSResult[C] = {
 
     val triggerKey = internalTriggers(content)
+    println(triggerKey)
 
     if (!internalResults.contains(triggerKey)) {
       val filesToProcess = internalFiles(triggerKey)
+      val mdoc           = internalMdocs(triggerKey)
 
-      val result = mdoc.processAll(pwd, filesToProcess.map(_._2).map(_.path).toSeq, triggerKey).toMap
+      val result = mdoc.processAll(pwd, filesToProcess.map(_._2).map(_.path).toSeq).toMap
 
       val results = filesToProcess.map {
         case (content, mdocFile) =>
@@ -67,15 +70,10 @@ class MdocJSProcessor[C] private (mdoc: MdocJS, pwd: os.Path, toMdocFile: Partia
     }
 
     internalResults(triggerKey)(content)
-
-    // val mdocFile = toMdocFile(content)
-    // val result   = mdoc.processAll(pwd, Seq(mdocFile.path), mdocFile.dependencies).head._2
-
-    // MdocJSResult(content, result.mdFile, result.mdjsFile, result.mdocFile)
   }
 }
 
 object MdocJSProcessor {
-  def create[C](mdoc: MdocJS = new MdocJS, pwd: os.Path = os.pwd)(f: PartialFunction[C, MdocFile]) =
-    new MdocJSProcessor[C](mdoc, pwd, f)
+  def create[C](pwd: os.Path = os.pwd)(f: PartialFunction[C, MdocFile]) =
+    new MdocJSProcessor[C](pwd, f)
 }

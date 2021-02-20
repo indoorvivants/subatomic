@@ -1,7 +1,7 @@
 ---
 title: Builders
 topnav: true
-scala-mdoc: true
+mdoc: true
 ---
 
 

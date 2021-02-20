@@ -34,8 +34,10 @@ object MdocBatchTests extends IOSuite {
     ): IO[Expectations] = {
       val logger = new Logger(s => log.info(s.replace("\n", "  ")).unsafeRunSync())
 
+      val config = MdocConfiguration.default.copy(extraDependencies = dependencies, variables = variables)
+
       val mdoc =
-        new Mdoc(logger = logger, variables = variables)
+        new Mdoc(logger, config)
 
       val tmpFile = os.temp(content, suffix = ".md")
 
@@ -65,7 +67,7 @@ object MdocBatchTests extends IOSuite {
       tmpContent = List.fill(10)(os.temp(content, suffix = ".md"))
 
       prepared = mdoc.prepare(tmpContent.map { path =>
-        path -> MdocFile(path)
+        path -> MdocFile(path, MdocConfiguration.default)
       })
 
       firstRetrieved <- res.block(prepared.get(tmpContent.head)).map(os.read)
@@ -98,11 +100,14 @@ object MdocBatchTests extends IOSuite {
     val ceDepContent   = List.fill(5)(os.temp(content2, suffix = "cats-effect..md"))
 
     val preparedZeroDep = zeroDepContent.map { path =>
-      path -> MdocFile(path)
+      path -> MdocFile(path, MdocConfiguration.default)
     }
 
     val preparedCEDep = ceDepContent.map { path =>
-      path -> MdocFile(path, dependencies = Set("org.typelevel::cats-effect:2.3.0"))
+      path -> MdocFile(
+        path,
+        MdocConfiguration.default.copy(extraDependencies = Set("org.typelevel::cats-effect:2.3.0"))
+      )
     }
 
     for {
@@ -149,7 +154,7 @@ object MdocBatchTests extends IOSuite {
       tmpContent = List.fill(10)(os.temp(content, suffix = ".md"))
 
       prepared = mdoc.prepare(tmpContent.map { path =>
-        path -> MdocFile(path)
+        path -> MdocFile(path, MdocConfiguration.default)
       })
 
       allRetrieved <- tmpContent.parTraverse(path => res.block(os.read(prepared.get(path)))).map(_.distinct)
