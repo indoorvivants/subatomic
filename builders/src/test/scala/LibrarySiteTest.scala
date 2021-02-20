@@ -53,7 +53,9 @@ object LibrarySiteTest extends SimpleIOSuite with BuildersHelpers {
 
     expect.all(
       content.get(SiteRoot / "base" / "index.html").exists(_.mdocConfig.isEmpty),
-      content.get(SiteRoot / "mdoc" / "index.html").exists(_.mdocConfig.exists(_.extraDependencies.contains(testDependency)))
+      content
+        .get(SiteRoot / "mdoc" / "index.html")
+        .exists(_.mdocConfig.exists(_.extraDependencies.contains(testDependency)))
     )
   }
 }

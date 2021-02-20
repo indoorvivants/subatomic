@@ -91,11 +91,11 @@ class MdocJS(
 
   def processAll(
       _pwd: os.Path,
-      files: Seq[os.Path],
+      files: Seq[os.Path]
   ): Seq[(os.Path, ScalaJSResult)] = {
     val dependencies = config.extraDependencies
-    val tempDir = os.temp.dir()
-    val opts    = optsFolder(dependencies)
+    val tempDir      = os.temp.dir()
+    val opts         = optsFolder(dependencies)
 
     val logger = logging.at("MDOC.JS")
 

@@ -180,7 +180,7 @@ lazy val docs = project
     libraryDependencies += "com.lihaoyi" %% "fansi" % "0.2.7",
     subatomicBuildersDependency := false,
     subatomicCoreDependency := false,
-    subatomicInheritClasspath := true,
+    subatomicInheritClasspath := true
   )
 /* .settings(buildInfoSettings) */
 
