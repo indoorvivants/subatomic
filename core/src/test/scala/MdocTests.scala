@@ -35,7 +35,7 @@ object MdocTests extends MutableIOSuite {
 
       val tmpFile = os.temp(content, suffix = ".md")
 
-      blocker.blockOn(IO(mdoc.process(tmpFile, dependencies))).map { p =>
+      blocker.blockOn(IO(mdoc.process(tmpFile))).map { p =>
         result(os.read(p))
       }
     }

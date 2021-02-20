@@ -16,33 +16,58 @@
 
 package subatomic
 
-import java.util.concurrent.atomic.AtomicReference
-
-import scala.collection.mutable.ListBuffer
-
 case class MdocResult[C](original: C, resultFile: os.Path)
 
-class MdocProcessor[C] private (mdoc: Mdoc, pwd: os.Path, toMdocFile: PartialFunction[C, MdocFile])
+class MdocProcessor[C] private (pwd: os.Path, toMdocFile: PartialFunction[C, MdocFile])
     extends Processor[C, MdocResult[C]] {
-  private val preparedMdoc: AtomicReference[Option[mdoc.PreparedMdoc[C]]] = new AtomicReference(None)
-  private val registeredContent: ListBuffer[(C, MdocFile)]                = ListBuffer.empty
+
+  private type Key = MdocConfiguration
+
+  private val internalFiles    = scala.collection.mutable.Map.empty[Key, Map[C, MdocFile]]
+  private val internalTriggers = scala.collection.mutable.Map.empty[C, Key]
+  private val internalResults  = scala.collection.mutable.Map.empty[Key, Map[C, MdocResult[C]]]
+  private val internalMdocs    = scala.collection.mutable.Map.empty[Key, Mdoc]
 
   val toMdocFileTotal = toMdocFile.lift
 
+  def extractKey(f: MdocFile): Key = f.config
+
   override def register(content: C): Unit = {
-    toMdocFileTotal(content).foreach { file =>
-      registeredContent.append(content -> file)
+    toMdocFileTotal(content).foreach { mdocFile =>
+      val key = extractKey(mdocFile)
+
+      internalTriggers.update(content, key)
+      internalFiles.update(key, internalFiles.getOrElse(key, Map.empty).updated(content, mdocFile))
+      internalMdocs.update(key, new Mdoc(config = key))
     }
   }
 
   override def retrieve(content: C): MdocResult[C] = {
-    preparedMdoc.compareAndSet(None, Some(mdoc.prepare(registeredContent, Some(pwd))))
 
-    MdocResult(content, preparedMdoc.get.get.get(content))
+    val triggerKey = internalTriggers(content)
+
+    if (!internalResults.contains(triggerKey)) {
+      val filesToProcess = internalFiles(triggerKey)
+      val mdoc           = internalMdocs(triggerKey)
+
+      val result = mdoc.processAll(filesToProcess.map(_._2).map(_.path).toSeq, Some(pwd)).toMap
+
+      val results = filesToProcess.map {
+        case (content, mdocFile) =>
+          val mdResult = result(mdocFile.path)
+
+          content -> MdocResult(content, mdResult)
+
+      }
+
+      internalResults.update(triggerKey, results)
+    }
+
+    internalResults(triggerKey)(content)
   }
 }
 
 object MdocProcessor {
-  def create[C](mdoc: Mdoc = new Mdoc, pwd: os.Path = os.pwd)(f: PartialFunction[C, MdocFile]) =
-    new MdocProcessor[C](mdoc, pwd, f)
+  def create[C](pwd: os.Path = os.pwd)(f: PartialFunction[C, MdocFile]) =
+    new MdocProcessor[C](pwd, f)
 }

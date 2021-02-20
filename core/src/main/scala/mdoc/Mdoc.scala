@@ -17,7 +17,6 @@
 package subatomic
 
 import java.util.Properties
-import java.util.concurrent.ConcurrentHashMap
 
 import subatomic.internal.BuildInfo
 
@@ -93,9 +92,6 @@ object MdocConfiguration {
       scalajsConfig = scalajs
     )
 
-    // println(config)
-    // println(attrs)
-
     if (enabled) Some(config) else None
   }
 }
@@ -150,42 +146,8 @@ class Mdoc(
     }.toSeq
   }
 
-  case class MdocSettings(
-      dependencies: Set[String]
-  )
-
-  class PreparedMdoc[T](
-      processor: Mdoc,
-      mapping: Map[MdocSettings, Vector[(T, MdocFile)]],
-      pwd: Option[os.Path] = None
-  ) {
-    val processed = new ConcurrentHashMap[MdocSettings, Map[T, os.Path]]
-
-    def get(content: T): os.Path = {
-      val similarOnes = mapping.filter(_._2.map(_._1).contains(content))
-
-      similarOnes.foreach {
-        case (settings, pieces) =>
-          processed.computeIfAbsent(
-            settings,
-            _ => {
-              val paths = pieces.map(_._2.path)
-
-              val result =
-                processor.processAll(paths, settings.dependencies, pwd)
-
-              result.map(_._2).zip(pieces.map(_._1)).map(_.swap).toMap
-            }
-          )
-      }
-
-      processed.get(similarOnes.head._1).apply(content)
-    }
-  }
-
   def processAll(
       files: Seq[os.Path],
-      dependencies: Set[String],
       pwd: Option[os.Path]
   ): Seq[(os.Path, os.Path)] = {
 
@@ -200,9 +162,9 @@ class Mdoc(
       files.mkString(", ")
     )
 
-    if (dependencies.nonEmpty)
+    if (config.extraDependencies.nonEmpty)
       logger.logLine(
-        s"dependencies ${dependencies.mkString(", ")}"
+        s"dependencies ${config.extraDependencies.mkString(", ")}"
       )
 
     if (inheritedClasspath.nonEmpty)
@@ -226,7 +188,7 @@ class Mdoc(
       launcherJVM,
       "mdoc.Main",
       "--classpath",
-      fetchCp(dependencies) + inheritedClasspath.map(":" + _).getOrElse("")
+      fetchCp(config.extraDependencies) + inheritedClasspath.map(":" + _).getOrElse("")
     )
 
     scala.util.Try(
@@ -240,29 +202,16 @@ class Mdoc(
     ) match {
       case scala.util.Success(_) =>
       case scala.util.Failure(ex) =>
-        throw SubatomicError.mdocInvocationError(ex.toString(), files.map(_.toString()))
+        val tmp = os.temp(deleteOnExit = false, contents = (base ++ args).mkString(" "))
+        throw SubatomicError.mdocInvocationError(ex.toString(), files.map(_.toString()), tmp)
     }
 
     os.write.over(os.pwd / "mdoc-invocation.txt", (base ++ args).mkString(" "))
 
     filesWithTargets
   }
-
-  def prepare[T](
-      files: Iterable[(T, MdocFile)],
-      pwd: Option[os.Path] = None
-  ) = {
-    val groupedByDependencies = files
-      .groupBy { mf =>
-        mf._2.config.extraDependencies
-      }
-      .map { case (deps, values) => MdocSettings(deps) -> values.toVector }
-
-    new PreparedMdoc[T](self, groupedByDependencies.toMap, pwd)
-  }
-
-  def process(file: os.Path, dependencies: Set[String]): os.Path = {
-    processAll(Seq(file), dependencies, None).head._2
+  def process(file: os.Path): os.Path = {
+    processAll(Seq(file), None).head._2
   }
 
   private val mdocDep = DependencyParser

@@ -8,5 +8,5 @@ object BuildSettings {
   val Scala_212 = "2.12.13"
 
   val AllScalaVersions = Seq(Scala_212, Scala_213)
-  val OnlyScala213 = Seq(Scala_213)
+  val OnlyScala213     = Seq(Scala_213)
 }
