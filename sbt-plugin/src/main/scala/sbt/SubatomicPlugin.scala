@@ -43,7 +43,7 @@ sealed trait DocDependency extends Product with Serializable {
   def group: String
 }
 case class ModuleDocDependency(mid: ModuleID, group: String)          extends DocDependency
-case class ClassesDocDependency(folder: File, group: String)          extends DocDependency
+case class ClassesDocDependency(folder: Seq[File], group: String)     extends DocDependency
 case class ProjectDocDependency(ref: ProjectReference, group: String) extends DocDependency
 case class ThisProjectClasses(group: String)                          extends DocDependency
 case class ThisProjectDependencies(group: String)                     extends DocDependency
@@ -68,11 +68,12 @@ object SubatomicPlugin extends AutoPlugin {
         "markdown documents"
     )
 
-    val subatomicDependencies = settingKey[List[DocDependency]]("")
+    val subatomicDependencies = settingKey[Seq[DocDependency]]("")
 
     object Subatomic {
       def dependency(mid: ModuleID, group: String = "default"): DocDependency       = ModuleDocDependency(mid, group)
-      def classes(classes: File, group: String = "default"): DocDependency          = ClassesDocDependency(classes, group)
+      def paths(classes: Seq[File], group: String = "default"): DocDependency       = ClassesDocDependency(classes, group)
+      def path(classes: File, group: String = "default"): DocDependency             = ClassesDocDependency(Seq(classes), group)
       def project(proj: ProjectReference, group: String = "default"): DocDependency = ProjectDocDependency(proj, group)
       def thisProjectClasses(group: String)                                         = ThisProjectClasses(group)
       def thisProjectDependencies(group: String)                                    = ThisProjectDependencies(group)
@@ -80,6 +81,20 @@ object SubatomicPlugin extends AutoPlugin {
   }
 
   import autoImport._
+
+  def nonRootsFilter(accepted: Set[ProjectReference]) = {
+    import sbt.internal.inc.ReflectUtilities
+    def nonRoots: List[ProjectReference] =
+      allProjects filter {
+        case prj @ LocalProject(_) => accepted.contains(prj)
+        case _                     => false
+      }
+    def allProjects: List[ProjectReference] =
+      ReflectUtilities.allVals[Project](this).values.toList map { p =>
+        p: ProjectReference
+      }
+    ScopeFilter(inProjects(nonRoots: _*), inAnyConfiguration)
+  }
 
   override def projectSettings: Seq[Def.Setting[_]] =
     List(
@@ -131,7 +146,7 @@ object SubatomicPlugin extends AutoPlugin {
 
           subatomicDependencies.value.collect {
             case ModuleDocDependency(mid, gr)  => mut ++= getJars(mid).map(gr -> _)
-            case ClassesDocDependency(cls, gr) => mut += gr -> cls
+            case ClassesDocDependency(cls, gr) => mut ++= cls.map(gr -> _)
             case ThisProjectClasses(gr)        => mut += gr -> (Compile / classDirectory).value
             case ThisProjectDependencies(gr) =>
               mut ++= dependencyClasspath
@@ -145,18 +160,32 @@ object SubatomicPlugin extends AutoPlugin {
           mut.result()
         }
 
-        // val projs: Seq[ProjectReference] = subatomicDocDependencies.value.collect {
-        //   case ProjectDocDependency(proj) => proj
+        // val projs = Seq.newBuilder[ProjectReference]
+
+        // subatomicDependencies.value.foreach {
+        //   case ProjectDocDependency(proj, _) => projs += (proj)
+        //   case _ => ()
         // }
 
         // val scp = ScopeFilter(
-        //   inProjects(projs: _*),
+        //   inProjects(projs.result(): _*),
         //   inConfigurations(Compile)
         // )
 
-        // println(scp)
+        // // println(scp)
 
         // println(classDirectory.all(scp).value)
+        //
+        // def scp = nonRootsFilter(
+        //   subatomicDependencies.value.collect {
+        //     case ProjectDocDependency(prj, _) => prj
+        //   }.toSet
+        // )
+        // println(classDirectory.all(scp).value)
+
+        // // println(classDirectory.all(subatomicScopeFilter.value).value)
+
+        // println("WHAT THE FCK")
 
         //
         // [error] (plugin2_12 / Compile / compileIncremental) java.lang.IllegalArgumentException: Could not find proxy for val scp

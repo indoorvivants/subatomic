@@ -102,6 +102,7 @@ case class Site[Content] private (pages: Vector[Entry], content: Iterable[(SiteP
           case (sitePath, asset) =>
             Site.logEntry(sitePath.toRelPath, asset, Some(original), logger)
             writeAsset(sitePath, asset, destination, overwrite)
+
         }
     }
 

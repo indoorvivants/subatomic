@@ -16,19 +16,21 @@
 
 package subatomic
 
-import scala.util.control.NoStackTrace
+class SubatomicError(msg: String) extends Exception("no") with scala.util.control.NoStackTrace {
+  final override def toString = SubatomicError.render(msg)
+}
 
-case class SubatomicError(msg: String) extends RuntimeException(msg) with NoStackTrace {
-  override def toString = {
+object SubatomicError {
+
+  def apply(msg: String) = new SubatomicError(msg)
+  def render(msg: String) = {
+
     val maxLineLength = msg.linesIterator.map(_.length).max
     val header        = "-" * maxLineLength
     val fireMsg       = msg.linesIterator.map(_.trim).map("🔥 " + _).mkString("\n")
     val newMsg        = header + "\n" + fireMsg + "\n" + header
     Logger._redLines("\n " + newMsg)
   }
-}
-
-object SubatomicError {
 
   trait messages {
     def fieldMissing(fieldName: String) =
@@ -63,7 +65,7 @@ object SubatomicError {
     | .buildAt(destination, ${Logger._bold("overwrite = true")})
       """.trim.stripMargin
     )
-  def mdocInvocationError(reason: String, files: Seq[String]) =
+  def mdocInvocationError(reason: String, files: Seq[String], commandFile: os.Path) =
     SubatomicError(s"""
    | Failed to invoke Mdoc
    | 
@@ -72,6 +74,8 @@ object SubatomicError {
    | The following files were passed to mdoc:
    | 
    | ${files.mkString("\n")}
+   | 
+   | The full java command has been written to $commandFile
    |
    | Not sure I can provide better error than that :(
    """.trim.stripMargin)
