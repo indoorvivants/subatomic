@@ -1,7 +1,5 @@
 import BuildSettings._
 
-scalaVersion := Scala_213
-
 lazy val root = project
   .aggregate(
     Seq(
@@ -38,7 +36,7 @@ lazy val core = projectMatrix
   .settings(
     libraryDependencies ++= flexmarkModules
   )
-  .jvmPlatform(scalaVersions = AllScalaVersions)
+  .jvmPlatform(AllScalaVersions)
   .settings(testSettings)
   .enablePlugins(BuildInfoPlugin)
   .settings(buildInfoSettings)
@@ -97,7 +95,7 @@ lazy val searchFrontend =
       libraryDependencies += "com.raquo" %%% "laminar" % "0.11.0",
       scalaJSUseMainModuleInitializer := true
     )
-    .jsPlatform(AllScalaVersions)
+    .jsPlatform(OnlyScala213)
     .settings(testSettings)
     .settings(buildInfoSettings)
     .settings(batchModeOnCI)
@@ -115,7 +113,7 @@ lazy val searchCli =
     )
     .enablePlugins(JavaAppPackaging)
     .jvmPlatform(AllScalaVersions)
-    .nativePlatform(AllScalaVersions)
+    .nativePlatform(Seq(Scala_213))
     .settings(testSettings)
     .settings(buildInfoSettings)
 
@@ -125,8 +123,8 @@ lazy val searchIndex =
     .dependsOn(searchShared)
     .settings(name := "subatomic-search-indexer")
     .jvmPlatform(AllScalaVersions)
-    .jsPlatform(AllScalaVersions, batchModeOnCI)
-    .nativePlatform(AllScalaVersions)
+    .jsPlatform(OnlyScala213, batchModeOnCI)
+    .nativePlatform(Seq(Scala_213))
     .settings(munitTestSettings)
     .settings(buildInfoSettings)
 
@@ -138,8 +136,8 @@ lazy val searchRetrieve =
       name := "subatomic-search-retrieve"
     )
     .jvmPlatform(AllScalaVersions)
-    .jsPlatform(AllScalaVersions, batchModeOnCI)
-    .nativePlatform(AllScalaVersions)
+    .jsPlatform(OnlyScala213, batchModeOnCI)
+    .nativePlatform(Seq(Scala_213))
     .settings(munitTestSettings)
     .settings(buildInfoSettings)
 
@@ -151,8 +149,8 @@ lazy val searchShared =
       libraryDependencies += "com.lihaoyi" %%% "upickle" % "1.2.3"
     )
     .jvmPlatform(AllScalaVersions)
-    .jsPlatform(AllScalaVersions, batchModeOnCI)
-    .nativePlatform(AllScalaVersions)
+    .jsPlatform(OnlyScala213, batchModeOnCI)
+    .nativePlatform(Seq(Scala_213))
     .settings(munitTestSettings)
     .settings(buildInfoSettings)
     .enablePlugins(BuildInfoPlugin)
@@ -182,7 +180,6 @@ lazy val docs = project
     subatomicCoreDependency := false,
     subatomicInheritClasspath := true
   )
-/* .settings(buildInfoSettings) */
 
 lazy val plugin = projectMatrix
   .in(file("sbt-plugin"))

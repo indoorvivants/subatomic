@@ -10,7 +10,7 @@ object Main {
     props.load(Source.fromResource("subatomic.properties").reader())
 
     assert(
-      props.getProperty("classpath").contains("cats-effect"),
+      props.getProperty("classpath.default").contains("cats-effect"),
       "FAILED: cats-effect is not added to the classpath in subatomic.properties"
     )
   }
