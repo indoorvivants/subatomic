@@ -138,45 +138,6 @@ class MdocJS(
 
   }
 
-  def process(
-      _pwd: os.Path,
-      file: os.Path,
-      dependencies: Iterable[String]
-  ): ScalaJSResult = {
-    val tempDir = os.temp.dir()
-    val opts    = optsFolder(dependencies)
-
-    val logger = logging.at("MDOC.JS")
-
-    val deps =
-      if (dependencies.nonEmpty) s" [${dependencies.mkString(", ")}]" else ""
-
-    logger.logLine(s"$file, dependencies: $deps")
-
-    os.proc(
-      "java",
-      "-classpath",
-      runnerCp + ":" + opts,
-      "mdoc.Main",
-      "--classpath",
-      fetchCp(dependencies),
-      "--in",
-      file.toString(),
-      "--out",
-      (tempDir / file.last).toString()
-    ).call(
-      _pwd,
-      stderr = ProcessOutput.Readlines(logger.at("ERR")._println),
-      stdout = ProcessOutput.Readlines(logger.at("OUT")._println)
-    )
-
-    ScalaJSResult(
-      tempDir / file.last,
-      tempDir / (file.last + ".js"),
-      tempDir / "mdoc.js"
-    )
-  }
-
   private def cp(dep: Dependency*) = {
     (Fetch()
       .addDependencies(dep: _*)

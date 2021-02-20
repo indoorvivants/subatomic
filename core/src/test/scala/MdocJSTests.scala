@@ -31,7 +31,7 @@ object MdocJSTests extends IOSuite {
 
       val tmpFile = os.temp(content, suffix = ".md")
 
-      blocker.blockOn(IO(mdoc.process(os.pwd, tmpFile, dependencies))).map(result)
+      blocker.blockOn(IO(mdoc.processAll(os.pwd, Seq(tmpFile)))).map(_.head._2).map(result)
     }
   }
 
