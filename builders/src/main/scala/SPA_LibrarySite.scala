@@ -229,8 +229,8 @@ object SpaLibrarySite {
     val addJsonConfig: Site[Doc] => Site[Doc] = { site =>
       import ujson._
 
-      def removeHtml(p: SitePath) = 
-        if(p.segments.lastOption.contains("index.html"))
+      def removeHtml(p: SitePath) =
+        if (p.segments.lastOption.contains("index.html"))
           p.up / "index"
         else p
 
@@ -240,7 +240,8 @@ object SpaLibrarySite {
             case (path, doc) =>
               Arr(Str(doc.title), Arr.from(removeHtml(path).segments))
           }
-        )
+        ),
+        "title" -> Str(siteConfig.name)
       ).render()
 
       site
@@ -248,8 +249,8 @@ object SpaLibrarySite {
         .addCopyOf(SiteRoot / "spa.js", os.temp(subatomic.spa.SpaPack.fullJS))
     }
 
-    val addIndexPage: Site[Doc] => Site[Doc] = {site =>
-      site.addPage(SiteRoot / "index.html", IndexHTML.apply(siteConfig.base).render)
+    val addIndexPage: Site[Doc] => Site[Doc] = { site =>
+      site.addPage(SiteRoot / "index.html", IndexHTML.apply(siteConfig, linker).render)
     }
 
     val builderSteps = new BuilderSteps(markdown)
@@ -296,15 +297,49 @@ object RawHTML {
 
 object IndexHTML {
   import scalatags.Text.all._
-  def apply(shift: SitePath) =
+
+  def apply(site: SpaLibrarySite, linker: Linker) = {
+
+    def templateStyles = {
+      val paths = List(StylesheetPath(SiteRoot / "assets" / "template.css"))
+
+      BuilderTemplate.managedStylesBlock(linker, paths)
+    }
+    def searchScripts = {
+      val paths =
+        if (site.search)
+          List(ScriptPath(SiteRoot / "assets" / "search.js"), ScriptPath(SiteRoot / "assets" / "search-index.js"))
+        else Nil
+
+      BuilderTemplate.managedScriptsBlock(linker, paths)
+    }
+
+    def searchStyles = {
+      val paths =
+        if (site.search)
+          List(
+            StylesheetPath(SiteRoot / "assets" / "subatomic-search.css")
+          )
+        else Nil
+
+      BuilderTemplate.managedStylesBlock(linker, paths)
+    }
+
     html(
       head(
-        meta(charset := "UTF-8")
+        meta(charset := "UTF-8"),
+        templateStyles,
+        searchStyles,
+        searchScripts,
+        HighlightJS.templateBlock(site.highlightJS)
       ),
       body(
-        div(id := "app"),
-        script(`type` := "text/javascript", src := (shift.segments ++ Seq("spa.js")).mkString("/", "/", ""))
+        div(
+          cls := "container",
+          div(id := "app")
+        ),
+        script(`type` := "text/javascript", src := (site.base.segments ++ Seq("spa.js")).mkString("/", "/", ""))
       )
     )
-
+  }
 }

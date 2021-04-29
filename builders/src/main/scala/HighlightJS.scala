@@ -17,7 +17,7 @@
 package subatomic.builders
 
 case class HighlightJS(
-    version: String = "10.5.0",
+    version: String = "10.7.2",
     languages: List[String] = List("scala"),
     theme: String = "default"
 ) {
