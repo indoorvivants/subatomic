@@ -1,0 +1,10 @@
+{
+  "title": "Example SPA",
+  "subtitle": "Looky, but don't touchy",
+  "pages": 
+    [
+      ["Index", []],
+      ["Hello world", ["hello", "world"]],
+      ["Bye world", ["bye", "world"]]
+    ]
+}

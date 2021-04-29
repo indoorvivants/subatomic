@@ -20,10 +20,10 @@ package docs
 import java.time.LocalDate
 
 import subatomic.builders._
-import subatomic.builders.librarysite._
+import subatomic.builders.spa.librarysite._
 
-object Docs extends LibrarySite.App {
-  override def extra(site: Site[LibrarySite.Doc]) = {
+object Docs extends SpaLibrarySite.App {
+  override def extra(site: Site[SpaLibrarySite.Doc]) = {
     site
       .addCopyOf(SiteRoot / "CNAME", os.pwd / "docs" / "assets" / "CNAME")
   }
@@ -31,7 +31,7 @@ object Docs extends LibrarySite.App {
   val currentYear = LocalDate.now().getYear()
 
   def config =
-    LibrarySite(
+    SpaLibrarySite(
       name = "Subatomic",
       contentRoot = os.pwd / "docs" / "pages",
       assetsRoot = Some(os.pwd / "docs" / "assets"),

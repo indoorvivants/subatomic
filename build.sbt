@@ -10,6 +10,7 @@ lazy val root = project
       searchShared.projectRefs,
       searchFrontend.projectRefs,
       searchFrontendPack.projectRefs,
+      spaFrontendPack.projectRefs,
       searchRetrieve.projectRefs,
       searchCli.projectRefs
     ).flatten: _*
@@ -44,7 +45,7 @@ lazy val core = projectMatrix
 lazy val builders =
   projectMatrix
     .in(file("builders"))
-    .dependsOn(core, searchIndex, searchFrontendPack, searchRetrieve)
+    .dependsOn(core, searchIndex, searchFrontendPack, searchRetrieve, spaFrontendPack)
     .settings(
       name := "subatomic-builders",
       libraryDependencies += "com.lihaoyi"                  %% "scalatags" % "0.9.1",
@@ -61,7 +62,7 @@ lazy val searchFrontendPack = projectMatrix
   .settings(name := "subatomic-search-frontend-pack")
   .jvmPlatform(AllScalaVersions)
   .settings(
-    resourceGenerators in Compile +=
+    (Compile / resourceGenerators) +=
       Def.taskIf {
         if (sys.env.contains("CI")) {
           val out = (Compile / resourceManaged).value / "search.js"
@@ -99,6 +100,52 @@ lazy val searchFrontend =
     .settings(testSettings)
     .settings(buildInfoSettings)
     .settings(batchModeOnCI)
+
+lazy val spaFrontend =
+  projectMatrix
+    .in(file("spa"))
+    .dependsOn(searchRetrieve, searchIndex)
+    .settings(name := "subatomic-spa")
+    .settings(
+      libraryDependencies += "com.raquo" %%% "laminar"  % "0.13.0-M1",
+      libraryDependencies += "com.raquo" %%% "waypoint" % "0.4.0-SNAPSHOT",
+      scalaJSUseMainModuleInitializer := true
+    )
+    .jsPlatform(OnlyScala213)
+    .settings(testSettings)
+    .settings(buildInfoSettings)
+    .settings(batchModeOnCI)
+    .disablePlugins(TpolecatPlugin)
+
+lazy val spaFrontendPack = projectMatrix
+  .in(file("spa/pack"))
+  .settings(name := "subatomic-spa-frontend-pack")
+  .jvmPlatform(AllScalaVersions)
+  .settings(
+    (Compile / resourceGenerators) +=
+      Def.taskIf {
+        if (sys.env.contains("CI")) {
+          val out = (Compile / resourceManaged).value / "spa.js"
+
+          // doesn't matter which Scala version we use, it's compiled to JS anyways
+          val fullOpt = (spaFrontend.js(Scala_213) / Compile / fullOptJS).value.data
+
+          IO.copyFile(fullOpt, out)
+
+          List(out)
+        } else {
+          val out = (Compile / resourceManaged).value / "spa.js"
+
+          // doesn't matter which Scala version we use, it's compiled to JS anyways
+          val fullOpt = (spaFrontend.js(Scala_213) / Compile / fastOptJS).value.data
+
+          IO.copyFile(fullOpt, out)
+
+          List(out)
+
+        }
+      }.taskValue
+  )
 
 lazy val searchCli =
   projectMatrix
@@ -155,7 +202,7 @@ lazy val searchShared =
     .settings(buildInfoSettings)
     .enablePlugins(BuildInfoPlugin)
     .settings(
-      excludeFilter.in(headerSources) := HiddenFileFilter || "*Stemmer.scala"
+      (headerSources / excludeFilter) := HiddenFileFilter || "*Stemmer.scala"
     )
 
 lazy val docs = project
@@ -164,17 +211,17 @@ lazy val docs = project
   .enablePlugins(SubatomicPlugin)
   .settings(
     scalaVersion := Scala_212,
-    skip in publish := true,
+    (publish / skip) := true,
     // To react to asset changes
     watchSources += WatchSource(
-      (baseDirectory in ThisBuild).value / "docs" / "assets"
+      (ThisBuild / baseDirectory).value / "docs" / "assets"
     ),
     watchSources += WatchSource(
-      (baseDirectory in ThisBuild).value / "docs" / "pages"
+      (ThisBuild / baseDirectory).value / "docs" / "pages"
     ),
     // To pick up Main.scala in docs/ (without the src/main/scala/ stuff)
-    unmanagedSourceDirectories in Compile +=
-      (baseDirectory in ThisBuild).value / "docs",
+    (Compile / unmanagedSourceDirectories) +=
+      (ThisBuild / baseDirectory).value / "docs",
     libraryDependencies += "com.lihaoyi" %% "fansi" % "0.2.7",
     subatomicBuildersDependency := false,
     subatomicCoreDependency := false,
@@ -186,7 +233,7 @@ lazy val plugin = projectMatrix
   .withId("plugin")
   .settings(
     sbtPlugin := true,
-    sbtVersion in pluginCrossBuild := "1.4.4"
+    (pluginCrossBuild / sbtVersion) := "1.4.4"
   )
   .jvmPlatform(scalaVersions = Seq(Scala_212))
   .settings(
@@ -200,22 +247,19 @@ lazy val plugin = projectMatrix
   .settings(
     publishLocal := publishLocal
       .dependsOn(
-        publishLocal in core.jvm(Scala_212),
-        publishLocal in builders.jvm(Scala_212),
-        publishLocal in searchIndex.jvm(Scala_212),
-        publishLocal in searchFrontendPack.jvm(Scala_212),
-        publishLocal in searchShared.jvm(Scala_212),
-        publishLocal in searchRetrieve.jvm(Scala_212)
+        (core.jvm(Scala_212) / publishLocal),
+        (builders.jvm(Scala_212) / publishLocal),
+        (searchIndex.jvm(Scala_212) / publishLocal),
+        (searchFrontendPack.jvm(Scala_212) / publishLocal),
+        (searchShared.jvm(Scala_212) / publishLocal),
+        (searchRetrieve.jvm(Scala_212) / publishLocal)
       )
       .value
   )
   .settings(
-    resourceGenerators in Compile += Def.task {
+    (Compile / resourceGenerators) += Def.task {
       val out =
-        managedResourceDirectories
-          .in(Compile)
-          .value
-          .head / "subatomic-plugin.properties"
+        (Compile / managedResourceDirectories).value.head / "subatomic-plugin.properties"
 
       val props = new java.util.Properties()
 
@@ -240,7 +284,7 @@ lazy val testSettings =
       )
     ),
     testFrameworks += new TestFramework("weaver.framework.CatsEffect"),
-    scalacOptions.in(Test) ~= filterConsoleScalacOptions
+    (Test / scalacOptions) ~= filterConsoleScalacOptions
   )
 
 lazy val munitTestSettings = Seq(
@@ -251,7 +295,7 @@ lazy val munitTestSettings = Seq(
 )
 
 lazy val skipPublish = Seq(
-  skip in publish := true
+  (publish / skip) := true
 )
 
 val batchModeOnCI =
