@@ -8,53 +8,52 @@ import scalajs.js.JSStringOps._
 import org.scalajs.dom
 import L._
 
-case class Site(
-    pages: js.Array[Page],
-    title: String,
-    subtitle: Option[String]
-)
-
-case class Page(path: js.Array[String], title: String)
-
 object SubatomicSPA {
   import com.raquo.waypoint._
 
-  def pageToString(pg: Page): String =
-    JSON.stringify(js.Dynamic.literal(path = pg.path, title = pg.title))
+  case class Site(
+      pages: js.Array[(Page, String)],
+      title: String,
+      subtitle: Option[String],
+      githubUrl: Option[String]
+  ) {
+    private val mapping = pages.map { case (p, title) => p.path.toList -> title }.toMap
 
-  def fromString(s: String): Page = {
-    val parsed = JSON.parse(s)
-    val path   = parsed.selectDynamic("path").asInstanceOf[js.Array[String]]
-    val title  = parsed.selectDynamic("title").asInstanceOf[String]
+    println(s"Mapping: $mapping")
 
-    Page(path, title)
+    def pageTitle(pg: Page) = {
+      mapping.apply(pg.path.toList)
+
+    }
   }
 
-  val pageRoute = Route.fragmentOnly(
-    encode = pageToString(_),
-    decode = fromString(_),
-    encodeUrl = (page: Page) => page.path.mkString("/"),
-    pattern = fragment[String]
-  )
+  case class Page(path: js.Array[String])
 
-  val indexRoute = Route.static(Page(js.Array("index"), ""), root / endOfSegments)
+  def pageToString(pg: Page): String = pg.path.mkString("/")
 
-  // TODO: shifted site root?
-  def configPath =
-    dom.window.location.origin.toString + "/site.json"
-
-  def readConfig = AjaxEventStream.get(configPath).map(resp => JSON.parse(resp.responseText))
+  def fromString(str: String): Page = {
+    Page(str.jsSplit("/"))
+  }
 
   def transform(dyn: js.Dynamic): Option[Site] = {
     import scalajs.js.isUndefined
+
+    def optString(field: String): Option[String] = {
+      val value = dyn.selectDynamic(field)
+      if (isUndefined(value)) None else Some(value.asInstanceOf[String])
+    }
+
+    def reqString(field: String): String = {
+      dyn.selectDynamic(field).asInstanceOf[String]
+    }
+
     val pagesField = dyn.selectDynamic("pages")
-    val title      = dyn.selectDynamic("title").asInstanceOf[String]
 
     if (!isUndefined(pagesField)) {
 
       val pagesArray = pagesField.asInstanceOf[js.Array[js.Any]]
 
-      val builder = js.Array[Page]()
+      val builder = js.Array[(Page, String)]()
 
       pagesArray.foreach { a =>
         val pg = a.asInstanceOf[js.Array[js.Any]]
@@ -62,17 +61,17 @@ object SubatomicSPA {
         val title    = pg(0).asInstanceOf[String]
         val segments = pg(1).asInstanceOf[js.Array[String]]
 
-        builder.addOne(Page(segments, title))
+        builder.addOne(Page(segments) -> title)
       }
 
-      Some(Site(builder, title, None))
+      Some(Site(builder, reqString("title"), optString("subtitle"), optString("githubUrl")))
 
     } else None
   }
 
   @js.native
   trait HighlightJs extends js.Object {
-    def highlightAll() = js.native
+    def highlightAll(): Unit = js.native
   }
 
   val hljs = js.Dynamic.global.hljs.asInstanceOf[HighlightJs]
@@ -81,83 +80,126 @@ object SubatomicSPA {
     hljs.highlightAll()
   }
 
-  def renderPage(page: Page) =
-    div(
-      inContext(thisNode =>
-        AjaxEventStream
-          .get(
-            // TODO: site on a shifted path
-            dom.window.location.origin.toString + page.path.toList
-              .prepended("_pages")
-              .prepended("/")
-              .mkString("/") + ".html"
-          )
-          .map(_.responseText) --> { c =>
-          thisNode.ref.innerHTML = c
-          reHighlight()
-        }
+  class SPASite(site: Site) {
+
+    val pageRoute = Route.onlyFragment(
+      encode = pageToString(_),
+      decode = fromString(_),
+      pattern = (root / endOfSegments) withFragment fragment[String]
+    )
+
+    val indexRoute = Route.static(Page(js.Array("index")), root / endOfSegments)
+
+    // TODO: shifted site root?
+
+    def renderPage(page: Page) =
+      div(
+        inContext(thisNode =>
+          AjaxEventStream
+            .get(
+              // TODO: site on a shifted path
+              dom.window.location.origin.toString + page.path.toList
+                .prepended("_pages")
+                .prepended("/")
+                .mkString("/") + ".html"
+            )
+            .map(_.responseText) --> { c =>
+            thisNode.ref.innerHTML = c
+            reHighlight()
+
+            dom.document.title = site.pageTitle(page)
+          }
+        )
+      )
+
+    lazy val router =
+      new Router[Page](
+        routes = List(indexRoute, pageRoute),
+        getPageTitle = p => site.pageTitle(p),
+        serializePage = page => pageToString(page),
+        deserializePage = pageStr => fromString(pageStr)
+      )(
+        $popStateEvent = L.windowEvents.onPopState,
+        owner = L.unsafeWindowOwner
+      )
+
+    def magicLink(page: Page, text: String) =
+      a(
+        href := router.absoluteUrlForPage(page),
+        onClick.preventDefault --> (_ => router.pushState(page)),
+        text
+      )
+
+    def magicLink(page: Page, text: Element) =
+      a(
+        href := router.absoluteUrlForPage(page),
+        onClick.preventDefault --> (_ => router.pushState(page)),
+        text
+      )
+
+    val Navigation = div(
+      div(
+        ul(
+          site.pages.map {
+            case (page, title) =>
+              val text =
+                if (page == router.$currentPage.now())
+                  b(title)
+                else span(title)
+
+              li(magicLink(page, text))
+          }
+        )
       )
     )
 
-  val router = new Router[Page](
-    routes = List(pageRoute, indexRoute),
-    getPageTitle = _.title,
-    serializePage = page => pageToString(page),
-    deserializePage = pageStr => fromString(pageStr)
-  )(
-    $popStateEvent = L.windowEvents.onPopState,
-    owner = L.unsafeWindowOwner
-  )
-
-  def magicLink(page: Page, text: String) =
-    a(
-      href := router.absoluteUrlForPage(page),
-      onClick.preventDefault --> (_ => router.pushState(page)),
-      text
-    )
-
-  def magicLink(page: Page, text: Element) =
-    a(
-      href := router.absoluteUrlForPage(page),
-      onClick.preventDefault --> (_ => router.pushState(page)),
-      text
-    )
-
-  var site = Var(Option.empty[Site])
-
-  val navigation = div(
-    child <-- site.signal.map {
-      case None => i("loading...")
-      case Some(site) =>
+    val Header =
+      header(
+        cls := "main-header",
         div(
-          ul(
-            site.pages.map { page =>
-              val text =
-                if (page == router.$currentPage.now())
-                  b(page.title)
-                else span(page.title)
-
-              li(magicLink(page, text))
-            }
+          cls := "site-title",
+          h1(
+            a(href := "#index", site.title)
           ),
-          h1(site.title)
+          site.subtitle.map { tagline => small(tagline) }
+        ),
+        div(idAttr := "searchContainer", cls := "searchContainer"),
+        div(
+          cls := "site-links",
+          site.githubUrl.map { githubUrl =>
+            a(
+              href := githubUrl,
+              img(
+                src := "https://cdn.svgporn.com/logos/github-icon.svg",
+                cls := "gh-logo"
+              )
+            )
+          }
         )
-    }
-  )
+      )
 
-  val content = article(
-    child <-- router.$currentPage.map(renderPage)
-  )
+    lazy val Content = article(
+      child <-- router.$currentPage.map(renderPage)
+    )
 
-  val app = div(
-    readConfig.map(transform) --> site.writer,
-    navigation,
-    content
-  )
+    lazy val app = div(
+      Navigation,
+      Header,
+      Content
+    )
+
+  }
 
   def main(args: Array[String]): Unit = {
+    val siteConfig =
+      js.Dynamic.global.SubatomicSiteConfig.asInstanceOf[String]
+
+    val site = transform(JSON.parse(siteConfig))
+
+    val Site = new SPASite(site.get)
+
     val _ = documentEvents.onDomContentLoaded.foreach { _ =>
-      val _ = render(org.scalajs.dom.document.getElementById("app"), app)
+      val _ = render(org.scalajs.dom.document.getElementById("app"), Site.app)
     }(unsafeWindowOwner)
   }
 }

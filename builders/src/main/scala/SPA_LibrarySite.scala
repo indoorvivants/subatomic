@@ -177,6 +177,7 @@ object SpaLibrarySite {
           mdocResult.resultFile
         )
       }
+    val pagesRoot = SiteRoot / "_pages"
 
     val mdocJSPageRenderer: Processor[Doc, Map[SitePath => SitePath, SiteAsset]] = mdocJSProcessor
       .map { res =>
@@ -201,8 +202,6 @@ object SpaLibrarySite {
         }
       }
 
-    val pagesRoot = SiteRoot / "_pages"
-
     val baseSite = Site
       .init(content)
       .populate {
@@ -214,19 +213,19 @@ object SpaLibrarySite {
             case (sitePath, doc: Doc) if doc.scalajsEnabled =>
               site.addProcessed(
                 mdocJSPageRenderer.map { mk =>
-                  mk.map { case (k, v) => k.apply(sitePath) -> v }
+                  mk.map { case (k, v) => k.apply(pagesRoot / sitePath) -> v }
                 },
                 doc
               )
             case (sitePath, doc: Doc) =>
-              site.add(SiteRoot / sitePath, renderMarkdownPage(doc.path))
+              site.add(pagesRoot / sitePath, renderMarkdownPage(doc.path))
           }
       }
 
     val addTemplateCSS: Site[Doc] => Site[Doc] = site =>
       site.add(SiteRoot / "assets" / "template.css", Page(default.asString))
 
-    val addJsonConfig: Site[Doc] => Site[Doc] = { site =>
+    def buildJsonConfig = {
       import ujson._
 
       def removeHtml(p: SitePath) =
@@ -234,7 +233,7 @@ object SpaLibrarySite {
           p.up / "index"
         else p
 
-      val siteConfigJson = Obj(
+      val requiredFields: Seq[(String, Value)] = Seq(
         "pages" -> Arr.from(
           content.map {
             case (path, doc) =>
@@ -242,15 +241,28 @@ object SpaLibrarySite {
           }
         ),
         "title" -> Str(siteConfig.name)
-      ).render()
+      )
 
+      val optionalFields: Seq[(String, Value)] =
+        siteConfig.githubUrl.map(s => "githubUrl" -> Str(s)).toSeq ++
+          siteConfig.tagline.map(s => "subtitle" -> Str(s)).toSeq
+
+      val siteConfigJson =
+        Str(Obj.from(requiredFields ++ optionalFields).render()).render()
+
+      s"""
+      |var SubatomicSiteConfig = $siteConfigJson
+      """.stripMargin
+    }
+
+    val addJsonConfig: Site[Doc] => Site[Doc] = { site =>
       site
-        .addPage(SiteRoot / "site.json", siteConfigJson)
         .addCopyOf(SiteRoot / "spa.js", os.temp(subatomic.spa.SpaPack.fullJS))
     }
 
     val addIndexPage: Site[Doc] => Site[Doc] = { site =>
-      site.addPage(SiteRoot / "index.html", IndexHTML.apply(siteConfig, linker).render)
+      val conf = buildJsonConfig
+      site.addPage(SiteRoot / "index.html", IndexHTML.apply(siteConfig, linker, conf).render)
     }
 
     val builderSteps = new BuilderSteps(markdown)
@@ -298,7 +310,7 @@ object RawHTML {
 object IndexHTML {
   import scalatags.Text.all._
 
-  def apply(site: SpaLibrarySite, linker: Linker) = {
+  def apply(site: SpaLibrarySite, linker: Linker, jsonConfig: String = "") = {
 
     def templateStyles = {
       val paths = List(StylesheetPath(SiteRoot / "assets" / "template.css"))
@@ -330,7 +342,6 @@ object IndexHTML {
         meta(charset := "UTF-8"),
         templateStyles,
         searchStyles,
-        searchScripts,
         HighlightJS.templateBlock(site.highlightJS)
       ),
       body(
@@ -338,7 +349,11 @@ object IndexHTML {
           cls := "container",
           div(id := "app")
         ),
-        script(`type` := "text/javascript", src := (site.base.segments ++ Seq("spa.js")).mkString("/", "/", ""))
+        script(`type` := "text/javascript",
+          raw(jsonConfig)
+        ),
+        script(`type` := "text/javascript", src := (site.base.segments ++ Seq("spa.js")).mkString("/", "/", "")),
+        searchScripts
       )
     )
   }

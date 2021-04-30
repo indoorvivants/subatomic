@@ -58,7 +58,7 @@ the static files being created:
 $ amm subatomic-site.sc build --disable-mdoc
 ```
 
-```scala mdoc:passthrough
+```scala 
 val result = subatomic.docs.RunSite(
   subatomic.docs.Docs, List("--disable-mdoc")
 )
