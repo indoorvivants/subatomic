@@ -345,13 +345,8 @@ object IndexHTML {
         HighlightJS.templateBlock(site.highlightJS)
       ),
       body(
-        div(
-          cls := "container",
-          div(id := "app")
-        ),
-        script(`type` := "text/javascript",
-          raw(jsonConfig)
-        ),
+        div(id := "app"),
+        script(`type` := "text/javascript", raw(jsonConfig)),
         script(`type` := "text/javascript", src := (site.base.segments ++ Seq("spa.js")).mkString("/", "/", "")),
         searchScripts
       )

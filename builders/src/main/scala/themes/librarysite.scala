@@ -25,7 +25,7 @@ object default extends StyleSheet.Standalone {
   import dsl._
 
   "body" - (
-    fontSize(19.px),
+    fontSize(16.px),
     color(black),
     backgroundColor(c"#463F3A"),
     fontFamily.attr := "-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif,Apple Color Emoji,Segoe UI Emoji,Segoe UI Symbol"
@@ -35,12 +35,28 @@ object default extends StyleSheet.Standalone {
     backgroundColor(rgb(254, 255, 248)),
     borderRadius(5.px),
     padding(30.px),
-    width(80.pc),
-    margin(30.px),
+    width(70.%%),
+    // margin(30.px),
     media.screen.minWidth(1600.px) - (
       width(50.%%),
       marginLeft(25.%%)
     )
+  )
+
+  "aside.navigation" - (
+    maxWidth(200.px)
+  )
+
+  "aside.navigation a" - (
+    color(rgb(254, 255, 248)),
+    textDecorationLine.none,
+    maxWidth(200.px)
+  )
+
+  "div.site" - (
+    display.flex,
+    flexDirection.row,
+    justifyContent.right
   )
 
   "footer" - (

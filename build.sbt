@@ -108,7 +108,7 @@ lazy val spaFrontend =
     .settings(name := "subatomic-spa")
     .settings(
       libraryDependencies += "com.raquo" %%% "laminar"  % "0.13.0-M1",
-      libraryDependencies += "com.raquo" %%% "waypoint" % "0.4.0-SNAPSHOT",
+      libraryDependencies += "com.raquo" %%% "waypoint" % "0.4.0",
       scalaJSUseMainModuleInitializer := true
     )
     .jsPlatform(OnlyScala213)

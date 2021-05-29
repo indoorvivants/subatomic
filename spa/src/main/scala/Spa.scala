@@ -27,7 +27,10 @@ object SubatomicSPA {
     }
   }
 
-  case class Page(path: js.Array[String])
+  case class Page(path: js.Array[String]) {
+    def sameAs(other: Page) = 
+      path.sameElements(other.path)
+  }
 
   def pageToString(pg: Page): String = pg.path.mkString("/")
 
@@ -82,10 +85,11 @@ object SubatomicSPA {
 
   class SPASite(site: Site) {
 
-    val pageRoute = Route.onlyFragment(
+    val pageRoute = Route[Page, String](
       encode = pageToString(_),
       decode = fromString(_),
-      pattern = (root / endOfSegments) withFragment fragment[String]
+      pattern = (root / segment[String] / endOfSegments),
+      basePath = Route.fragmentBasePath
     )
 
     val indexRoute = Route.static(Page(js.Array("index")), root / endOfSegments)
@@ -137,13 +141,14 @@ object SubatomicSPA {
         text
       )
 
-    val Navigation = div(
-      div(
+    val Navigation =
+      aside(
+        cls := "navigation",
         ul(
           site.pages.map {
             case (page, title) =>
               val text =
-                if (page == router.$currentPage.now())
+                if (page.sameAs(router.$currentPage.now()))
                   b(title)
                 else span(title)
 
@@ -151,7 +156,6 @@ object SubatomicSPA {
           }
         )
       )
-    )
 
     val Header =
       header(
@@ -183,9 +187,8 @@ object SubatomicSPA {
     )
 
     lazy val app = div(
-      Navigation,
       Header,
-      Content
+      div(cls := "site", Navigation, div(cls := "container", Content))
     )
 
   }
