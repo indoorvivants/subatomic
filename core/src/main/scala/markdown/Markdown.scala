@@ -31,12 +31,13 @@ import com.vladsch.flexmark.util.ast.Node
 import com.vladsch.flexmark.util.ast.TextContainer
 import com.vladsch.flexmark.util.data.MutableDataSet
 import com.vladsch.flexmark.util.misc.Extension
+import java.util.Collection
 
 class Markdown(extensions: List[Extension]) {
   private val opts = extensions match {
     case _ :: _ =>
       new MutableDataSet()
-        .set(
+        .set[Collection[Extension]](
           Parser.EXTENSIONS,
           extensions.asJava
         )
