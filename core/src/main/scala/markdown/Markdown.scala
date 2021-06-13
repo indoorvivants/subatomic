@@ -16,6 +16,8 @@
 
 package subatomic
 
+import java.util.Collection
+
 import scala.annotation.tailrec
 import scala.collection.mutable.ArrayBuffer
 import scala.jdk.CollectionConverters._
@@ -31,7 +33,6 @@ import com.vladsch.flexmark.util.ast.Node
 import com.vladsch.flexmark.util.ast.TextContainer
 import com.vladsch.flexmark.util.data.MutableDataSet
 import com.vladsch.flexmark.util.misc.Extension
-import java.util.Collection
 
 class Markdown(extensions: List[Extension]) {
   private val opts = extensions match {

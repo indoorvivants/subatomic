@@ -18,7 +18,8 @@ package subatomic
 
 import java.{util => ju}
 
-import scala.util.Success
+import scala.util.Failure
+import scala.util.Try
 
 import com.vladsch.flexmark.ast.Link
 import com.vladsch.flexmark.html.HtmlRenderer
@@ -36,9 +37,11 @@ import com.vladsch.flexmark.html.renderer.ResolvedLink
 import com.vladsch.flexmark.util.ast.Node
 import com.vladsch.flexmark.util.data.DataHolder
 import com.vladsch.flexmark.util.data.MutableDataHolder
-import io.lemonlabs.uri.RelativeUrl
-import io.lemonlabs.uri.Url
-import io.lemonlabs.uri.config.UriConfig
+// import java.nio.file.Paths
+// import scala.jdk.CollectionConverters._
+// import io.lemonlabs.uri.RelativeUrl
+// import io.lemonlabs.uri.Url
+// import io.lemonlabs.uri.config.UriConfig
 
 object RelativizeLinksExtension {
   class Resolver(base: os.RelPath) extends LinkResolver {
@@ -47,12 +50,26 @@ object RelativizeLinksExtension {
         context: LinkResolverBasicContext,
         link: ResolvedLink
     ): ResolvedLink = {
-      Url.parseTry(link.getUrl()) match {
-        case Success(rp: RelativeUrl) =>
-          val newPath =
-            rp.path.withParts(base.segments ++ rp.path.parts).toAbsolute
-          val newUrl = rp.copy(path = newPath)(UriConfig.default)
-          link.withUrl(newUrl.toStringRaw)
+      def asUrl(u: String) = Try(new java.net.URL(u))
+      val url              = link.getUrl()
+      asUrl(url) match {
+        case Failure(_) if url.startsWith("#") =>
+          // hash
+          link
+        case Failure(_) =>
+          val fakeBase = "http://localhost"
+          val fakeUrl  = if (url.startsWith("/")) fakeBase + url else fakeBase + "/" + url
+          val parsed   = new java.net.URI(fakeUrl)
+          val pathSegments =
+            if (parsed.getPath() == "/" || parsed.getPath() == "") Seq() else parsed.getPath().split("/").toSeq.tail
+
+          val shiftedPath = "" +: (base.segments ++ pathSegments)
+          val sb          = new StringBuilder
+          sb.append(shiftedPath.mkString("/"))
+          if (parsed.getQuery() != null) sb.append("?" + parsed.getQuery())
+          if (parsed.getFragment() != null) sb.append("#" + parsed.getFragment())
+
+          link.withUrl(sb.result())
         case _ => link
       }
     }

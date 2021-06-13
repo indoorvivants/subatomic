@@ -21,7 +21,6 @@ package cli
 import scala.util.Try
 
 object SearchCLI {
-  import scala.collection.compat._
   def main(argArr: Array[String]): Unit = {
     val args = argArr.toList
 

@@ -63,9 +63,9 @@ lazy val core = projectMatrix
     libraryDependencies ++= Seq(
       "io.get-coursier"        %% "coursier"                % Ver.coursier cross CrossVersion.for3Use2_13,
       "com.lihaoyi"            %% "os-lib"                  % Ver.osLib,
-      "io.lemonlabs"           %% "scala-uri"               % Ver.scalaUri cross CrossVersion.for3Use2_13,
       "org.scala-lang.modules" %% "scala-collection-compat" % Ver.scalaCollectionCompat
-    )
+    ),
+    Test / fork := true
   )
   .settings(
     libraryDependencies ++= flexmarkModules
@@ -74,6 +74,7 @@ lazy val core = projectMatrix
   .settings(testSettings)
   .enablePlugins(BuildInfoPlugin)
   .settings(buildInfoSettings)
+  .configure()
 
 lazy val builders =
   projectMatrix
@@ -271,7 +272,6 @@ lazy val testSettings =
       )
     ),
     testFrameworks += new TestFramework("weaver.framework.CatsEffect"),
-    Test / scalacOptions ~= filterConsoleScalacOptions
   )
 
 lazy val munitTestSettings = Seq(
