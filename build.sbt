@@ -8,9 +8,9 @@ val Ver = new {
   val scalacss              = "0.7.0"
   val decline               = "2.0.0"
   val laminar               = "0.13.0"
-  val upickle               = "1.3.15"
+  val upickle               = "1.4.0"
   val fansi                 = "0.2.14"
-  val weaver                = "0.6.3"
+  val weaver                = "0.6.4"
   val munit                 = "0.7.26"
 
   val Scala = new {
@@ -130,7 +130,7 @@ lazy val searchFrontend =
       libraryDependencies += "com.raquo" %%% "laminar" % Ver.laminar,
       scalaJSUseMainModuleInitializer := true
     )
-    .jsPlatform(Ver.Scala.only_2)
+    .jsPlatform(Ver.Scala.all)
     .settings(testSettings)
     .settings(buildInfoSettings)
     .settings(batchModeOnCI)
@@ -157,8 +157,8 @@ lazy val searchIndex =
     .in(file("search/indexer"))
     .dependsOn(searchShared)
     .settings(name := "subatomic-search-indexer")
-    .jvmPlatform(Ver.Scala.only_2)
-    .jsPlatform(Ver.Scala.only_2, batchModeOnCI)
+    .jvmPlatform(Ver.Scala.all)
+    .jsPlatform(Ver.Scala.all, batchModeOnCI)
     .nativePlatform(Ver.Scala.only_2)
     .settings(munitTestSettings)
     .settings(buildInfoSettings)
@@ -170,8 +170,8 @@ lazy val searchRetrieve =
     .settings(
       name := "subatomic-search-retrieve"
     )
-    .jvmPlatform(Ver.Scala.only_2)
-    .jsPlatform(Ver.Scala.only_2, batchModeOnCI)
+    .jvmPlatform(Ver.Scala.all)
+    .jsPlatform(Ver.Scala.all, batchModeOnCI)
     .nativePlatform(Ver.Scala.only_2)
     .settings(munitTestSettings)
     .settings(buildInfoSettings)
@@ -183,8 +183,8 @@ lazy val searchShared =
       name := "subatomic-search-shared",
       libraryDependencies += "com.lihaoyi" %%% "upickle" % Ver.upickle
     )
-    .jvmPlatform(Ver.Scala.only_2)
-    .jsPlatform(Ver.Scala.only_2, batchModeOnCI)
+    .jvmPlatform(Ver.Scala.all)
+    .jsPlatform(Ver.Scala.all, batchModeOnCI)
     .nativePlatform(Ver.Scala.only_2)
     .settings(munitTestSettings)
     .settings(buildInfoSettings)
@@ -315,7 +315,7 @@ lazy val buildInfoSettings = {
 inThisBuild(
   List(
     scalaVersion := Ver.Scala.`2_13`,
-    scalafixDependencies += "com.github.liancheng" %% "organize-imports" % "0.4.0",
+    scalafixDependencies += "com.github.liancheng" %% "organize-imports" % "0.5.0",
     semanticdbEnabled := true,
     semanticdbVersion := scalafixSemanticdb.revision,
     scalafixScalaBinaryVersion := scalaBinaryVersion.value,

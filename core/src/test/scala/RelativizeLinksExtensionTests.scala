@@ -3,7 +3,6 @@ package subatomic
 import com.vladsch.flexmark.util.misc.Extension
 import weaver.Expectations
 import weaver.SimpleMutableIOSuite
-import weaver.SourceLocation
 
 object RelativizeLinksExtensionTests extends SimpleMutableIOSuite {
 

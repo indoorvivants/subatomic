@@ -44,7 +44,7 @@ case class CharTree(
 
 object CharTree {
 
-  private case class MutableCharTree private (
+  private case class MutableCharTree(
       children: mut.Map[Char, MutableCharTree],
       var terminal: Option[TermIdx]
   ) {
@@ -63,7 +63,7 @@ object CharTree {
   }
 
   def build(terms: Iterable[(TermName, TermIdx)]) = {
-    val node = MutableCharTree(mut.Map.empty, None)
+    val node = new MutableCharTree(mut.Map.empty, None)
 
     terms.foreach {
       case (name, idx) =>

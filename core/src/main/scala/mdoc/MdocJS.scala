@@ -40,26 +40,38 @@ class MdocJS(
     unsafeParse(s"org.scalameta::mdoc-js:${config.mdocVersion}")
   )
 
-  private lazy val jsClasspath = cp(
-    unsafeParse(
-      s"org.scala-js::scalajs-library:${scalajsConfiguration.version}"
-    ),
-    unsafeParse(
-      s"org.scala-js::scalajs-dom_sjs1:${scalajsConfiguration.domVersion}"
-    )
-  )
-
   val fullScala = config.scalaBinaryVersion match {
     case "2.12" => "2.12.12"
     case "2.13" => "2.13.3"
+    case "3"    => "2.13.3"
   }
 
-  private lazy val compilerPlug = cp(
-    unsafeParse(
-      s"org.scala-js:scalajs-compiler_$fullScala:${scalajsConfiguration.version}",
-      transitive = false
+  def jsLibraryClasspath = {
+    val scalaSuffix = config.scalaBinaryVersion match {
+      case "2.13" => "2.13"
+      case "2.12" => "2.12"
+      case "3"    => "2.13"
+    }
+
+    cp(
+      unsafeParse(
+        s"org.scala-js:scalajs-library_$scalaSuffix:${scalajsConfiguration.version}"
+      ),
+      unsafeParse(
+        s"org.scala-js:scalajs-dom_sjs1_$scalaSuffix:${scalajsConfiguration.domVersion}"
+      )
     )
-  )
+  }
+
+  private lazy val compilerPlug =
+    if (config.scalaBinaryVersion != "3")
+      "-Xplugin:" + cp(
+        unsafeParse(
+          s"org.scala-js:scalajs-compiler_$fullScala:${scalajsConfiguration.version}",
+          transitive = false
+        )
+      )
+    else "-Xscalajs"
 
   def optsFolder(deps: Iterable[String]) = {
     val tempDir = os.temp.dir()
@@ -68,8 +80,8 @@ class MdocJS(
 
     val fileContent =
       List(
-        "js-classpath=" + jsClasspath + depsCp,
-        "js-scalac-options=-Xplugin:" + compilerPlug
+        "js-classpath=" + jsLibraryClasspath + depsCp,
+        "js-scalac-options=" + compilerPlug
       ).mkString("\n")
 
     os.write.over(tempDir / "mdoc.properties", fileContent)

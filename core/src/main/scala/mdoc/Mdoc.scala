@@ -151,7 +151,7 @@ class Mdoc(
       pwd: Option[os.Path]
   ): Seq[(os.Path, os.Path)] = {
 
-    val logger      = logging.at("MDOC(batch)")
+    val logger      = logging.at("MDOC")
     val tmpLocation = os.temp.dir()
 
     val filesWithTargets = files.map { p =>
@@ -182,14 +182,19 @@ class Mdoc(
 
     val launcherJVM = mainCp + launcherClasspath.map(":" + _).getOrElse("")
 
+    val extraCP =
+      fetchCp(config.extraDependencies) + inheritedClasspath.map(":" + _).getOrElse("")
+
+    val classpathArg = if (extraCP.trim != "") Seq("--classpath", extraCP) else Seq.empty
+
     val base = Seq(
       "java",
       "-classpath",
       launcherJVM,
-      "mdoc.Main",
-      "--classpath",
-      fetchCp(config.extraDependencies) + inheritedClasspath.map(":" + _).getOrElse("")
-    )
+      "mdoc.Main"
+    ) ++ classpathArg
+
+    println(base)
 
     scala.util.Try(
       os

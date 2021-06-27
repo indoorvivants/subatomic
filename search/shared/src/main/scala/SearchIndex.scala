@@ -66,10 +66,8 @@ case class SearchIndex private (
     charTree: CharTree
 ) {
 
-  case class Found[T] private (value: T)
-
-  def resolveTerm(s: String): Option[Found[TermIdx]] =
-    termMapping.get(TermName(s)).map(Found(_))
+  def resolveTerm(s: String): Option[TermIdx] =
+    termMapping.get(TermName(s))
 
   def asJson: ujson.Value = {
     import upickle.default._
@@ -83,13 +81,13 @@ case class SearchIndex private (
 import upickle.default._
 
 object SearchIndex {
-  implicit val termIdxReader  = IntReader.map(TermIdx)
-  implicit val termNameReader = StringReader.map(TermName)
-  implicit val docIdxReader   = IntReader.map(DocumentIdx)
-  implicit val tfReader       = IntReader.map(TermFrequency)
-  implicit val gtfReader      = IntReader.map(GlobalTermFrequency)
-  implicit val csReader       = IntReader.map(CollectionSize)
-  implicit val sectIdxR       = IntReader.map(SectionIdx)
+  implicit val termIdxReader: Reader[TermIdx]         = IntReader.map(TermIdx.apply)
+  implicit val termNameReader: Reader[TermName]       = StringReader.map(TermName.apply)
+  implicit val docIdxReader: Reader[DocumentIdx]      = IntReader.map(DocumentIdx.apply)
+  implicit val tfReader: Reader[TermFrequency]        = IntReader.map(TermFrequency.apply)
+  implicit val gtfReader: Reader[GlobalTermFrequency] = IntReader.map(GlobalTermFrequency.apply)
+  implicit val csReader: Reader[CollectionSize]       = IntReader.map(CollectionSize.apply)
+  implicit val sectIdxR: Reader[SectionIdx]           = IntReader.map(SectionIdx.apply)
 
   implicit val termIdxWriter: Writer[TermIdx]    = IntWriter.comap(_.value)
   implicit val termNameWriter: Writer[TermName]  = StringWriter.comap(_.value)
@@ -107,17 +105,19 @@ object SearchIndex {
 
   implicit def rct: Reader[CharTree] = macroR[(Map[Char, CharTree], Option[TermIdx])].map(c => CharTree(c._1, c._2))
 
-  implicit val tdoR =
+  implicit val tdoR: Reader[TermDocumentOccurence] =
     macroR[(TermFrequency, Map[SectionIdx, TermFrequency])].map(i => TermDocumentOccurence(i._1, i._2))
 
-  implicit val tdoW = macroW[(TermFrequency, Map[SectionIdx, TermFrequency])].comap[TermDocumentOccurence](t =>
-    (t.frequencyInDocument, t.sectionOccurences)
-  )
+  implicit val tdoW: Writer[TermDocumentOccurence] =
+    macroW[(TermFrequency, Map[SectionIdx, TermFrequency])].comap[TermDocumentOccurence](t =>
+      (t.frequencyInDocument, t.sectionOccurences)
+    )
   implicit val secR: Reader[SectionEntry] = macroRW[(String, String)].map(s => SectionEntry(s._1, s._2))
   implicit val secW: Writer[SectionEntry] = macroW[(String, String)].comap[SectionEntry](s => (s.title, s.url))
 
-  implicit val docR = macroR[(String, String, Map[SectionIdx, SectionEntry])].map(s => DocumentEntry(s._1, s._2, s._3))
-  implicit val docW =
+  implicit val docR: Reader[DocumentEntry] =
+    macroR[(String, String, Map[SectionIdx, SectionEntry])].map(s => DocumentEntry(s._1, s._2, s._3))
+  implicit val docW: Writer[DocumentEntry] =
     macroW[(String, String, Map[SectionIdx, SectionEntry])].comap[DocumentEntry](d => (d.title, d.url, d.sections))
 
   implicit val w: Writer[SearchIndex] = macroW[SearchIndex]
