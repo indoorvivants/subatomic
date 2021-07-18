@@ -1,8 +1,8 @@
-{
-  if (!sys.env.contains("DEV"))
-    Seq(addSbtPlugin("io.github.davidgregory084" % "sbt-tpolecat" % "0.1.13"))
-  else Seq.empty
-}
+/* { */
+/*   if (!sys.env.contains("DEV")) */
+/*     Seq(addSbtPlugin("io.github.davidgregory084" % "sbt-tpolecat" % "0.1.13")) */
+/*   else Seq.empty */
+/* } */
 
 addSbtPlugin("com.github.cb372"  % "sbt-explicit-dependencies" % "0.2.16")
 addSbtPlugin("org.scalameta"     % "sbt-scalafmt"              % "2.4.2")

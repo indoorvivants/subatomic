@@ -19,6 +19,7 @@ package search
 package cli
 
 import scala.util.Try
+import scala.collection.compat._
 
 object SearchCLI {
   def main(argArr: Array[String]): Unit = {

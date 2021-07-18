@@ -194,7 +194,7 @@ class Mdoc(
       "mdoc.Main"
     ) ++ classpathArg
 
-    println(base)
+    // println(base)
 
     scala.util.Try(
       os

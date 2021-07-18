@@ -2,11 +2,8 @@ package subatomic
 package builders
 
 import weaver._
-import cats.effect._
-import weaver.{Log => WeaverLog}
 
 object LibrarySiteTest extends SimpleIOSuite with BuildersHelpers {
-  import subatomic.builders.librarysite.LibrarySite._
   import subatomic.builders.librarysite.LibrarySite
 
   pureTest("discovery: attributes and paths") {

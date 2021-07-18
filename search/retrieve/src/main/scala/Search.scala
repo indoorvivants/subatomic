@@ -40,9 +40,9 @@ class Search(index: SearchIndex, debug: Boolean = false) {
       for {
         termIdx <- index.resolveTerm(tok)
         _ = debugPrint(s"token $tok resolved to $termIdx")
-        docsWithTerm <- index.termsInDocuments.get(termIdx.value)
+        docsWithTerm <- index.termsInDocuments.get(termIdx)
         _ = debugPrint(s"documents with $tok: $docsWithTerm")
-      } yield termIdx.value -> docsWithTerm
+      } yield termIdx -> docsWithTerm
     }
 
     val validTerms = terms.map(_._1)

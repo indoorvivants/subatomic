@@ -16,7 +16,7 @@ val Ver = new {
   val Scala = new {
     val `2_12` = "2.12.13"
     val `2_13` = "2.13.5"
-    val `3`    = "3.0.0"
+    val `3`    = "3.0.1"
 
     val only_2 = Seq(`2_12`, `2_13`)
     val all    = only_2 :+ `3`
@@ -41,8 +41,8 @@ lazy val root = project
 
 import commandmatrix._
 
-commands ++= CrossCommand.single(
-  "test",
+commands ++= CrossCommand.all(
+  cmds = Seq("compile", "test"),
   matrices = Seq(core, builders, searchIndex, searchShared, searchFrontend, searchRetrieve, searchCli),
   dimensions = Seq(
     Dimension.scala("2.12"),
@@ -181,7 +181,7 @@ lazy val searchShared =
     .in(file("search/shared"))
     .settings(
       name := "subatomic-search-shared",
-      libraryDependencies += "com.lihaoyi" %%% "upickle" % Ver.upickle
+      libraryDependencies += "com.lihaoyi" %%% "upickle" % Ver.upickle 
     )
     .jvmPlatform(Ver.Scala.all)
     .jsPlatform(Ver.Scala.all, batchModeOnCI)
