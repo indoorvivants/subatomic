@@ -61,7 +61,7 @@ object MdocConfiguration {
   def default =
     MdocConfiguration(
       scalaBinaryVersion = BuildInfo.scalaBinaryVersion,
-      mdocVersion = "2.2.21",
+      mdocVersion = "2.2.22",
       inheritClasspath = true,
       inheritVariables = true,
       variables = Map.empty,
@@ -194,7 +194,7 @@ class Mdoc(
       "mdoc.Main"
     ) ++ classpathArg
 
-    // println(base)
+    launcherJVM.split(":").sorted.map(_.replace("/home/velvetbaldmime/.cache/coursier/", "")).foreach(println)
 
     scala.util.Try(
       os

@@ -3,7 +3,7 @@ val Ver = new {
   val coursier              = "2.0.16"
   val osLib                 = "0.7.8"
   val scalaUri              = "3.2.0"
-  val scalaCollectionCompat = "2.4.4"
+  val scalaCollectionCompat = "2.5.0"
   val scalatags             = "0.9.4"
   val scalacss              = "0.7.0"
   val decline               = "2.0.0"
@@ -61,7 +61,7 @@ lazy val core = projectMatrix
   .settings(
     name := "subatomic-core",
     libraryDependencies ++= Seq(
-      "io.get-coursier"        %% "coursier"                % Ver.coursier cross CrossVersion.for3Use2_13,
+      "io.get-coursier"        %% "coursier"                % Ver.coursier cross CrossVersion.for3Use2_13 exclude ("org.scala-lang.modules", "scala-collection-compat_2.13"),
       "com.lihaoyi"            %% "os-lib"                  % Ver.osLib,
       "org.scala-lang.modules" %% "scala-collection-compat" % Ver.scalaCollectionCompat
     ),
@@ -181,7 +181,7 @@ lazy val searchShared =
     .in(file("search/shared"))
     .settings(
       name := "subatomic-search-shared",
-      libraryDependencies += "com.lihaoyi" %%% "upickle" % Ver.upickle 
+      libraryDependencies += "com.lihaoyi" %%% "upickle" % Ver.upickle
     )
     .jvmPlatform(Ver.Scala.all)
     .jsPlatform(Ver.Scala.all, batchModeOnCI)
@@ -271,7 +271,7 @@ lazy val testSettings =
         "com.disneystreaming" %%% "weaver-scalacheck" % Ver.weaver % Test
       )
     ),
-    testFrameworks += new TestFramework("weaver.framework.CatsEffect"),
+    testFrameworks += new TestFramework("weaver.framework.CatsEffect")
   )
 
 lazy val munitTestSettings = Seq(
