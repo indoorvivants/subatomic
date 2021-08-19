@@ -41,7 +41,7 @@ object RelativizeLinksExtensionTests extends SimpleMutableIOSuite {
     }
   }
 
-  implicit class StringOps(s: String) {
+  private implicit class Ops(s: String) {
     def processedWith(
         l: Extension*
     )(htmlTest: String => Expectations) = {
