@@ -1,7 +1,7 @@
 val Ver = new {
   val flexmark              = "0.62.2"
   val coursier              = "2.0.16"
-  val osLib                 = "0.7.8"
+  val osLib                 = "0.7.2"
   val scalaUri              = "3.2.0"
   val scalaCollectionCompat = "2.5.0"
   val scalatags             = "0.9.4"

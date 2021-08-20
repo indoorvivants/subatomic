@@ -22,6 +22,7 @@ import java.time.format.DateTimeFormatter
 
 import subatomic.Discover.MarkdownDocument
 import subatomic.builders._
+import subatomic.buildrs.blog.themes.default
 
 import com.vladsch.flexmark.ext.anchorlink.AnchorLinkExtension
 import com.vladsch.flexmark.ext.yaml.front.matter.YamlFrontMatterExtension
@@ -283,6 +284,9 @@ object Blog {
       site.addPage(SiteRoot / "archive.html", template.archivePage(blogPosts).render)
     }
 
+    val addTemplateCSS: Site[Doc] => Site[Doc] = site =>
+      site.add(SiteRoot / "assets" / "template.css", Page(default.asString))
+
     val builderSteps = new BuilderSteps(markdown)
 
     val steps = List[Site[Doc] => Site[Doc]](
@@ -294,6 +298,7 @@ object Blog {
         content
       ),
       builderSteps.addAllAssets[Doc](siteConfig.assetsRoot, siteConfig.assetsFilter),
+      addTemplateCSS,
       extra
     )
 
@@ -357,7 +362,7 @@ trait Template {
 
   def rawHtml(rawHtml: String) = div(raw(rawHtml))
 
-  def searchScripts = {
+  private def searchScripts = {
     val paths =
       if (site.search)
         List(ScriptPath(SiteRoot / "assets" / "search.js"), ScriptPath(SiteRoot / "assets" / "search-index.js"))
@@ -366,7 +371,7 @@ trait Template {
     BuilderTemplate.managedScriptsBlock(linker, paths)
   }
 
-  def searchStyles = {
+  private def searchStyles = {
     val paths =
       if (site.search)
         List(
@@ -374,6 +379,12 @@ trait Template {
           StylesheetPath(SiteRoot / "assets" / "subatomic-search.css")
         )
       else Nil
+
+    BuilderTemplate.managedStylesBlock(linker, paths)
+  }
+
+  private def templateStyles = {
+    val paths = List(StylesheetPath(SiteRoot / "assets" / "template.css"))
 
     BuilderTemplate.managedStylesBlock(linker, paths)
   }
@@ -393,6 +404,7 @@ trait Template {
         BuilderTemplate.managedScriptsBlock(linker, site.managedScripts),
         searchScripts,
         searchStyles,
+        templateStyles,
         meta(charset := "UTF-8"),
         meta(
           name := "viewport",

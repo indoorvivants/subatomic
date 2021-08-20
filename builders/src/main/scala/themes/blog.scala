@@ -74,13 +74,25 @@ object default extends StyleSheet.Standalone {
 
   "img" - maxWidth(100.%%)
 
+  "div.sidebar a" - color(c"#eae0d5")
+
   "div.sidebar a:hover" - color(c"#eae0d5")
+
+  "article.content-wrapper a" - (
+    color(c"#22333b"),
+    fontWeight.bold,
+    textDecorationLine.underline
+  )
+  "article.content-wrapper a:hover" - (
+    color(c"#22333b"),
+    fontWeight.bold,
+    textDecorationLine.none
+  )
 
   "article.content-wrapper" - (
     backgroundColor(c"#eae0d5"),
     height(100.%%),
     height.auto,
-    textAlign.justify,
     color(c"#0a0908"),
     whenOnWideScreen - (
       flexGrow(0),
@@ -130,9 +142,8 @@ object default extends StyleSheet.Standalone {
   )
 
   "article.content-wrapper code" - (
-    borderRadius(5.px),
     backgroundColor(c"#23241f"),
-    padding(2.px),
+    padding(1.px),
     color.white
   )
 

@@ -49,10 +49,12 @@ object RelativizeLinksExtension {
     ): ResolvedLink = {
       Url.parseTry(link.getUrl()) match {
         case Success(rp: RelativeUrl) =>
-          val newPath =
-            rp.path.withParts(base.segments ++ rp.path.parts).toAbsolute
-          val newUrl = rp.copy(path = newPath)(UriConfig.default)
-          link.withUrl(newUrl.toStringRaw)
+          if (rp.path.nonEmpty) {
+            val newPath =
+              rp.path.withParts(base.segments ++ rp.path.parts).toAbsolute
+            val newUrl = rp.copy(path = newPath)(UriConfig.default)
+            link.withUrl(newUrl.toStringRaw)
+          } else link
         case _ => link
       }
     }
