@@ -24,68 +24,62 @@ import scalacss.DevDefaults._
 object default extends StyleSheet.Standalone {
   import dsl._
 
-  val whenOnWideScreen = media.screen.minDeviceWidth(1200.px)
-  val whenOnPortrait   = media.screen.maxDeviceHeight(400.px).portrait
+  val whenOnWideScreen   = media.screen.minWidth(1600.px)
+  val whenOnNarrowScreen = media.screen.minWidth(1024.px).maxWidth(1600.px)
+  val whenOnMobile       = media.screen.maxWidth(1023.px)
 
   "html, body" - (
     fontFamily.attr := "sans-serif",
-    fontSize(16.px),
+    fontSize(19.px),
     height(100.%%),
-    backgroundColor(c"#22333b")
+    backgroundColor(c"#22333b"),
   )
 
   "div.wrapper" - (
     whenOnWideScreen - (
       flexDirection.row,
-      margin(30.px),
-      display.grid,
-      gridTemplateColumns := "minmax(10px, 1fr) minmax(10px, 5fr)",
-      gap(1.rem),
-      backgroundColor(c"#eae0d5"),
-      maxWidth(80.%%),
-      width(80.%%)
-    ),
-    whenOnPortrait - (
       display.flex,
-      flexDirection.column,
       width(100.%%),
-      maxWidth(100.%%)
-    )
+      justifyContent.center,
+      flexWrap.nowrap,
+      alignContent.center,
+    ),
+    whenOnNarrowScreen - (
+      flexDirection.rowReverse,
+      display.flex,
+      maxWidth(1600.px),
+    ),
+    whenOnMobile - (maxWidth(100.%%), flexDirection.columnReverse, display.flex)
   )
-
-  "a" - textDecorationLine.none
 
   "span.blog-tag" - (
     margin(3.px),
     backgroundColor(c"#d6d6d6"),
-    padding(6.px),
+    padding(2.px),
     color.black,
     borderWidth(1.px, 1.px, 1.px, 5.px),
     borderColor.black,
     borderStyle.solid,
-    display.inlineBlock
+    display.inlineBlock,
+    paddingLeft(5.px)
   )
 
-  "span.blog-tag > a" - color.black
-
-  "div.static-nav" - marginBottom(10.px)
-
-  "div.about" - textAlign.right
+  "span.blog-tag a, span.blog-tag a:hover" - (color.black, textDecorationLine.none)
 
   "img" - maxWidth(100.%%)
 
-  "div.sidebar a" - color(c"#eae0d5")
+  "aside.sidebar a" - color(c"#eae0d5")
 
-  "div.sidebar a:hover" - color(c"#eae0d5")
+  "aside.sidebar a:hover" - color(c"#eae0d5")
+
+  "article.content-wrapper" - (width(35.em), padding(3.5.em))
 
   "article.content-wrapper a" - (
     color(c"#22333b"),
-    fontWeight.bold,
     textDecorationLine.underline
   )
   "article.content-wrapper a:hover" - (
     color(c"#22333b"),
-    fontWeight.bold,
     textDecorationLine.none
   )
 
@@ -97,57 +91,67 @@ object default extends StyleSheet.Standalone {
     whenOnWideScreen - (
       flexGrow(0),
       flexShrink(0),
-      padding(10.px)
     ),
-    whenOnPortrait - (
-      padding(10.px),
-      order(0),
-      flexShrink(0),
-      flexGrow(0),
-      maxWidth(100.%%)
-    )
   )
 
   "div.searchContainer a" - (
     color.darkslategrey
   )
 
-  "div.sidebar" - (
+  "aside.sidebar" - (
     backgroundColor(c"#22333b"),
     color(c"#c6ac8f"),
+    padding(10.px),
     whenOnWideScreen - (
       flexShrink(0),
-      flexGrow(0)
+      flexGrow(0),
+      maxWidth(300.px)
     ),
-    whenOnPortrait - (
-      padding(10.px),
-      order(1),
-      flexShrink(0),
-      flexGrow(0)
-    )
-  )
-
-  "div.blog-card div.blog-card-title" - (
-    padding(10.px),
-    backgroundColor(c"#436475"),
-    color.white,
-    textAlign.left
+    whenOnNarrowScreen - maxWidth(300.px)
   )
 
   "div.blog-card-title a" - (
     fontSize(22.px),
     fontWeight.bold,
-    textDecorationLine.none,
-    color.white
+  )
+
+  "p.blog-card-text" - (
+    marginLeft(20.px),
+    paddingLeft(10.px),
+    borderLeftColor(c"#436475"),
+    borderLeftWidth(2.px),
+    borderLeftStyle.solid,
+    fontStyle.italic
   )
 
   "article.content-wrapper code" - (
-    backgroundColor(c"#23241f"),
-    padding(1.px),
+    backgroundColor(c"#404239"),
+    padding(3.px),
+    borderRadius(1.px),
+    fontSize(75.%%),
     color.white
   )
 
-  "article.content-wrapper" - fontSize(19.px)
+  "article.content-wrapper" - (
+    fontSize(19.px),
+    lineHeight(1.4),
+    padding(20.px),
+    whenOnWideScreen - (
+      flexGrow(4),
+      maxWidth(1000.px),
+    ),
+    whenOnMobile - (maxWidth(100.%%), padding(3.px)),
+    whenOnNarrowScreen - (flexGrow(4), maxWidth(1000.px))
+  )
+
+  "blockquote" - (
+    fontSize(120.%%),
+    fontStyle.italic,
+    borderLeftColor.darkgrey,
+    borderLeftWidth(5.px),
+    borderLeftStyle.solid,
+    paddingLeft(1.em)
+  )
 
   "article.content-wrapper code.hljs" - padding(10.px)
 

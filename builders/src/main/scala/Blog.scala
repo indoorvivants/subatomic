@@ -118,11 +118,13 @@ object Blog {
     val posts = Discover
       .someMarkdown(siteConfig.contentRoot) {
         case MarkdownDocument(path, filename, attributes) =>
+          // TODO: handle the error here correctly
           val date        = LocalDate.parse(attributes.requiredOne("date"))
           val tags        = attributes.optionalOne("tags").toList.flatMap(_.split(",").toList)
           val title       = attributes.requiredOne("title")
           val description = attributes.optionalOne("description")
-          val archived    = attributes.optionalOne("archived").map(_.toBoolean).getOrElse(false)
+          // TODO: handle error here correctly
+          val archived = attributes.optionalOne("archived").map(_.toBoolean).getOrElse(false)
 
           val sitePath = SiteRoot / (date.format(DateTimeFormatter.ISO_LOCAL_DATE) + "-" + filename + ".html")
 
@@ -397,6 +399,7 @@ trait Template {
       .getOrElse("")
 
     html(
+      lang := "en",
       head(
         scalatags.Text.tags2.title(site.name + ":" + pageTitle),
         HighlightJS.templateBlock(site.highlightJS),
@@ -414,26 +417,43 @@ trait Template {
       body(
         div(
           cls := "wrapper",
-          div(
+          aside(
             cls := "sidebar",
-            h2(a(href := linker.root, site.name)),
-            hr,
+            blogTitleSection,
             about,
             staticNav,
-            div(id := "searchContainer", cls := "searchContainer"),
-            hr,
-            h4("tags"),
+            searchSection,
             tagCloud,
-            navigation match {
-              case Some(value) => div(hr, h4("posts"), Nav(value))
-              case None        => div()
-            }
+            navigationSection(navigation)
           ),
-          tag("article")(cls := "content-wrapper", content)
+          article(cls := "content-wrapper", content)
         )
       )
     )
   }
+
+  private def navigationSection(navigation: Option[Vector[NavLink]]) =
+    navigation match {
+      case Some(value) =>
+        section(
+          cls := "site-navigation-posts",
+          h4("posts"),
+          Nav(value)
+        )
+      case None => span()
+    }
+
+  private def blogTitleSection =
+    section(
+      cls := "site-title",
+      h2(a(href := linker.root, site.name))
+    )
+
+  private def searchSection =
+    section(
+      cls := "site-search",
+      div(id := "searchContainer", cls := "searchContainer")
+    )
 
   def page(navigation: Vector[NavLink], content: TypedTag[_]) =
     basePage(Some(navigation), content)
@@ -457,7 +477,7 @@ trait Template {
         a(href := linker.unsafe(_ / "tags" / s"$tag.html"), small(tag))
       )
     }
-    page(navigation, div(h2(title), p(tagline), hr, content)).render
+    "<!DOCTYPE html>" + page(navigation, div(h2(title), p(tagline), hr, content)).render
   }
 
   def tagPage(
@@ -485,10 +505,14 @@ trait Template {
   }
 
   def tagCloud = {
-    div(
-      tagPages.toList.map { tagPage =>
-        span(a(href := linker.find(tagPage), small(tagPage.tag)), " ")
-      }
+    section(
+      cls := "site-tag-cloud",
+      h4("tags"),
+      nav(
+        tagPages.toList.map { tagPage =>
+          span(a(href := linker.find(tagPage), small(tagPage.tag)), " ")
+        }
+      )
     )
   }
 
@@ -548,21 +572,30 @@ trait Template {
     )
   }
 
+  val section = tag("section")
+  val aside   = tag("aside")
+  val nav     = tag("nav")
+  val article = tag("article")
+
   def about =
-    div(
+    section(
+      cls := "site-tagline",
       p(site.tagline)
     )
 
   def staticNav =
-    ul(
-      site.links.map {
-        case (title, url) =>
-          li(
-            a(
-              href := url,
-              title
+    section(
+      cls := "site-links",
+      ul(
+        site.links.map {
+          case (title, url) =>
+            li(
+              a(
+                href := url,
+                title
+              )
             )
-          )
-      }
+        }
+      )
     )
 }
