@@ -100,10 +100,10 @@ object SearchIndex {
   implicit val csWriter: Writer[CollectionSize] =
     IntWriter.comap(_.value)
 
-  implicit def wct: Writer[CharTree] =
+  implicit val wct: Writer[CharTree] =
     macroW[(Map[Char, CharTree], Option[TermIdx])].comap[CharTree](ct => (ct.data, ct.terminal))
 
-  implicit def rct: Reader[CharTree] = macroR[(Map[Char, CharTree], Option[TermIdx])].map(c => CharTree(c._1, c._2))
+  implicit val rct: Reader[CharTree] = macroR[(Map[Char, CharTree], Option[TermIdx])].map(c => CharTree(c._1, c._2))
 
   implicit val tdoR: Reader[TermDocumentOccurence] =
     macroR[(TermFrequency, Map[SectionIdx, TermFrequency])].map(i => TermDocumentOccurence(i._1, i._2))

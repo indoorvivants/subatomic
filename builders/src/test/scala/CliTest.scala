@@ -18,13 +18,13 @@ object CliTest extends weaver.SimpleIOSuite {
     }
 
   pureTest("CLI supports --disable-mdoc flag") {
-    exists(runBuild("--disable-mdoc")) { config =>
+    exists(runBuild("--disable-mdoc").toOption) { config =>
       expect(config.disableMdoc == true)
     }
   }
 
   pureTest("CLI supports --overwrite flag") {
-    exists(runBuild("--force")) { config =>
+    exists(runBuild("--force").toOption) { config =>
       expect(config.overwrite == true)
     }
   }
@@ -32,13 +32,13 @@ object CliTest extends weaver.SimpleIOSuite {
   pureTest("CLI supports --destination flag") {
     val dest = os.temp.dir()
 
-    exists(runBuild(s"--destination", dest.toString())) { config =>
+    exists(runBuild(s"--destination", dest.toString()).toOption) { config =>
       expect(config.destination == dest)
     }
   }
 
   pureTest("CLI options are all optional") {
-    exists(runBuild()) { config =>
+    exists(runBuild().toOption) { config =>
       expect.all(
         config.disableMdoc == false,
         config.overwrite == false
@@ -47,13 +47,13 @@ object CliTest extends weaver.SimpleIOSuite {
   }
 
   pureTest("CLI supports --test-search-cli flag") {
-    exists(runSearch("--interactive")) { config =>
+    exists(runSearch("--interactive").toOption) { config =>
       expect(config.mode == cli.Interactive)
     }
   }
 
   pureTest("CLI supports --test-search-query flag") {
-    exists(runSearch("--query", "bla bla")) { config =>
+    exists(runSearch("--query", "bla bla").toOption) { config =>
       expect(config.mode == cli.Query("bla bla"))
     }
   }
