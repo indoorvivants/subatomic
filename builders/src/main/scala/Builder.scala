@@ -73,7 +73,6 @@ object BuilderTemplate {
   |}
   |
   |div.searchContainer input {
-  |  width: 100%;
   |  max-width:300px;
   |  padding:10px;
   |  font-size: 18px;

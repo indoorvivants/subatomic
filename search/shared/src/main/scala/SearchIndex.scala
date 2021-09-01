@@ -55,7 +55,7 @@ case class SectionEntry(
   * @param termMapping
   * @param collectionSize
   */
-case class SearchIndex private (
+case class SearchIndex(
     documentsMapping: Map[DocumentIdx, DocumentEntry],
     termsInDocuments: Map[TermIdx, Map[DocumentIdx, TermDocumentOccurence]],
     globalTermFrequency: Map[TermIdx, GlobalTermFrequency],
