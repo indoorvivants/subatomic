@@ -368,7 +368,7 @@ import commandmatrix._
 inThisBuild(
   Seq(
     commands ++=
-      CrossCommand.singl(
+      CrossCommand.single(
         "test",
         matrices =
           Seq(core, searchShared, searchIndex, searchRetrieve, builders, searchCli, searchFrontend, searchFrontendPack),
