@@ -11,12 +11,12 @@ val Ver = new {
   val upickle               = "1.4.0"
   val fansi                 = "0.2.14"
   val weaver                = "0.6.4"
-  val munit                 = "0.7.26"
+  val munit                 = "0.7.29"
 
   val Scala = new {
     val `2_12` = "2.12.13"
     val `2_13` = "2.13.5"
-    val `3`    = "3.0.1"
+    val `3`    = "3.0.2"
 
     val only_2    = Seq(`2_12`, `2_13`)
     val only_2_13 = Seq(`2_13`)
@@ -146,9 +146,9 @@ lazy val searchIndex =
     .in(file("search/indexer"))
     .dependsOn(searchShared)
     .settings(name := "subatomic-search-indexer")
-    .jvmPlatform(Ver.Scala.only_2)
-    .jsPlatform(Ver.Scala.only_2_13, batchModeOnCI)
-    .nativePlatform(Ver.Scala.only_2_13)
+    .jvmPlatform(Ver.Scala.all)
+    .jsPlatform(Ver.Scala.all, batchModeOnCI)
+    .nativePlatform(Ver.Scala.only_2)
     .settings(munitTestSettings)
     .settings(buildInfoSettings)
 
@@ -159,9 +159,9 @@ lazy val searchRetrieve =
     .settings(
       name := "subatomic-search-retrieve"
     )
-    .jvmPlatform(Ver.Scala.only_2)
-    .jsPlatform(Ver.Scala.only_2_13, batchModeOnCI)
-    .nativePlatform(Ver.Scala.only_2_13)
+    .jvmPlatform(Ver.Scala.all)
+    .jsPlatform(Ver.Scala.all, batchModeOnCI)
+    .nativePlatform(Ver.Scala.only_2)
     .settings(munitTestSettings)
     .settings(buildInfoSettings)
 
@@ -172,9 +172,9 @@ lazy val searchShared =
       name := "subatomic-search-shared",
       libraryDependencies += "com.lihaoyi" %%% "upickle" % Ver.upickle
     )
-    .jvmPlatform(Ver.Scala.only_2)
-    .jsPlatform(Ver.Scala.only_2_13, batchModeOnCI)
-    .nativePlatform(Ver.Scala.only_2_13)
+    .jvmPlatform(Ver.Scala.all)
+    .jsPlatform(Ver.Scala.all, batchModeOnCI)
+    .nativePlatform(Ver.Scala.only_2)
     .settings(munitTestSettings)
     .settings(buildInfoSettings)
     .enablePlugins(BuildInfoPlugin)
@@ -259,8 +259,8 @@ lazy val testSettings =
     libraryDependencies ++= ifNot(
       virtualAxes.value.contains(VirtualAxis.native),
       Seq(
-        "com.disneystreaming" %%% "weaver-cats"       % "0.6.4" % Test,
-        "com.disneystreaming" %%% "weaver-scalacheck" % "0.6.4" % Test
+        "com.disneystreaming" %%% "weaver-cats"       % Ver.weaver % Test,
+        "com.disneystreaming" %%% "weaver-scalacheck" % Ver.weaver % Test
       )
     ),
     testFrameworks += new TestFramework("weaver.framework.CatsEffect"),
@@ -268,8 +268,8 @@ lazy val testSettings =
   )
 
 lazy val munitTestSettings = Seq(
-  libraryDependencies += "org.scalameta" %%% "munit"            % "0.7.26" % Test,
-  libraryDependencies += "org.scalameta" %%% "munit-scalacheck" % "0.7.26" % Test,
+  libraryDependencies += "org.scalameta" %%% "munit"            % Ver.munit % Test,
+  libraryDependencies += "org.scalameta" %%% "munit-scalacheck" % Ver.munit % Test,
   testFrameworks += new TestFramework("munit.Framework"),
   Test / scalaJSLinkerConfig ~= { _.withModuleKind(ModuleKind.CommonJSModule) }
 )

@@ -44,7 +44,7 @@ case class CharTree(
 
 object CharTree {
 
-  private case class MutableCharTree private (
+  private[search] case class MutableCharTree(
       children: mut.Map[Char, MutableCharTree],
       var terminal: Option[TermIdx]
   ) {
@@ -129,7 +129,7 @@ object CharTree {
               _print(s"--'$char'-->")
               go(tree, level + 1)
           }
-        case _ => ()
+        // case _ => ()
       }
     }
 
