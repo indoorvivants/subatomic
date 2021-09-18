@@ -52,11 +52,10 @@ class MdocProcessor[C] private (pwd: os.Path, toMdocFile: PartialFunction[C, Mdo
 
       val result = mdoc.processAll(filesToProcess.map(_._2).map(_.path).toSeq, Some(pwd)).toMap
 
-      val results = filesToProcess.map {
-        case (content, mdocFile) =>
-          val mdResult = result(mdocFile.path)
+      val results = filesToProcess.map { case (content, mdocFile) =>
+        val mdResult = result(mdocFile.path)
 
-          content -> MdocResult(content, mdResult)
+        content -> MdocResult(content, mdResult)
 
       }
 

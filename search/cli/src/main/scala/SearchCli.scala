@@ -48,9 +48,8 @@ object SearchCLI {
 
     val indexer = Indexer.default[(os.Path, String)](iter)
 
-    indexer.processAll {
-      case (path, content) =>
-        Document.section(s"Doc at $path", path.toString(), content)
+    indexer.processAll { case (path, content) =>
+      Document.section(s"Doc at $path", path.toString(), content)
     }
   }
 

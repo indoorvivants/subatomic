@@ -22,9 +22,8 @@ class AlgorthimsSpec extends munit.FunSuite with munit.ScalaCheckSuite {
   val documentGen = Gen.mapOf(documentPair)
 
   property("IDF is never zero") {
-    forAll(collSizeGen.flatMap(cs => globalTermFrequencyGen.map(cs -> _))) {
-      case (colSize, gtf) =>
-        assertNotEquals(Algorithms.inverse_Document_Frequency(colSize, gtf), 0.0)
+    forAll(collSizeGen.flatMap(cs => globalTermFrequencyGen.map(cs -> _))) { case (colSize, gtf) =>
+      assertNotEquals(Algorithms.inverse_Document_Frequency(colSize, gtf), 0.0)
     }
   }
 

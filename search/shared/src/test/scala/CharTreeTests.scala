@@ -25,27 +25,24 @@ class CharTreeTests extends munit.FunSuite with munit.ScalaCheckSuite {
   val gen = for {
     size  <- Gen.choose(10, MaxSize)
     words <- Gen.listOfN(size, wordGen)
-    dataset = words.distinct.zipWithIndex.map {
-      case (n, idx) => TermName(n) -> TermIdx(idx)
+    dataset = words.distinct.zipWithIndex.map { case (n, idx) =>
+      TermName(n) -> TermIdx(idx)
     }
   } yield (CharTree.build(dataset), dataset)
 
   val seed = scala.util.Random.nextLong()
 
   property("CharTree build and retrieval") {
-    forAll(gen) {
-      case ((chartree, dataset)) =>
-        val resolutions = dataset.map {
-          case (tn, tidx) =>
-            (tidx, chartree.find(tn))
-        }
+    forAll(gen) { case ((chartree, dataset)) =>
+      val resolutions = dataset.map { case (tn, tidx) =>
+        (tidx, chartree.find(tn))
+      }
 
-        val (_, notFound) = resolutions.partition {
-          case (expected, result) =>
-            result.contains(expected)
-        }
+      val (_, notFound) = resolutions.partition { case (expected, result) =>
+        result.contains(expected)
+      }
 
-        assert(notFound.isEmpty)
+      assert(notFound.isEmpty)
     }
   }
 }

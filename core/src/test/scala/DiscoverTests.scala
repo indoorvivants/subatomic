@@ -49,14 +49,13 @@ object DiscoverTests extends SimpleMutableIOSuite {
     )
 
     val results = Discover
-      .someMarkdown(tmpDir) {
-        case MarkdownDocument(path, filename, attributes) =>
-          SiteRoot / s"$filename.html" -> MyContent(
-            attributes.requiredOne("test"),
-            attributes.requiredOne("hello"),
-            attributes.optionalOne("opt"),
-            path
-          )
+      .someMarkdown(tmpDir) { case MarkdownDocument(path, filename, attributes) =>
+        SiteRoot / s"$filename.html" -> MyContent(
+          attributes.requiredOne("test"),
+          attributes.requiredOne("hello"),
+          attributes.optionalOne("opt"),
+          path
+        )
       }
       .toSet
 

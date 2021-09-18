@@ -141,8 +141,8 @@ class Mdoc(
   } else Map.empty[String, String]
 
   lazy val variablesStr: Seq[String] = {
-    (inheritedVariables ++ config.variables).map {
-      case (k, v) => s"--site.$k=$v"
+    (inheritedVariables ++ config.variables).map { case (k, v) =>
+      s"--site.$k=$v"
     }.toSeq
   }
 
@@ -175,9 +175,8 @@ class Mdoc(
     if (inheritedVariables.nonEmpty)
       logger.logLine(s"inherited variables: $inheritedVariables")
 
-    val args = filesWithTargets.flatMap {
-      case (from, to) =>
-        Seq("--in", from.toString, "--out", to.toString) ++ variablesStr
+    val args = filesWithTargets.flatMap { case (from, to) =>
+      Seq("--in", from.toString, "--out", to.toString) ++ variablesStr
     }
 
     val launcherJVM = mainCp + launcherClasspath.map(":" + _).getOrElse("")

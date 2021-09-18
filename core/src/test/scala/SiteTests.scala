@@ -22,9 +22,8 @@ object SiteTests extends weaver.IOSuite {
   def read(p: os.Path): String = os.read(p)
 
   test("populate: addPage") { (res, log) =>
-    val site = baseSite(log).populate {
-      case (site, (path, content)) =>
-        site.addPage(path, content)
+    val site = baseSite(log).populate { case (site, (path, content)) =>
+      site.addPage(path, content)
     }
 
     res.check(site) { result =>
@@ -37,9 +36,8 @@ object SiteTests extends weaver.IOSuite {
   }
 
   test("doesn't overwrite the site by default") { (_, log) =>
-    val site = baseSite(log).populate {
-      case (site, (path, content)) =>
-        site.addPage(path, content)
+    val site = baseSite(log).populate { case (site, (path, content)) =>
+      site.addPage(path, content)
     }
 
     val destination = os.temp.dir()
@@ -49,9 +47,8 @@ object SiteTests extends weaver.IOSuite {
   }
 
   test("overwrites when explicitly told to") { (_, log) =>
-    val site = baseSite(log).populate {
-      case (site, (path, content)) =>
-        site.addPage(path, content)
+    val site = baseSite(log).populate { case (site, (path, content)) =>
+      site.addPage(path, content)
     }
 
     val destination = os.temp.dir()

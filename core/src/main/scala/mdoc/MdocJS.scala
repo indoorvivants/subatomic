@@ -122,9 +122,8 @@ class MdocJS(
       p -> tmp / p.last
     }.toMap
 
-    val argmap = mapping.toSeq.flatMap {
-      case (from, to) =>
-        Seq("--in", from.toString, "--out", to.toString)
+    val argmap = mapping.toSeq.flatMap { case (from, to) =>
+      Seq("--in", from.toString, "--out", to.toString)
     }
 
     os.proc(
@@ -141,11 +140,10 @@ class MdocJS(
       stdout = ProcessOutput.Readlines(logger.at("OUT")._println)
     )
 
-    mapping.toSeq.map {
-      case (source, target) =>
-        val tgDir = target / os.up
+    mapping.toSeq.map { case (source, target) =>
+      val tgDir = target / os.up
 
-        source -> ScalaJSResult(target, tgDir / (source.last + ".js"), tgDir / "mdoc.js")
+      source -> ScalaJSResult(target, tgDir / (source.last + ".js"), tgDir / "mdoc.js")
     }
 
   }
