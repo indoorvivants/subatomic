@@ -7,25 +7,37 @@ on:
 
 jobs:
   build:
+    name: CI ${{ matrix.java }} ${{matrix.scalaVersion}} (${{matrix.scalaPlatform}})
     strategy:
       fail-fast: false
-    runs-on: ubuntu-latest
+      matrix:
+        os: [ubuntu-latest]
+        java: [adopt@1.8, adopt@1.11, 17]
+        scalaVersion: ["2_12", "2_13", "3_0"]
+        scalaPlatform: ["jvm", "js", "native"]
+    runs-on: ${{ matrix.os }}
+    env:
+      BUILD_KEY: ${{matrix.scalaVersion}}-${{matrix.scalaPlatform}}
     steps:
       - uses: actions/checkout@v1
       - uses: coursier/cache-action@v3      
-      - uses: olafurpg/setup-scala@v10
+      - uses: olafurpg/setup-scala@v13
         with:
           java-version: adopt@1.8
+
       - name: Setup Scala Native environment
         run: |
             sudo apt-get update
             sudo apt install clang
+        if: matrix.scalaPlatform == 'native'
+
       - name: Test
-        run: sbt ci
-        env:
-          JAVA_OPTS: "-XX:MaxMetaspaceSize=1g -Xms1g -Xmx4g -Xss2M -XX:+UseG1GC"
-          JVM_OPTS: "-XX:MaxMetaspaceSize=1g -Xms1g -Xmx4g -Xss2M -XX:+UseG1GC"
-      # - name: Native link
-      #   run: sbt nativeLink
+        run: sbt test-$BUILD_KEY codeQuality-$BUILD_KEY
+
+      - name: SBT Plugin test
+        run: sbt pluginTests-$BUILD_KEY
+        if: matrix.scalaPlatform == 'jvm' && matrix.scalaVersion == '2_12'
+
       - name: Check site build
         run: sbt buildSite
+        if: matrix.scalaPlatform == 'jvm' && matrix.scalaVersion == '2_13'

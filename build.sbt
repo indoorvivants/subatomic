@@ -70,7 +70,7 @@ lazy val builders =
     .in(file("builders"))
     .dependsOn(core, searchIndex, searchFrontendPack, searchRetrieve)
     .settings(
-      name := "subatomic-builders",
+      name                                                  := "subatomic-builders",
       libraryDependencies += "com.lihaoyi"                  %% "scalatags" % Ver.scalatags,
       libraryDependencies += "com.github.japgolly.scalacss" %% "core"      % Ver.scalacss,
       libraryDependencies += "com.monovore"                 %% "decline"   % Ver.decline
@@ -117,7 +117,7 @@ lazy val searchFrontend =
     .settings(name := "subatomic-search-frontend")
     .settings(
       libraryDependencies += "com.raquo" %%% "laminar" % Ver.laminar,
-      scalaJSUseMainModuleInitializer := true
+      scalaJSUseMainModuleInitializer     := true
     )
     .jsPlatform(Ver.Scala.only_2_13)
     .settings(testSettings)
@@ -129,7 +129,7 @@ lazy val searchCli =
     .in(file("search/cli"))
     .dependsOn(searchIndex, searchRetrieve)
     .settings(
-      name := "subatomic-search-cli",
+      name                                  := "subatomic-search-cli",
       libraryDependencies += "com.lihaoyi" %%% "os-lib" % Ver.osLib,
       scalacOptions += "-Wconf:cat=unused-imports:wv",
       scalacOptions += "-Wconf:cat=unused-imports&site=subatomic.search.cli.SearchCLI:s,any:wv",
@@ -169,7 +169,7 @@ lazy val searchShared =
   projectMatrix
     .in(file("search/shared"))
     .settings(
-      name := "subatomic-search-shared",
+      name                                  := "subatomic-search-shared",
       libraryDependencies += "com.lihaoyi" %%% "upickle" % Ver.upickle
     )
     .jvmPlatform(Ver.Scala.all)
@@ -187,7 +187,7 @@ lazy val docs = project
   .dependsOn(builders.jvm(Ver.Scala.`2_12`), plugin.jvm(Ver.Scala.`2_12`), searchIndex.jvm(Ver.Scala.`2_12`))
   .enablePlugins(SubatomicPlugin)
   .settings(
-    scalaVersion := Ver.Scala.`2_12`,
+    scalaVersion    := Ver.Scala.`2_12`,
     skip in publish := true,
     // To react to asset changes
     watchSources += WatchSource(
@@ -200,16 +200,16 @@ lazy val docs = project
     unmanagedSourceDirectories in Compile +=
       (baseDirectory in ThisBuild).value / "docs",
     libraryDependencies += "com.lihaoyi" %% "fansi" % Ver.fansi,
-    subatomicBuildersDependency := false,
-    subatomicCoreDependency := false,
-    subatomicInheritClasspath := true
+    subatomicBuildersDependency          := false,
+    subatomicCoreDependency              := false,
+    subatomicInheritClasspath            := true
   )
 
 lazy val plugin = projectMatrix
   .in(file("sbt-plugin"))
   .withId("plugin")
   .settings(
-    sbtPlugin := true,
+    sbtPlugin                      := true,
     sbtVersion in pluginCrossBuild := "1.4.4"
   )
   .jvmPlatform(scalaVersions = Seq(Ver.Scala.`2_12`))
@@ -307,15 +307,15 @@ lazy val buildInfoSettings = {
 
 inThisBuild(
   List(
-    scalaVersion := Ver.Scala.`2_13`,
+    scalaVersion                                   := Ver.Scala.`2_13`,
     scalafixDependencies += "com.github.liancheng" %% "organize-imports" % "0.5.0",
-    semanticdbEnabled := true,
-    semanticdbVersion := scalafixSemanticdb.revision,
-    scalafixScalaBinaryVersion := scalaBinaryVersion.value,
-    organization := "com.indoorvivants",
-    organizationName := "Anton Sviridov",
-    homepage := Some(url("https://github.com/indoorvivants/subatomic")),
-    startYear := Some(2020),
+    semanticdbEnabled                              := true,
+    semanticdbVersion                              := scalafixSemanticdb.revision,
+    scalafixScalaBinaryVersion                     := scalaBinaryVersion.value,
+    organization                                   := "com.indoorvivants",
+    organizationName                               := "Anton Sviridov",
+    homepage                                       := Some(url("https://github.com/indoorvivants/subatomic")),
+    startYear                                      := Some(2020),
     licenses := List(
       "Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")
     ),
@@ -366,3 +366,47 @@ addCommandAlias("buildSite", "docs/run build")
 ThisBuild / concurrentRestrictions ++= {
   if (sys.env.contains("CI")) Seq(Tags.limitAll(4)) else Seq.empty
 }
+
+import commandmatrix._
+
+inThisBuild(
+  Seq(
+    commands ++=
+      CrossCommand.single(
+        "test",
+        matrices =
+          Seq(core, searchShared, searchIndex, searchRetrieve, builders, searchCli, searchFrontend, searchFrontendPack),
+        dimensions = Seq(
+          Dimension.scala("2.13", fullFor3 = false), 
+          Dimension.platform()
+        )
+      ),
+    commands ++=
+      CrossCommand.composite(
+        "codeQuality",
+        Seq("scalafmtCheckAll", s"scalafix --check $scalafixRules", "headerCheck"),
+        matrices =
+          Seq(core, searchShared, searchIndex, searchRetrieve, builders, searchCli, searchFrontend, searchFrontendPack),
+        dimensions = Seq(
+          Dimension.scala("2.13", fullFor3 = false),
+          Dimension.platform()
+        ),
+        filter = axes => CrossCommand.filter.notScala3(axes),
+        stubMissing = true
+      ),
+    commands ++=
+      CrossCommand.composite(
+        "pluginTests",
+        Seq("scripted"),
+        matrices = Seq(plugin),
+        dimensions = Seq(
+          Dimension.scala("2.12", fullFor3 = false), // "2.12" is the default one
+          Dimension.platform()
+        ),
+        filter = axes =>
+          CrossCommand.filter.isScalaBinary(2, Some(12))(axes) &&
+            CrossCommand.filter.onlyJvm(axes),
+        stubMissing = true
+      )
+  )
+)
