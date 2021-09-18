@@ -65,26 +65,25 @@ object Ansi2Html extends Function1[String, String] {
 
     val sb = new StringBuilder
 
-    colored.getChars.zip(colored.getColors).map {
-      case (character, color) =>
-        if (current != color) {
-          categories.foreach { cat =>
-            sb.append(
-              transition(
-                cat.lookupAttr(current & cat.mask),
-                cat.lookupAttr(color & cat.mask)
-              )
+    colored.getChars.zip(colored.getColors).map { case (character, color) =>
+      if (current != color) {
+        categories.foreach { cat =>
+          sb.append(
+            transition(
+              cat.lookupAttr(current & cat.mask),
+              cat.lookupAttr(color & cat.mask)
             )
-          }
-
-          current = color
+          )
         }
-        if (character == ' ')
-          sb.append("&nbsp;")
-        else if (character == '\n')
-          sb.append("<br />")
-        else if (character != '\r')
-          sb.append(character)
+
+        current = color
+      }
+      if (character == ' ')
+        sb.append("&nbsp;")
+      else if (character == '\n')
+        sb.append("<br />")
+      else if (character != '\r')
+        sb.append(character)
     }
 
     if (current != 0L) {

@@ -16,13 +16,12 @@ object SearchFrontendTests extends SimpleMutableIOSuite {
       "/hello/world" -> "amet ipsum amet dolor"
     )
 
-    val idx = Indexer.default[(String, String)](content).processAll {
-      case (path, text) =>
-        Document.section(
-          s"Document at $path",
-          path,
-          text
-        )
+    val idx = Indexer.default[(String, String)](content).processAll { case (path, text) =>
+      Document.section(
+        s"Document at $path",
+        path,
+        text
+      )
     }
 
     val o = read[SearchIndex](writeJs(idx).render())

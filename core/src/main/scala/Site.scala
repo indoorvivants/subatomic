@@ -57,11 +57,10 @@ case class Site[Content] private (pages: Vector[Entry], content: Iterable[(SiteP
   def changeLogger(logger: String => Unit) = copy(logger = new Logger(logger))
 
   def copyAll(root: os.Path, siteBase: SitePath, filter: os.Path => Boolean = _ => true): Site[Content] = {
-    os.walk(root).filter(_.toIO.isFile()).filter(filter).foldLeft(this) {
-      case (site, file) =>
-        val relativePath = file.relativeTo(root)
+    os.walk(root).filter(_.toIO.isFile()).filter(filter).foldLeft(this) { case (site, file) =>
+      val relativePath = file.relativeTo(root)
 
-        site.addCopyOf(siteBase / relativePath, file)
+      site.addCopyOf(siteBase / relativePath, file)
     }
   }
 
@@ -76,15 +75,14 @@ case class Site[Content] private (pages: Vector[Entry], content: Iterable[(SiteP
       ) + "\n"
     )
 
-    val ready = pages.collect {
-      case r: Ready => r
+    val ready = pages.collect { case r: Ready =>
+      r
     }
 
-    ready.foreach {
-      case Ready(sitePath, asset) =>
-        Site.logEntry(sitePath.toRelPath, asset, None, logger)
+    ready.foreach { case Ready(sitePath, asset) =>
+      Site.logEntry(sitePath.toRelPath, asset, None, logger)
 
-        writeAsset(sitePath, asset, destination, overwrite)
+      writeAsset(sitePath, asset, destination, overwrite)
     }
 
     val delayed = pages.collect {
@@ -98,10 +96,9 @@ case class Site[Content] private (pages: Vector[Entry], content: Iterable[(SiteP
         writeAsset(sitePath, assetResult, destination, overwrite)
 
       case Right((DelayedMany(_, original), results)) =>
-        results.foreach {
-          case (sitePath, asset) =>
-            Site.logEntry(sitePath.toRelPath, asset, Some(original), logger)
-            writeAsset(sitePath, asset, destination, overwrite)
+        results.foreach { case (sitePath, asset) =>
+          Site.logEntry(sitePath.toRelPath, asset, Some(original), logger)
+          writeAsset(sitePath, asset, destination, overwrite)
 
         }
     }

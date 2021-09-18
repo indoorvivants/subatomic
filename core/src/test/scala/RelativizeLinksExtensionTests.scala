@@ -22,24 +22,23 @@ object RelativizeLinksExtensionTests extends weaver.FunSuite {
     ("hello/world#test-this", shifted, "/test/hello/world#test-this")
   )
 
-  expectations.foreach {
-    case (sourceUrl, mode, expected) =>
-      test(s"(link) When path is [$mode], $sourceUrl --> $expected") {
-        s"[Hello World]($sourceUrl)".processedWith(RelativizeLinksExtension(mode)) { result =>
-          expect.same(
-            result,
-            s"""<p><a href="$expected">Hello World</a></p>"""
-          )
-        }
+  expectations.foreach { case (sourceUrl, mode, expected) =>
+    test(s"(link) When path is [$mode], $sourceUrl --> $expected") {
+      s"[Hello World]($sourceUrl)".processedWith(RelativizeLinksExtension(mode)) { result =>
+        expect.same(
+          result,
+          s"""<p><a href="$expected">Hello World</a></p>"""
+        )
       }
-      test(s"(image link) When path is [$mode], $sourceUrl --> $expected") {
-        s"![Hello World]($sourceUrl)".processedWith(RelativizeLinksExtension(mode)) { result =>
-          expect.same(
-            result,
-            s"""<p><img src="$expected" alt="Hello World" /></p>"""
-          )
-        }
+    }
+    test(s"(image link) When path is [$mode], $sourceUrl --> $expected") {
+      s"![Hello World]($sourceUrl)".processedWith(RelativizeLinksExtension(mode)) { result =>
+        expect.same(
+          result,
+          s"""<p><img src="$expected" alt="Hello World" /></p>"""
+        )
       }
+    }
   }
 
   private implicit class Ops(s: String) {
