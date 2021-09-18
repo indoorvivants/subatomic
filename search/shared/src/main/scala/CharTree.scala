@@ -65,9 +65,8 @@ object CharTree {
   def build(terms: Iterable[(TermName, TermIdx)]) = {
     val node = MutableCharTree(mut.Map.empty, None)
 
-    terms.foreach {
-      case (name, idx) =>
-        add(node, name.value.toList, idx)
+    terms.foreach { case (name, idx) =>
+      add(node, name.value.toList, idx)
     }
 
     node.immutable
@@ -124,10 +123,9 @@ object CharTree {
       node match {
         case CharTree(children, termIdx) =>
           _print(termIdx.toString)
-          children.foreach {
-            case (char, tree) =>
-              _print(s"--'$char'-->")
-              go(tree, level + 1)
+          children.foreach { case (char, tree) =>
+            _print(s"--'$char'-->")
+            go(tree, level + 1)
           }
         // case _ => ()
       }
@@ -139,8 +137,8 @@ object CharTree {
 
 object Test {
   def main(args: Array[String]): Unit = {
-    val words = List("taps", "tops", "top", "tap").zipWithIndex.map {
-      case (n, idx) => TermName(n) -> TermIdx(idx)
+    val words = List("taps", "tops", "top", "tap").zipWithIndex.map { case (n, idx) =>
+      TermName(n) -> TermIdx(idx)
     }
 
     val struct = CharTree.build(words)

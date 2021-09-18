@@ -46,8 +46,7 @@ case class SectionEntry(
     url: String
 )
 
-/**
-  * There she is. The wholy grail. What we want to achieve in the end.
+/** There she is. The wholy grail. What we want to achieve in the end.
   *
   * @param documentsMapping
   * @param termsInDocuments
@@ -105,7 +104,7 @@ object SearchIndex {
   implicit val wct: Writer[CharTree] =
     macroW[(Map[Char, CharTree], Option[TermIdx])].comap[CharTree](ct => (ct.data, ct.terminal))
 
-  implicit val rct: Reader[CharTree] = 
+  implicit val rct: Reader[CharTree] =
     macroR[(Map[Char, CharTree], Option[TermIdx])].map(c => CharTree(c._1, c._2))
 
   implicit val tdoR: Reader[TermDocumentOccurence] =

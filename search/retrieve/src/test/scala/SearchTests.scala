@@ -12,13 +12,12 @@ class SearchSuite extends munit.FunSuite with munit.ScalaCheckSuite {
     "/hello/world" -> "amet ipsum amet dolor"
   )
 
-  val idx = Indexer.default[(String, String)](content).processAll {
-    case (path, text) =>
-      Document.section(
-        s"Document at $path",
-        path,
-        text
-      )
+  val idx = Indexer.default[(String, String)](content).processAll { case (path, text) =>
+    Document.section(
+      s"Document at $path",
+      path,
+      text
+    )
   }
 
   val tokenGen = Gen.oneOf(idx.termMapping.keys.map(_.value))

@@ -51,7 +51,7 @@ object BuilderTemplate {
   def managedStylesBlock(linker: Linker, styles: List[StylesheetPath]) = {
     styles.map { sp =>
       link(
-        rel := "stylesheet",
+        rel  := "stylesheet",
         href := linker.unsafe(_ => sp.path)
       )
     }

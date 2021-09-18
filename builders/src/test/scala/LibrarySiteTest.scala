@@ -85,12 +85,11 @@ trait BuildersHelpers {
 
   def prepareContent(sps: (SitePath, String)*): PreparedContent = {
     val root = os.temp.dir()
-    val files = sps.map {
-      case (rp, value) =>
-        os.makeDir.all((root / rp.toRelPath) / os.up)
-        os.write.over(root / rp.toRelPath, value)
+    val files = sps.map { case (rp, value) =>
+      os.makeDir.all((root / rp.toRelPath) / os.up)
+      os.write.over(root / rp.toRelPath, value)
 
-        rp -> (root / rp.toRelPath)
+      rp -> (root / rp.toRelPath)
     }
 
     PreparedContent(root, files.toMap)

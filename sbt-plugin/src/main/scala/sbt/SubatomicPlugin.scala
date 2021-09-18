@@ -71,9 +71,9 @@ object SubatomicPlugin extends AutoPlugin {
     val subatomicDependencies = settingKey[Seq[DocDependency]]("")
 
     object Subatomic {
-      def dependency(mid: ModuleID, group: String = "default"): DocDependency       = ModuleDocDependency(mid, group)
-      def paths(classes: Seq[File], group: String = "default"): DocDependency       = ClassesDocDependency(classes, group)
-      def path(classes: File, group: String = "default"): DocDependency             = ClassesDocDependency(Seq(classes), group)
+      def dependency(mid: ModuleID, group: String = "default"): DocDependency = ModuleDocDependency(mid, group)
+      def paths(classes: Seq[File], group: String = "default"): DocDependency = ClassesDocDependency(classes, group)
+      def path(classes: File, group: String = "default"): DocDependency = ClassesDocDependency(Seq(classes), group)
       def project(proj: ProjectReference, group: String = "default"): DocDependency = ProjectDocDependency(proj, group)
       def thisProjectClasses(group: String)                                         = ThisProjectClasses(group)
       def thisProjectDependencies(group: String)                                    = ThisProjectDependencies(group)
@@ -98,11 +98,11 @@ object SubatomicPlugin extends AutoPlugin {
 
   override def projectSettings: Seq[Def.Setting[_]] =
     List(
-      subatomicInheritClasspath := true,
-      subatomicCoreDependency := true,
+      subatomicInheritClasspath   := true,
+      subatomicCoreDependency     := true,
       subatomicBuildersDependency := true,
-      subatomicDependencies := List(ThisProjectClasses("default"), ThisProjectDependencies("default")),
-      subatomicMdocVariables := Map("VERSION" -> version.value),
+      subatomicDependencies       := List(ThisProjectClasses("default"), ThisProjectDependencies("default")),
+      subatomicMdocVariables      := Map("VERSION" -> version.value),
       libraryDependencies ++= {
         (
           subatomicBuildersDependency.value,
@@ -195,24 +195,22 @@ object SubatomicPlugin extends AutoPlugin {
 
         val props = new java.util.Properties()
 
-        subatomicMdocVariables.value.foreach {
-          case (varName, varValue) =>
-            props.setProperty(s"variable.$varName", varValue)
+        subatomicMdocVariables.value.foreach { case (varName, varValue) =>
+          props.setProperty(s"variable.$varName", varValue)
         }
 
         if (subatomicInheritClasspath.value) {
 
-          classpath.groupBy(_._1).foreach {
-            case (groupName, clsp) =>
-              props.setProperty(
-                s"classpath.$groupName",
-                clsp.map(_._2).mkString(java.io.File.pathSeparator)
-              )
+          classpath.groupBy(_._1).foreach { case (groupName, clsp) =>
+            props.setProperty(
+              s"classpath.$groupName",
+              clsp.map(_._2).mkString(java.io.File.pathSeparator)
+            )
 
-              props.setProperty(
-                s"launcherClasspath.$groupName",
-                clsp.map(_._2).mkString(java.io.File.pathSeparator)
-              )
+            props.setProperty(
+              s"launcherClasspath.$groupName",
+              clsp.map(_._2).mkString(java.io.File.pathSeparator)
+            )
           }
 
         }
