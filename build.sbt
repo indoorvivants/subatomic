@@ -363,23 +363,20 @@ ThisBuild / commands += Command.command("ci") { st =>
 
 addCommandAlias("buildSite", "docs/run build")
 
-ThisBuild / concurrentRestrictions ++= {
-  if (sys.env.contains("CI")) Seq(Tags.limitAll(4)) else Seq.empty
-}
-
 import commandmatrix._
 
 inThisBuild(
   Seq(
     commands ++=
-      CrossCommand.single(
+      CrossCommand.singl(
         "test",
         matrices =
           Seq(core, searchShared, searchIndex, searchRetrieve, builders, searchCli, searchFrontend, searchFrontendPack),
         dimensions = Seq(
-          Dimension.scala("2.13", fullFor3 = false), 
+          Dimension.scala("2.13", fullFor3 = false),
           Dimension.platform()
-        )
+        ),
+        stubMissing = true
       ),
     commands ++=
       CrossCommand.composite(
