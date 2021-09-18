@@ -29,7 +29,7 @@ object MdocTests extends weaver.IOSuite {
       val mdoc =
         new Mdoc(logger, config)
 
-      val tmpFile = os.temp(content, suffix = ".md")
+      val tmpFile = os.temp(content, suffix = ".md", deleteOnExit = false)
 
       blocker.blockOn(IO(mdoc.process(tmpFile))).map { p =>
         result(os.read(p))

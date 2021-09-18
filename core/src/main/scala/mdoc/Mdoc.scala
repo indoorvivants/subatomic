@@ -184,16 +184,27 @@ class Mdoc(
     val extraCP =
       fetchCp(config.extraDependencies) + inheritedClasspath.map(":" + _).getOrElse("")
 
-    val classpathArg = if (extraCP.trim != "") Seq("--classpath", extraCP) else Seq.empty
+    val classpathArg =
+      if (extraCP.trim != "")
+        Seq("--classpath", extraCP)
+      else
+        Seq.empty
 
     val base = Seq(
       "java",
-      "-classpath",
+      "-cp",
       launcherJVM,
       "mdoc.Main"
     ) ++ classpathArg
 
-    launcherJVM.split(":").sorted.map(_.replace("/home/velvetbaldmime/.cache/coursier/", "")).foreach(println)
+    println(classpathArg)
+    val cmd = (base ++ args).mkString(" ")
+
+    // launcherJVM.split(":").sorted.map(_.replace("/USers/velvetbaldmime/.cache/coursier/", "")).foreach(println)
+    // val x = new scala.sys.process.ProcessBuilder()
+    import scala.sys.process._
+    println(cmd)
+    cmd.!!(ProcessLogger(println, println))
 
     scala.util.Try(
       os
@@ -201,7 +212,8 @@ class Mdoc(
         .call(
           pwd.getOrElse(tmpLocation),
           stderr = ProcessOutput.Readlines(logger.at("ERR")._println),
-          stdout = ProcessOutput.Readlines(logger.at("OUT")._println)
+          stdout = ProcessOutput.Readlines(logger.at("OUT")._println),
+          propagateEnv = false
         )
     ) match {
       case scala.util.Success(_) =>
@@ -218,9 +230,18 @@ class Mdoc(
     processAll(Seq(file), None).head._2
   }
 
-  private val mdocDep = DependencyParser
-    .dependency(s"org.scalameta::mdoc:${config.mdocVersion}", config.scalaBinaryVersion)
-    .getOrElse(throw new Exception("Unspeakable has happened"))
+  println(config.scalaBinaryVersion)
+
+  private val mdocDep = {
+    if (config.scalaBinaryVersion == "3")
+      DependencyParser
+        .dependency(s"org.scalameta:mdoc_3:${config.mdocVersion}", config.scalaBinaryVersion)
+        .getOrElse(throw new Exception("oh noes"))
+    else
+      DependencyParser
+        .dependency(s"org.scalameta::mdoc:${config.mdocVersion}", config.scalaBinaryVersion)
+        .getOrElse(throw new Exception("Unspeakable has happened"))
+  }
 
   private lazy val mainCp = {
 

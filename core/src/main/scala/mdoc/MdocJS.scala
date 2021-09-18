@@ -71,7 +71,7 @@ class MdocJS(
           transitive = false
         )
       )
-    else "-Xscalajs"
+    else "-scalajs"
 
   def optsFolder(deps: Iterable[String]) = {
     val tempDir = os.temp.dir()

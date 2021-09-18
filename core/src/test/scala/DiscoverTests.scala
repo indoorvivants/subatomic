@@ -1,6 +1,5 @@
 package subatomic
 
-
 import weaver.SimpleMutableIOSuite
 import subatomic.Discover.MarkdownDocument
 import com.vladsch.flexmark.ext.yaml.front.matter.YamlFrontMatterExtension

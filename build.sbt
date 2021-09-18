@@ -42,15 +42,6 @@ lazy val root = project
 
 import commandmatrix._
 
-commands ++= CrossCommand.all(
-  cmds = Seq("compile", "test"),
-  matrices = Seq(core, builders, searchIndex, searchShared, searchFrontend, searchRetrieve, searchCli),
-  dimensions = Seq(
-    Dimension.scala("2.12"),
-    Dimension.platform()
-  )
-)
-
 val flexmarkModules = Seq(
   "",
   "-ext-yaml-front-matter",
@@ -66,7 +57,7 @@ lazy val core = projectMatrix
       "com.lihaoyi"            %% "os-lib"                  % Ver.osLib,
       "org.scala-lang.modules" %% "scala-collection-compat" % Ver.scalaCollectionCompat
     ),
-    Test / fork := true
+    /* Test / fork := true */
   )
   .settings(
     libraryDependencies ++= flexmarkModules
@@ -376,8 +367,8 @@ import commandmatrix._
 inThisBuild(
   Seq(
     commands ++=
-      CrossCommand.single(
-        "test",
+      CrossCommand.all(
+        Seq("compile", "test", "publishLocal"),
         matrices =
           Seq(core, searchShared, searchIndex, searchRetrieve, builders, searchCli, searchFrontend, searchFrontendPack),
         dimensions = Seq(

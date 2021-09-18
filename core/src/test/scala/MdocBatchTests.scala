@@ -1,6 +1,5 @@
 package subatomic
 
-
 import weaver._
 import cats.effect.IO
 
