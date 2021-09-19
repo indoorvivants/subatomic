@@ -199,7 +199,6 @@ class Mdoc(
       "mdoc.Main"
     ) ++ classpathArg
 
-
     scala.util.Try(
       os
         .proc(base ++ args)
