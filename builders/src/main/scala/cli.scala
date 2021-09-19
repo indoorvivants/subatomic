@@ -17,9 +17,10 @@
 package subatomic
 package builders
 
+import scala.util.Try
+
 import cats.implicits._
 import com.monovore.decline._
-import scala.util.Try
 
 object cli {
 
