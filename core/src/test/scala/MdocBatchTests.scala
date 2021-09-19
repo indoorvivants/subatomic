@@ -1,14 +1,8 @@
 package subatomic
 
-import scala.util.Try
-
 import weaver._
 import cats.effect.IO
-import cats.data.Chain
 
-import cats.effect.syntax._
-import cats.syntax.all._
-import cats.effect.concurrent.Ref
 import cats.effect.Blocker
 import cats.effect.Resource
 

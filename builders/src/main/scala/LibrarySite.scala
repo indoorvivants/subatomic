@@ -106,41 +106,40 @@ object LibrarySite {
 
   def discoverContent(siteConfig: LibrarySite) = {
     Discover
-      .someMarkdown(siteConfig.contentRoot) {
-        case MarkdownDocument(path, filename, attributes) =>
-          val id = attributes.optionalOne("id").getOrElse(filename)
+      .someMarkdown(siteConfig.contentRoot) { case MarkdownDocument(path, filename, attributes) =>
+        val id = attributes.optionalOne("id").getOrElse(filename)
 
-          val inNavBar = attributes
-            .optionalOne("topnav")
-            .map(_.toBoolean)
-            .getOrElse(false)
+        val inNavBar = attributes
+          .optionalOne("topnav")
+          .map(_.toBoolean)
+          .getOrElse(false)
 
-          val title = attributes.requiredOne("title")
+        val title = attributes.requiredOne("title")
 
-          val mdocConfig = MdocConfiguration.fromAttrs(attributes)
+        val mdocConfig = MdocConfiguration.fromAttrs(attributes)
 
-          val isIndex = filename == "index"
+        val isIndex = filename == "index"
 
-          val relp = (path / os.up).relativeTo(
-            siteConfig.contentRoot
-          )
+        val relp = (path / os.up).relativeTo(
+          siteConfig.contentRoot
+        )
 
-          val sitePath =
-            if (!isIndex)
-              SiteRoot / relp / id / "index.html"
-            else
-              SiteRoot / relp / "index.html"
+        val sitePath =
+          if (!isIndex)
+            SiteRoot / relp / id / "index.html"
+          else
+            SiteRoot / relp / "index.html"
 
-          val document = Doc(
-            title,
-            path,
-            inNavBar,
-            index = isIndex,
-            mdocConfig = mdocConfig,
-            depth = relp.segments
-          )
+        val document = Doc(
+          title,
+          path,
+          inNavBar,
+          index = isIndex,
+          mdocConfig = mdocConfig,
+          depth = relp.segments
+        )
 
-          sitePath -> document
+        sitePath -> document
       }
       .toVector
       .sortBy(_._1 == SiteRoot / "index.html")
@@ -238,22 +237,21 @@ object LibrarySite {
 
     val baseSite = Site
       .init(content)
-      .populate {
-        case (site, content) =>
-          content match {
-            case (sitePath, doc: Doc) if doc.mdocConfig.nonEmpty && !doc.scalajsEnabled =>
-              site.addProcessed(sitePath, mdocPageRenderer, doc)
+      .populate { case (site, content) =>
+        content match {
+          case (sitePath, doc: Doc) if doc.mdocConfig.nonEmpty && !doc.scalajsEnabled =>
+            site.addProcessed(sitePath, mdocPageRenderer, doc)
 
-            case (sitePath, doc: Doc) if doc.scalajsEnabled =>
-              site.addProcessed(
-                mdocJSPageRenderer.map { mk =>
-                  mk.map { case (k, v) => k.apply(sitePath) -> v }
-                },
-                doc
-              )
-            case (sitePath, doc: Doc) =>
-              site.add(sitePath, renderMarkdownPage(doc.title, doc.path, navigation(doc)))
-          }
+          case (sitePath, doc: Doc) if doc.scalajsEnabled =>
+            site.addProcessed(
+              mdocJSPageRenderer.map { mk =>
+                mk.map { case (k, v) => k.apply(sitePath) -> v }
+              },
+              doc
+            )
+          case (sitePath, doc: Doc) =>
+            site.add(sitePath, renderMarkdownPage(doc.title, doc.path, navigation(doc)))
+        }
       }
 
     val addTemplateCSS: Site[Doc] => Site[Doc] = site =>
@@ -373,7 +371,7 @@ trait Template {
       lst.map { link =>
         val sel = if (link.selected) s" $baseClass-selected" else ""
         a(
-          cls := s"$baseClass-btn" + sel,
+          cls  := s"$baseClass-btn" + sel,
           href := link.url,
           link.title
         )

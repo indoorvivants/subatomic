@@ -16,6 +16,8 @@
 
 package subatomic
 
+import java.util.Collection
+
 import scala.annotation.tailrec
 import scala.collection.mutable.ArrayBuffer
 import scala.jdk.CollectionConverters._
@@ -36,7 +38,7 @@ class Markdown(extensions: List[Extension]) {
   private val opts = extensions match {
     case _ :: _ =>
       new MutableDataSet()
-        .set(
+        .set[Collection[Extension]](
           Parser.EXTENSIONS,
           extensions.asJava
         )

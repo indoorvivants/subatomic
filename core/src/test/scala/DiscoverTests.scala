@@ -1,12 +1,7 @@
 package subatomic
 
-import scala.util.Failure
-import scala.util.Success
-import scala.util.Try
-
 import weaver.SimpleMutableIOSuite
 import subatomic.Discover.MarkdownDocument
-import com.vladsch.flexmark.ext.yaml.front.matter.YamlFrontMatterNode
 import com.vladsch.flexmark.ext.yaml.front.matter.YamlFrontMatterExtension
 import weaver.Expectations
 import subatomic.Discover.YamlAttributes
@@ -53,14 +48,13 @@ object DiscoverTests extends SimpleMutableIOSuite {
     )
 
     val results = Discover
-      .someMarkdown(tmpDir) {
-        case MarkdownDocument(path, filename, attributes) =>
-          SiteRoot / s"$filename.html" -> MyContent(
-            attributes.requiredOne("test"),
-            attributes.requiredOne("hello"),
-            attributes.optionalOne("opt"),
-            path
-          )
+      .someMarkdown(tmpDir) { case MarkdownDocument(path, filename, attributes) =>
+        SiteRoot / s"$filename.html" -> MyContent(
+          attributes.requiredOne("test"),
+          attributes.requiredOne("hello"),
+          attributes.optionalOne("opt"),
+          path
+        )
       }
       .toSet
 

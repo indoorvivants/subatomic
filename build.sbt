@@ -1,4 +1,29 @@
-import BuildSettings._
+val Ver = new {
+  val flexmark              = "0.62.2"
+  val coursier              = "2.0.16"
+  val osLib                 = "0.7.8"
+  val scalaUri              = "3.2.0"
+  val scalaCollectionCompat = "2.5.0"
+  val scalatags             = "0.9.4"
+  val scalacss              = "0.8.0-RC1"
+  val scalacssFor2_12       = "0.7.0"
+  val decline               = "2.1.0"
+  val laminar               = "0.13.1"
+  val upickle               = "1.4.0"
+  val fansi                 = "0.2.14"
+  val weaver                = "0.6.6"
+  val munit                 = "0.7.29"
+
+  val Scala = new {
+    val `2_12` = "2.12.13"
+    val `2_13` = "2.13.5"
+    val `3`    = "3.0.2"
+
+    val only_2    = Seq(`2_12`, `2_13`)
+    val only_2_13 = Seq(`2_13`)
+    val all       = only_2 :+ `3`
+  }
+}
 
 lazy val root = project
   .aggregate(
@@ -17,30 +42,33 @@ lazy val root = project
   )
   .settings(skipPublish)
 
+import commandmatrix._
+
 val flexmarkModules = Seq(
   "",
   "-ext-yaml-front-matter",
   "-ext-anchorlink"
-).map(mName => "com.vladsch.flexmark" % s"flexmark$mName" % "0.62.2")
+).map(mName => "com.vladsch.flexmark" % s"flexmark$mName" % Ver.flexmark)
 
 lazy val core = projectMatrix
   .in(file("core"))
   .settings(
     name := "subatomic-core",
     libraryDependencies ++= Seq(
-      "io.get-coursier"        %% "coursier"                % "2.0.0-RC6-24",
-      "com.lihaoyi"            %% "os-lib"                  % "0.7.2",
-      "io.lemonlabs"           %% "scala-uri"               % "3.0.0",
-      "org.scala-lang.modules" %% "scala-collection-compat" % "2.4.1"
+      "io.get-coursier" %% "coursier" % Ver.coursier cross CrossVersion.for3Use2_13 exclude ("org.scala-lang.modules", "scala-collection-compat_2.13"),
+      "com.lihaoyi"            %% "os-lib"                  % Ver.osLib,
+      "org.scala-lang.modules" %% "scala-collection-compat" % Ver.scalaCollectionCompat
     )
+    /* Test / fork := true */
   )
   .settings(
     libraryDependencies ++= flexmarkModules
   )
-  .jvmPlatform(AllScalaVersions)
+  .jvmPlatform(Ver.Scala.all)
   .settings(testSettings)
   .enablePlugins(BuildInfoPlugin)
   .settings(buildInfoSettings)
+  .configure()
 
 lazy val builders =
   projectMatrix
@@ -48,11 +76,22 @@ lazy val builders =
     .dependsOn(core, searchIndex, searchFrontendPack, searchRetrieve, spaFrontendPack)
     .settings(
       name := "subatomic-builders",
-      libraryDependencies += "com.lihaoyi"                  %% "scalatags" % "0.9.1",
-      libraryDependencies += "com.github.japgolly.scalacss" %% "core"      % "0.7.0",
-      libraryDependencies += "com.monovore"                 %% "decline"   % "1.3.0"
+      libraryDependencies += {
+        if (scalaVersion.value.startsWith("3"))
+          ("com.lihaoyi" %% "scalatags" % Ver.scalatags)
+            .exclude("com.lihaoyi", "geny_2.13") cross CrossVersion.for3Use2_13
+        else
+          ("com.lihaoyi" %% "scalatags" % Ver.scalatags)
+      },
+      libraryDependencies += {
+        if (scalaBinaryVersion.value != "2.12")
+          "com.github.japgolly.scalacss" %% "core" % Ver.scalacss
+        else
+          "com.github.japgolly.scalacss" %% "core" % Ver.scalacssFor2_12
+      },
+      libraryDependencies += "com.monovore" %% "decline" % Ver.decline
     )
-    .jvmPlatform(AllScalaVersions)
+    .jvmPlatform(Ver.Scala.all)
     .settings(testSettings)
     .enablePlugins(BuildInfoPlugin)
     .settings(buildInfoSettings)
@@ -60,15 +99,15 @@ lazy val builders =
 lazy val searchFrontendPack = projectMatrix
   .in(file("search/pack"))
   .settings(name := "subatomic-search-frontend-pack")
-  .jvmPlatform(AllScalaVersions)
+  .jvmPlatform(Ver.Scala.all)
   .settings(
-    (Compile / resourceGenerators) +=
+    Compile / resourceGenerators +=
       Def.taskIf {
         if (sys.env.contains("CI")) {
           val out = (Compile / resourceManaged).value / "search.js"
 
           // doesn't matter which Scala version we use, it's compiled to JS anyways
-          val fullOpt = (searchFrontend.js(Scala_213) / Compile / fullOptJS).value.data
+          val fullOpt = (searchFrontend.js(Ver.Scala.`2_13`) / Compile / fullOptJS).value.data
 
           IO.copyFile(fullOpt, out)
 
@@ -77,7 +116,7 @@ lazy val searchFrontendPack = projectMatrix
           val out = (Compile / resourceManaged).value / "search.js"
 
           // doesn't matter which Scala version we use, it's compiled to JS anyways
-          val fullOpt = (searchFrontend.js(Scala_213) / Compile / fastOptJS).value.data
+          val fullOpt = (searchFrontend.js(Ver.Scala.`2_13`) / Compile / fastOptJS).value.data
 
           IO.copyFile(fullOpt, out)
 
@@ -93,10 +132,10 @@ lazy val searchFrontend =
     .dependsOn(searchRetrieve, searchIndex)
     .settings(name := "subatomic-search-frontend")
     .settings(
-      libraryDependencies += "com.raquo" %%% "laminar" % "0.11.0",
-      scalaJSUseMainModuleInitializer := true
+      libraryDependencies += "com.raquo" %%% "laminar" % Ver.laminar,
+      scalaJSUseMainModuleInitializer     := true
     )
-    .jsPlatform(OnlyScala213)
+    .jsPlatform(Ver.Scala.all)
     .settings(testSettings)
     .settings(buildInfoSettings)
     .settings(batchModeOnCI)
@@ -152,15 +191,13 @@ lazy val searchCli =
     .in(file("search/cli"))
     .dependsOn(searchIndex, searchRetrieve)
     .settings(
-      name := "subatomic-search-cli",
-      libraryDependencies += "com.lihaoyi" %%% "os-lib" % "0.7.2",
-      scalacOptions += "-Wconf:cat=unused-imports:wv",
-      scalacOptions += "-Wconf:cat=unused-imports&site=subatomic.search.cli.SearchCLI:s,any:wv",
-      libraryDependencies += "org.scala-lang.modules" %%% "scala-collection-compat" % "2.4.1"
+      name                                             := "subatomic-search-cli",
+      libraryDependencies += "com.lihaoyi"            %%% "os-lib"                  % Ver.osLib,
+      libraryDependencies += "org.scala-lang.modules" %%% "scala-collection-compat" % Ver.scalaCollectionCompat
     )
     .enablePlugins(JavaAppPackaging)
-    .jvmPlatform(AllScalaVersions)
-    .nativePlatform(Seq(Scala_213))
+    .jvmPlatform(Ver.Scala.all)
+    .nativePlatform(Ver.Scala.only_2)
     .settings(testSettings)
     .settings(buildInfoSettings)
 
@@ -169,9 +206,9 @@ lazy val searchIndex =
     .in(file("search/indexer"))
     .dependsOn(searchShared)
     .settings(name := "subatomic-search-indexer")
-    .jvmPlatform(AllScalaVersions)
-    .jsPlatform(OnlyScala213, batchModeOnCI)
-    .nativePlatform(Seq(Scala_213))
+    .jvmPlatform(Ver.Scala.all)
+    .jsPlatform(Ver.Scala.all, batchModeOnCI)
+    .nativePlatform(Ver.Scala.only_2)
     .settings(munitTestSettings)
     .settings(buildInfoSettings)
 
@@ -182,9 +219,9 @@ lazy val searchRetrieve =
     .settings(
       name := "subatomic-search-retrieve"
     )
-    .jvmPlatform(AllScalaVersions)
-    .jsPlatform(OnlyScala213, batchModeOnCI)
-    .nativePlatform(Seq(Scala_213))
+    .jvmPlatform(Ver.Scala.all)
+    .jsPlatform(Ver.Scala.all, batchModeOnCI)
+    .nativePlatform(Ver.Scala.only_2)
     .settings(munitTestSettings)
     .settings(buildInfoSettings)
 
@@ -192,22 +229,23 @@ lazy val searchShared =
   projectMatrix
     .in(file("search/shared"))
     .settings(
-      name := "subatomic-search-shared",
-      libraryDependencies += "com.lihaoyi" %%% "upickle" % "1.2.3"
+      name                                  := "subatomic-search-shared",
+      libraryDependencies += "com.lihaoyi" %%% "upickle" % Ver.upickle
     )
-    .jvmPlatform(AllScalaVersions)
-    .jsPlatform(OnlyScala213, batchModeOnCI)
-    .nativePlatform(Seq(Scala_213))
+    .jvmPlatform(Ver.Scala.all)
+    .jsPlatform(Ver.Scala.all, batchModeOnCI)
+    .nativePlatform(Ver.Scala.only_2)
     .settings(munitTestSettings)
     .settings(buildInfoSettings)
     .enablePlugins(BuildInfoPlugin)
     .settings(
-      (headerSources / excludeFilter) := HiddenFileFilter || "*Stemmer.scala"
+      headerSources / excludeFilter := HiddenFileFilter || "*Stemmer.scala"
     )
 
-lazy val docs = project
+lazy val docs = projectMatrix
   .in(file("docs"))
-  .dependsOn(builders.jvm(Scala_212), plugin.jvm(Scala_212), searchIndex.jvm(Scala_212))
+  .dependsOn(builders, plugin, searchIndex)
+  .jvmPlatform(Seq(Ver.Scala.`2_12`))
   .enablePlugins(SubatomicPlugin)
   .settings(
     scalaVersion := Scala_212,
@@ -220,12 +258,12 @@ lazy val docs = project
       (ThisBuild / baseDirectory).value / "docs" / "pages"
     ),
     // To pick up Main.scala in docs/ (without the src/main/scala/ stuff)
-    (Compile / unmanagedSourceDirectories) +=
+    Compile / unmanagedSourceDirectories +=
       (ThisBuild / baseDirectory).value / "docs",
-    libraryDependencies += "com.lihaoyi" %% "fansi" % "0.2.7",
-    subatomicBuildersDependency := false,
-    subatomicCoreDependency := false,
-    subatomicInheritClasspath := true
+    libraryDependencies += "com.lihaoyi" %% "fansi" % Ver.fansi,
+    subatomicBuildersDependency          := false,
+    subatomicCoreDependency              := false,
+    subatomicInheritClasspath            := true
   )
 
 lazy val plugin = projectMatrix
@@ -235,7 +273,7 @@ lazy val plugin = projectMatrix
     sbtPlugin := true,
     (pluginCrossBuild / sbtVersion) := "1.4.4"
   )
-  .jvmPlatform(scalaVersions = Seq(Scala_212))
+  .jvmPlatform(scalaVersions = Seq(Ver.Scala.`2_12`))
   .settings(
     moduleName := "subatomic-plugin",
     scriptedLaunchOpts := {
@@ -247,17 +285,17 @@ lazy val plugin = projectMatrix
   .settings(
     publishLocal := publishLocal
       .dependsOn(
-        (core.jvm(Scala_212) / publishLocal),
-        (builders.jvm(Scala_212) / publishLocal),
-        (searchIndex.jvm(Scala_212) / publishLocal),
-        (searchFrontendPack.jvm(Scala_212) / publishLocal),
-        (searchShared.jvm(Scala_212) / publishLocal),
-        (searchRetrieve.jvm(Scala_212) / publishLocal)
+        core.jvm(Ver.Scala.`2_12`) / publishLocal,
+        builders.jvm(Ver.Scala.`2_12`) / publishLocal,
+        searchIndex.jvm(Ver.Scala.`2_12`) / publishLocal,
+        searchFrontendPack.jvm(Ver.Scala.`2_12`) / publishLocal,
+        searchShared.jvm(Ver.Scala.`2_12`) / publishLocal,
+        searchRetrieve.jvm(Ver.Scala.`2_12`) / publishLocal
       )
       .value
   )
   .settings(
-    (Compile / resourceGenerators) += Def.task {
+    Compile / resourceGenerators += Def.task {
       val out =
         (Compile / managedResourceDirectories).value.head / "subatomic-plugin.properties"
 
@@ -279,8 +317,8 @@ lazy val testSettings =
     libraryDependencies ++= ifNot(
       virtualAxes.value.contains(VirtualAxis.native),
       Seq(
-        "com.disneystreaming" %%% "weaver-cats"       % "0.6.0-M6" % Test,
-        "com.disneystreaming" %%% "weaver-scalacheck" % "0.6.0-M6" % Test
+        "com.disneystreaming" %%% "weaver-cats"       % Ver.weaver % Test,
+        "com.disneystreaming" %%% "weaver-scalacheck" % Ver.weaver % Test
       )
     ),
     testFrameworks += new TestFramework("weaver.framework.CatsEffect"),
@@ -288,14 +326,14 @@ lazy val testSettings =
   )
 
 lazy val munitTestSettings = Seq(
-  libraryDependencies += "org.scalameta" %%% "munit"            % "0.7.21" % Test,
-  libraryDependencies += "org.scalameta" %%% "munit-scalacheck" % "0.7.21" % Test,
+  libraryDependencies += "org.scalameta" %%% "munit"            % Ver.munit % Test,
+  libraryDependencies += "org.scalameta" %%% "munit-scalacheck" % Ver.munit % Test,
   testFrameworks += new TestFramework("munit.Framework"),
   Test / scalaJSLinkerConfig ~= { _.withModuleKind(ModuleKind.CommonJSModule) }
 )
 
 lazy val skipPublish = Seq(
-  (publish / skip) := true
+  publish / skip := true
 )
 
 val batchModeOnCI =
@@ -327,15 +365,15 @@ lazy val buildInfoSettings = {
 
 inThisBuild(
   List(
-    scalaVersion := Scala_213,
-    scalafixDependencies += "com.github.liancheng" %% "organize-imports" % "0.4.0",
-    semanticdbEnabled := true,
-    semanticdbVersion := scalafixSemanticdb.revision,
-    scalafixScalaBinaryVersion := scalaBinaryVersion.value,
-    organization := "com.indoorvivants",
-    organizationName := "Anton Sviridov",
-    homepage := Some(url("https://github.com/indoorvivants/subatomic")),
-    startYear := Some(2020),
+    scalaVersion                                   := Ver.Scala.`2_13`,
+    scalafixDependencies += "com.github.liancheng" %% "organize-imports" % "0.5.0",
+    semanticdbEnabled                              := true,
+    semanticdbVersion                              := scalafixSemanticdb.revision,
+    scalafixScalaBinaryVersion                     := scalaBinaryVersion.value,
+    organization                                   := "com.indoorvivants",
+    organizationName                               := "Anton Sviridov",
+    homepage                                       := Some(url("https://github.com/indoorvivants/subatomic")),
+    startYear                                      := Some(2020),
     licenses := List(
       "Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")
     ),
@@ -381,8 +419,49 @@ ThisBuild / commands += Command.command("ci") { st =>
     "headerCheck" :: st
 }
 
-addCommandAlias("buildSite", "docs/run build")
+addCommandAlias("buildSite", "docs2_12/run build")
 
-ThisBuild / concurrentRestrictions ++= {
-  if (sys.env.contains("CI")) Seq(Tags.limitAll(4)) else Seq.empty
-}
+import commandmatrix._
+
+inThisBuild(
+  Seq(
+    commands ++=
+      CrossCommand.all(
+        Seq("compile", "test", "publishLocal"),
+        matrices =
+          Seq(core, searchShared, searchIndex, searchRetrieve, builders, searchCli, searchFrontend, searchFrontendPack),
+        dimensions = Seq(
+          Dimension.scala("2.13", fullFor3 = false),
+          Dimension.platform()
+        ),
+        stubMissing = true
+      ),
+    commands ++=
+      CrossCommand.composite(
+        "codeQuality",
+        Seq("scalafmtCheckAll", s"scalafix --check $scalafixRules", "headerCheck"),
+        matrices =
+          Seq(core, searchShared, searchIndex, searchRetrieve, builders, searchCli, searchFrontend, searchFrontendPack),
+        dimensions = Seq(
+          Dimension.scala("2.13", fullFor3 = false),
+          Dimension.platform()
+        ),
+        filter = axes => CrossCommand.filter.notScala3(axes),
+        stubMissing = true
+      ),
+    commands ++=
+      CrossCommand.composite(
+        "pluginTests",
+        Seq("scripted"),
+        matrices = Seq(plugin),
+        dimensions = Seq(
+          Dimension.scala("2.12", fullFor3 = false), // "2.12" is the default one
+          Dimension.platform()
+        ),
+        filter = axes =>
+          CrossCommand.filter.isScalaBinary(2, Some(12))(axes) &&
+            CrossCommand.filter.onlyJvm(axes),
+        stubMissing = true
+      )
+  )
+)

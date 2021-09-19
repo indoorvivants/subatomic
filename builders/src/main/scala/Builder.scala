@@ -32,7 +32,7 @@ trait Builder {
       }
       .getOrElse(Nil)
       .toList
-      .map(StylesheetPath)
+      .map(StylesheetPath(_))
 
   lazy val managedScripts: List[ScriptPath] =
     assetsRoot
@@ -42,7 +42,7 @@ trait Builder {
       }
       .getOrElse(Nil)
       .toList
-      .map(ScriptPath)
+      .map(ScriptPath(_))
 }
 
 object BuilderTemplate {
@@ -51,7 +51,7 @@ object BuilderTemplate {
   def managedStylesBlock(linker: Linker, styles: List[StylesheetPath]) = {
     styles.map { sp =>
       link(
-        rel := "stylesheet",
+        rel  := "stylesheet",
         href := linker.unsafe(_ => sp.path)
       )
     }
@@ -73,7 +73,6 @@ object BuilderTemplate {
   |}
   |
   |div.searchContainer input {
-  |  width: 100%;
   |  max-width:300px;
   |  padding:10px;
   |  font-size: 18px;

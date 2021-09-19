@@ -1,7 +1,5 @@
 package subatomic
 
-import scala.util.Failure
-import scala.util.Success
 import scala.util.Try
 
 import weaver.SimpleMutableIOSuite

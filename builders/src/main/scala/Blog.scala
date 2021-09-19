@@ -22,6 +22,7 @@ import java.time.format.DateTimeFormatter
 
 import subatomic.Discover.MarkdownDocument
 import subatomic.builders._
+import subatomic.buildrs.blog.themes.default
 
 import com.vladsch.flexmark.ext.anchorlink.AnchorLinkExtension
 import com.vladsch.flexmark.ext.yaml.front.matter.YamlFrontMatterExtension
@@ -115,43 +116,43 @@ object Blog {
 
   def discoverContent(siteConfig: Blog): Vector[(SitePath, Doc)] = {
     val posts = Discover
-      .someMarkdown(siteConfig.contentRoot) {
-        case MarkdownDocument(path, filename, attributes) =>
-          val date        = LocalDate.parse(attributes.requiredOne("date"))
-          val tags        = attributes.optionalOne("tags").toList.flatMap(_.split(",").toList)
-          val title       = attributes.requiredOne("title")
-          val description = attributes.optionalOne("description")
-          val archived    = attributes.optionalOne("archived").map(_.toBoolean).getOrElse(false)
+      .someMarkdown(siteConfig.contentRoot) { case MarkdownDocument(path, filename, attributes) =>
+        // TODO: handle the error here correctly
+        val date        = LocalDate.parse(attributes.requiredOne("date"))
+        val tags        = attributes.optionalOne("tags").toList.flatMap(_.split(",").toList)
+        val title       = attributes.requiredOne("title")
+        val description = attributes.optionalOne("description")
+        // TODO: handle error here correctly
+        val archived = attributes.optionalOne("archived").map(_.toBoolean).getOrElse(false)
 
-          val sitePath = SiteRoot / (date.format(DateTimeFormatter.ISO_LOCAL_DATE) + "-" + filename + ".html")
+        val sitePath = SiteRoot / (date.format(DateTimeFormatter.ISO_LOCAL_DATE) + "-" + filename + ".html")
 
-          val mdocConfig = MdocConfiguration.fromAttrs(attributes)
+        val mdocConfig = MdocConfiguration.fromAttrs(attributes)
 
-          val post = Post(
-            title,
-            path,
-            date,
-            description,
-            tags,
-            mdocConfig,
-            archived
-          ): Doc
+        val post = Post(
+          title,
+          path,
+          date,
+          description,
+          tags,
+          mdocConfig,
+          archived
+        ): Doc
 
-          sitePath -> post
+        sitePath -> post
       }
       .toVector
 
     val tagPages = posts
       .map(_._2)
-      .collect {
-        case p: Post => p
+      .collect { case p: Post =>
+        p
       }
       .flatMap(post => post.tags.map(tag => tag -> post))
       .groupBy(_._1)
       .toVector
-      .map {
-        case (tag, posts) =>
-          SiteRoot / "tags" / s"$tag.html" -> TagPage(tag, posts.map(_._2).toList)
+      .map { case (tag, posts) =>
+        SiteRoot / "tags" / s"$tag.html" -> TagPage(tag, posts.map(_._2).toList)
       }
 
     posts ++ tagPages
@@ -172,8 +173,8 @@ object Blog {
       Default(
         siteConfig,
         linker,
-        content.map(_._2).collect {
-          case t: TagPage => t
+        content.map(_._2).collect { case t: TagPage =>
+          t
         }
       )
     )
@@ -248,23 +249,22 @@ object Blog {
 
     val baseSite = Site
       .init(content)
-      .populate {
-        case (site, content) =>
-          content match {
-            case (sitePath, doc: Post) if doc.mdocConfig.nonEmpty && !doc.scalajsEnabled =>
-              site.addProcessed(sitePath, mdocPageRenderer, doc)
-            case (sitePath, doc: Post) if doc.mdocConfig.nonEmpty =>
-              site.addProcessed(
-                mdocJSPageRenderer.map { mk =>
-                  mk.map { case (k, v) => k.apply(sitePath) -> v }
-                },
-                doc
-              )
-            case (sitePath, doc: Post) =>
-              site.add(sitePath, renderPost(doc.title, doc.tags, doc.path, navigation(doc)))
-            case (sitePath, doc: TagPage) =>
-              site.addPage(sitePath, template.tagPage(navigation(doc), doc.tag, doc.posts).render)
-          }
+      .populate { case (site, content) =>
+        content match {
+          case (sitePath, doc: Post) if doc.mdocConfig.nonEmpty && !doc.scalajsEnabled =>
+            site.addProcessed(sitePath, mdocPageRenderer, doc)
+          case (sitePath, doc: Post) if doc.mdocConfig.nonEmpty =>
+            site.addProcessed(
+              mdocJSPageRenderer.map { mk =>
+                mk.map { case (k, v) => k.apply(sitePath) -> v }
+              },
+              doc
+            )
+          case (sitePath, doc: Post) =>
+            site.add(sitePath, renderPost(doc.title, doc.tags, doc.path, navigation(doc)))
+          case (sitePath, doc: TagPage) =>
+            site.addPage(sitePath, template.tagPage(navigation(doc), doc.tag, doc.posts).render)
+        }
       }
 
     def addIndexPage(site: Site[Doc]): Site[Doc] = {
@@ -283,17 +283,21 @@ object Blog {
       site.addPage(SiteRoot / "archive.html", template.archivePage(blogPosts).render)
     }
 
+    val addTemplateCSS: Site[Doc] => Site[Doc] = site =>
+      site.add(SiteRoot / "assets" / "template.css", Page(default.asString))
+
     val builderSteps = new BuilderSteps(markdown)
 
     val steps = List[Site[Doc] => Site[Doc]](
       builderSteps.addSearchIndex[Doc](
         linker,
-        {
-          case p: Post => BuilderSteps.SearchableDocument(p.title, p.path)
+        { case p: Post =>
+          BuilderSteps.SearchableDocument(p.title, p.path)
         },
         content
       ),
       builderSteps.addAllAssets[Doc](siteConfig.assetsRoot, siteConfig.assetsFilter),
+      addTemplateCSS,
       extra
     )
 
@@ -357,7 +361,7 @@ trait Template {
 
   def rawHtml(rawHtml: String) = div(raw(rawHtml))
 
-  def searchScripts = {
+  private def searchScripts = {
     val paths =
       if (site.search)
         List(ScriptPath(SiteRoot / "assets" / "search.js"), ScriptPath(SiteRoot / "assets" / "search-index.js"))
@@ -366,7 +370,7 @@ trait Template {
     BuilderTemplate.managedScriptsBlock(linker, paths)
   }
 
-  def searchStyles = {
+  private def searchStyles = {
     val paths =
       if (site.search)
         List(
@@ -374,6 +378,12 @@ trait Template {
           StylesheetPath(SiteRoot / "assets" / "subatomic-search.css")
         )
       else Nil
+
+    BuilderTemplate.managedStylesBlock(linker, paths)
+  }
+
+  private def templateStyles = {
+    val paths = List(StylesheetPath(SiteRoot / "assets" / "template.css"))
 
     BuilderTemplate.managedStylesBlock(linker, paths)
   }
@@ -386,6 +396,7 @@ trait Template {
       .getOrElse("")
 
     html(
+      lang := "en",
       head(
         scalatags.Text.tags2.title(site.name + ":" + pageTitle),
         HighlightJS.templateBlock(site.highlightJS),
@@ -393,35 +404,53 @@ trait Template {
         BuilderTemplate.managedScriptsBlock(linker, site.managedScripts),
         searchScripts,
         searchStyles,
+        templateStyles,
         meta(charset := "UTF-8"),
         meta(
-          name := "viewport",
+          name            := "viewport",
           attr("content") := "width=device-width, initial-scale=1"
         )
       ),
       body(
         div(
           cls := "wrapper",
-          div(
+          aside(
             cls := "sidebar",
-            h2(a(href := linker.root, site.name)),
-            hr,
+            blogTitleSection,
             about,
             staticNav,
-            div(id := "searchContainer", cls := "searchContainer"),
-            hr,
-            h4("tags"),
+            searchSection,
             tagCloud,
-            navigation match {
-              case Some(value) => div(hr, h4("posts"), Nav(value))
-              case None        => div()
-            }
+            navigationSection(navigation)
           ),
-          tag("article")(cls := "content-wrapper", content)
+          article(cls := "content-wrapper", content)
         )
       )
     )
   }
+
+  private def navigationSection(navigation: Option[Vector[NavLink]]) =
+    navigation match {
+      case Some(value) =>
+        section(
+          cls := "site-navigation-posts",
+          h4("posts"),
+          Nav(value)
+        )
+      case None => span()
+    }
+
+  private def blogTitleSection =
+    section(
+      cls := "site-title",
+      h2(a(href := linker.root, site.name))
+    )
+
+  private def searchSection =
+    section(
+      cls := "site-search",
+      div(id := "searchContainer", cls := "searchContainer")
+    )
 
   def page(navigation: Vector[NavLink], content: TypedTag[_]) =
     basePage(Some(navigation), content)
@@ -445,7 +474,7 @@ trait Template {
         a(href := linker.unsafe(_ / "tags" / s"$tag.html"), small(tag))
       )
     }
-    page(navigation, div(h2(title), p(tagline), hr, content)).render
+    "<!DOCTYPE html>" + page(navigation, div(h2(title), p(tagline), hr, content)).render
   }
 
   def tagPage(
@@ -473,10 +502,14 @@ trait Template {
   }
 
   def tagCloud = {
-    div(
-      tagPages.toList.map { tagPage =>
-        span(a(href := linker.find(tagPage), small(tagPage.tag)), " ")
-      }
+    section(
+      cls := "site-tag-cloud",
+      h4("tags"),
+      nav(
+        tagPages.toList.map { tagPage =>
+          span(a(href := linker.find(tagPage), small(tagPage.tag)), " ")
+        }
+      )
     )
   }
 
@@ -519,7 +552,7 @@ trait Template {
       div(
         h3("Posts"),
         div(cls := "card-columns", blogs.sortBy(-_.date.toEpochDay()).map(blogCard).toVector),
-        a(href := linker.unsafe(_ / "archive.html"), "Archive")
+        a(href  := linker.unsafe(_ / "archive.html"), "Archive")
       )
     )
   }
@@ -536,21 +569,29 @@ trait Template {
     )
   }
 
+  val section = tag("section")
+  val aside   = tag("aside")
+  val nav     = tag("nav")
+  val article = tag("article")
+
   def about =
-    div(
+    section(
+      cls := "site-tagline",
       p(site.tagline)
     )
 
   def staticNav =
-    ul(
-      site.links.map {
-        case (title, url) =>
+    section(
+      cls := "site-links",
+      ul(
+        site.links.map { case (title, url) =>
           li(
             a(
               href := url,
               title
             )
           )
-      }
+        }
+      )
     )
 }

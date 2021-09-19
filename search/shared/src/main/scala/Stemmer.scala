@@ -1,22 +1,18 @@
 package subatomic
 package search
 
-/**
-  * Anton:
+/** Anton:
   *
-  * This is just the initial implementation, copied from
-  * https://tartarus.org/martin/PorterStemmer/scala.txt
+  * This is just the initial implementation, copied from https://tartarus.org/martin/PorterStemmer/scala.txt
   *
   * I intend to rewrite it in a more condensed way, reducing the number of passes.
   *
   * I've insourced it for now, given that the licensing is permissive:
   *
-  * "In every case where the software is not written by me (Martin Porter),
-  * this licensing arrangement has been endorsed by the contributor, and it is
-  * therefore unnecessary to ask the contributor again to confirm it."
+  * "In every case where the software is not written by me (Martin Porter), this licensing arrangement has been endorsed
+  * by the contributor, and it is therefore unnecessary to ask the contributor again to confirm it."
   *
-  * See FAW at https://tartarus.org/martin/PorterStemmer/
-  * *
+  * See FAW at https://tartarus.org/martin/PorterStemmer/ *
   */
 
 object PorterStemmer {

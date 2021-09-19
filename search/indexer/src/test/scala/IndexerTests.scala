@@ -13,18 +13,17 @@ class IndexerSuite extends munit.FunSuite {
     "/hello/world" -> List("section1" -> "amet ipsum amet dolor")
   )
 
-  val idx = Indexer.default(content).processAll {
-    case (path, sections) => //Document.section(s"Document at $path", path, text)
+  val idx =
+    Indexer.default(content).processAll { case (path, sections) => //Document.section(s"Document at $path", path, text)
 
       Document(
         s"Document at $path",
         path,
-        sections.map {
-          case (title, content) =>
-            Section(title, None, content)
+        sections.map { case (title, content) =>
+          Section(title, None, content)
         }.toVector
       )
-  }
+    }
 
   test("all documents have entry in the index") {
     assertEquals(
@@ -81,11 +80,10 @@ class IndexerSuite extends munit.FunSuite {
         .getOrElse(err(s"Document with $url not found in the index"))
       val reverseTermMapping = idx.termMapping.map(_.swap)
 
-      idx.documentTerms(docIdx).map {
-        case (termIdx, termFreq) =>
-          reverseTermMapping(
-            termIdx
-          ).value -> termFreq.frequencyInDocument.value
+      idx.documentTerms(docIdx).map { case (termIdx, termFreq) =>
+        reverseTermMapping(
+          termIdx
+        ).value -> termFreq.frequencyInDocument.value
       }
     }
 

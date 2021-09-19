@@ -58,11 +58,10 @@ class MdocJSProcessor[C] private (pwd: os.Path, toMdocFile: PartialFunction[C, M
 
       val result = mdoc.processAll(pwd, filesToProcess.map(_._2).map(_.path).toSeq).toMap
 
-      val results = filesToProcess.map {
-        case (content, mdocFile) =>
-          val mdjsResult = result(mdocFile.path)
+      val results = filesToProcess.map { case (content, mdocFile) =>
+        val mdjsResult = result(mdocFile.path)
 
-          content -> MdocJSResult(content, mdjsResult.mdFile, mdjsResult.mdjsFile, mdjsResult.mdocFile)
+        content -> MdocJSResult(content, mdjsResult.mdFile, mdjsResult.mdjsFile, mdjsResult.mdocFile)
 
       }
 

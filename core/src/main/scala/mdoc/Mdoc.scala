@@ -35,7 +35,7 @@ case class ScalaJSConfig(
 )
 
 object ScalaJSConfig {
-  def default = ScalaJSConfig(version = "1.3.0", "1.0.0")
+  def default = ScalaJSConfig(version = "1.5.0", "1.0.0")
 
   def fromAttrs(attrs: Discover.YamlAttributes): Option[ScalaJSConfig] = {
     val enabled    = attrs.optionalOne("mdoc-js").map(_.toBoolean).getOrElse(false)
@@ -48,6 +48,7 @@ object ScalaJSConfig {
 
 case class MdocConfiguration(
     scalaBinaryVersion: String,
+    scalaVersion: String,
     mdocVersion: String,
     inheritClasspath: Boolean,
     inheritVariables: Boolean,
@@ -61,7 +62,8 @@ object MdocConfiguration {
   def default =
     MdocConfiguration(
       scalaBinaryVersion = BuildInfo.scalaBinaryVersion,
-      mdocVersion = "2.2.18",
+      scalaVersion = BuildInfo.scalaVersion,
+      mdocVersion = "2.2.23",
       inheritClasspath = true,
       inheritVariables = true,
       variables = Map.empty,
@@ -141,8 +143,8 @@ class Mdoc(
   } else Map.empty[String, String]
 
   lazy val variablesStr: Seq[String] = {
-    (inheritedVariables ++ config.variables).map {
-      case (k, v) => s"--site.$k=$v"
+    (inheritedVariables ++ config.variables).map { case (k, v) =>
+      s"--site.$k=$v"
     }.toSeq
   }
 
@@ -151,7 +153,7 @@ class Mdoc(
       pwd: Option[os.Path]
   ): Seq[(os.Path, os.Path)] = {
 
-    val logger      = logging.at("MDOC(batch)")
+    val logger      = logging.at("MDOC")
     val tmpLocation = os.temp.dir()
 
     val filesWithTargets = files.map { p =>
@@ -175,21 +177,29 @@ class Mdoc(
     if (inheritedVariables.nonEmpty)
       logger.logLine(s"inherited variables: $inheritedVariables")
 
-    val args = filesWithTargets.flatMap {
-      case (from, to) =>
-        Seq("--in", from.toString, "--out", to.toString) ++ variablesStr
+    val args = filesWithTargets.flatMap { case (from, to) =>
+      Seq("--in", from.toString, "--out", to.toString) ++ variablesStr
     }
 
     val launcherJVM = mainCp + launcherClasspath.map(":" + _).getOrElse("")
 
+    val scala3CP = if (config.scalaBinaryVersion == "3") mainCp + ":" else ""
+
+    val extraCP =
+      scala3CP + fetchCp(config.extraDependencies) + inheritedClasspath.map(":" + _).getOrElse("")
+
+    val classpathArg =
+      if (extraCP.trim != "")
+        Seq("--classpath", extraCP)
+      else
+        Seq.empty
+
     val base = Seq(
       "java",
-      "-classpath",
+      "-cp",
       launcherJVM,
-      "mdoc.Main",
-      "--classpath",
-      fetchCp(config.extraDependencies) + inheritedClasspath.map(":" + _).getOrElse("")
-    )
+      "mdoc.Main"
+    ) ++ classpathArg
 
     scala.util.Try(
       os
@@ -197,7 +207,8 @@ class Mdoc(
         .call(
           pwd.getOrElse(tmpLocation),
           stderr = ProcessOutput.Readlines(logger.at("ERR")._println),
-          stdout = ProcessOutput.Readlines(logger.at("OUT")._println)
+          stdout = ProcessOutput.Readlines(logger.at("OUT")._println),
+          propagateEnv = false
         )
     ) match {
       case scala.util.Success(_) =>
@@ -214,9 +225,16 @@ class Mdoc(
     processAll(Seq(file), None).head._2
   }
 
-  private val mdocDep = DependencyParser
-    .dependency(s"org.scalameta::mdoc:${config.mdocVersion}", config.scalaBinaryVersion)
-    .getOrElse(throw new Exception("Unspeakable has happened"))
+  private val mdocDep = {
+    if (config.scalaBinaryVersion == "3")
+      DependencyParser
+        .dependency(s"org.scalameta:mdoc_3:${config.mdocVersion}", config.scalaBinaryVersion)
+        .getOrElse(throw new Exception("oh noes"))
+    else
+      DependencyParser
+        .dependency(s"org.scalameta::mdoc:${config.mdocVersion}", config.scalaBinaryVersion)
+        .getOrElse(throw new Exception("Unspeakable has happened"))
+  }
 
   private lazy val mainCp = {
 

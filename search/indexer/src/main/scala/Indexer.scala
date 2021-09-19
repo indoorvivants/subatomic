@@ -59,9 +59,8 @@ class Indexer[ContentType](
   ): SearchIndex = {
     val total  = extract.lift
     val tf_idf = new TF_IDF(content.size, tokenizer, debug)
-    content.foreach {
-      case cnt =>
-        total(cnt).foreach { tf_idf.add }
+    content.foreach { case cnt =>
+      total(cnt).foreach { tf_idf.add }
     }
 
     tf_idf.buildIndex
@@ -162,12 +161,11 @@ private[subatomic] class TF_IDF(
     val documentEntry = DocumentEntry(
       document.title,
       document.url,
-      document.sections.zipWithIndex.map {
-        case (section, idx) =>
-          SectionIdx(idx) -> SectionEntry(
-            title = section.title,
-            url = section.url.getOrElse(document.url)
-          )
+      document.sections.zipWithIndex.map { case (section, idx) =>
+        SectionIdx(idx) -> SectionEntry(
+          title = section.title,
+          url = section.url.getOrElse(document.url)
+        )
       }.toMap
     )
 
@@ -177,33 +175,31 @@ private[subatomic] class TF_IDF(
 
     document.sections.zipWithIndex
       .map { case (s, i) => s -> SectionIdx(i) }
-      .foreach {
-        case (Section(_, _, text), sectionIdx) =>
-          val tokens             = tokenizer(text)
-          val documentRegistered = mutable.Set[TermIdx]()
+      .foreach { case (Section(_, _, text), sectionIdx) =>
+        val tokens             = tokenizer(text)
+        val documentRegistered = mutable.Set[TermIdx]()
 
-          tokens
-            .groupBy(identity)
-            .map { case (tok, occs) => tok -> TermFrequency(occs.size) }
-            .foreach {
-              case (tok, termFrequency) =>
-                val termIdx = getTermId(tok)
+        tokens
+          .groupBy(identity)
+          .map { case (tok, occs) => tok -> TermFrequency(occs.size) }
+          .foreach { case (tok, termFrequency) =>
+            val termIdx = getTermId(tok)
 
-                if (!documentRegistered.contains(termIdx)) {
-                  increaseGlobalTermFrequency(termIdx, TermFrequency(1))
-                  documentRegistered.add(termIdx)
-                }
-
-                val currentStats = getTermDocumentOccurennce(termIdx, docIdx)
-
-                val newStats = currentStats.copy(
-                  frequencyInDocument = currentStats.frequencyInDocument + termFrequency,
-                  sectionOccurences = currentStats.sectionOccurences
-                    .updated(sectionIdx, termFrequency)
-                )
-
-                updateTermDocumentOccurrence(termIdx, docIdx, newStats)
+            if (!documentRegistered.contains(termIdx)) {
+              increaseGlobalTermFrequency(termIdx, TermFrequency(1))
+              documentRegistered.add(termIdx)
             }
+
+            val currentStats = getTermDocumentOccurennce(termIdx, docIdx)
+
+            val newStats = currentStats.copy(
+              frequencyInDocument = currentStats.frequencyInDocument + termFrequency,
+              sectionOccurences = currentStats.sectionOccurences
+                .updated(sectionIdx, termFrequency)
+            )
+
+            updateTermDocumentOccurrence(termIdx, docIdx, newStats)
+          }
       }
   }
 
@@ -215,17 +211,15 @@ private[subatomic] class TF_IDF(
     val acc =
       mutable.Map[DocumentIdx, mutable.Map[TermIdx, TermDocumentOccurence]]()
 
-    termsInDocuments.foreach {
-      case (termIdx, frequenceInDocuments) =>
-        frequenceInDocuments.foreach {
-          case (docIdx, termFrequency) =>
-            acc.get(docIdx) match {
-              case Some(value) =>
-                value.update(termIdx, termFrequency)
-              case None =>
-                acc.update(docIdx, mutable.Map(termIdx -> termFrequency))
-            }
+    termsInDocuments.foreach { case (termIdx, frequenceInDocuments) =>
+      frequenceInDocuments.foreach { case (docIdx, termFrequency) =>
+        acc.get(docIdx) match {
+          case Some(value) =>
+            value.update(termIdx, termFrequency)
+          case None =>
+            acc.update(docIdx, mutable.Map(termIdx -> termFrequency))
         }
+      }
     }
 
     acc.map { case (k, v) => k -> v.toMap }.toMap

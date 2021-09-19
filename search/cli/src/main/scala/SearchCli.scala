@@ -19,9 +19,9 @@ package search
 package cli
 
 import scala.util.Try
+// import scala.collection.compat._
 
 object SearchCLI {
-  import scala.collection.compat._
   def main(argArr: Array[String]): Unit = {
     val args = argArr.toList
 
@@ -44,13 +44,12 @@ object SearchCLI {
   }
 
   private def indexPath(path: os.Path): SearchIndex = {
-    val iter = os.walk(path).iterator.filter(_.toIO.isFile()).map(p => p -> os.read(p)).to(Iterable)
+    val iter = os.walk(path).iterator.filter(_.toIO.isFile()).map(p => p -> os.read(p))
 
-    val indexer = Indexer.default[(os.Path, String)](iter)
+    val indexer = Indexer.default[(os.Path, String)](iter.toVector)
 
-    indexer.processAll {
-      case (path, content) =>
-        Document.section(s"Doc at $path", path.toString(), content)
+    indexer.processAll { case (path, content) =>
+      Document.section(s"Doc at $path", path.toString(), content)
     }
   }
 

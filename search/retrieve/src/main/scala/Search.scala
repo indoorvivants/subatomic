@@ -42,7 +42,7 @@ class Search(index: SearchIndex, debug: Boolean = false) {
         _ = debugPrint(s"token $tok resolved to $termIdx")
         docsWithTerm <- index.termsInDocuments.get(termIdx.value)
         _ = debugPrint(s"documents with $tok: $docsWithTerm")
-      } yield termIdx.value -> docsWithTerm
+      } yield termIdx -> docsWithTerm
     }
 
     val validTerms = terms.map(_._1)
@@ -54,32 +54,31 @@ class Search(index: SearchIndex, debug: Boolean = false) {
       val documentTerms = getDocumentTerms(documentId)
 
       validTerms.map { termId =>
-        documentTerms.get(termId) match {
+        documentTerms.get(termId.value) match {
           case Some(tdo) =>
             val TF = Algorithms.augmented_Term_Frequency(
-              termId,
+              termId.value,
               documentTerms.map { case (k, v) => k -> v.frequencyInDocument }
             )
 
             val IDF = Algorithms.inverse_Document_Frequency(
               index.collectionSize,
-              getGlobalTermFrequency(termId)
+              getGlobalTermFrequency(termId.value)
             )
 
             debugPrint(s"DocumentId: $documentId, Term: ${termId}, TF: $TF, IDF: $IDF")
 
             val TERM_SCORE = TF * IDF
 
-            tdo.sectionOccurences.map {
-              case (sectionIdx, frequencyInSection) =>
-                val key = (documentId, sectionIdx)
-                debugPrint(
-                  s"Updating ($documentId, $sectionIdx) for $termId with ${frequencyInSection.value * TERM_SCORE}"
-                )
-                sectionRef.update(
-                  key,
-                  frequencyInSection.value * TERM_SCORE + sectionRef.getOrElseUpdate(key, 0.0)
-                )
+            tdo.sectionOccurences.map { case (sectionIdx, frequencyInSection) =>
+              val key = (documentId, sectionIdx)
+              debugPrint(
+                s"Updating ($documentId, $sectionIdx) for $termId with ${frequencyInSection.value * TERM_SCORE}"
+              )
+              sectionRef.update(
+                key,
+                frequencyInSection.value * TERM_SCORE + sectionRef.getOrElseUpdate(key, 0.0)
+              )
             }
 
             (documentId, TERM_SCORE)
@@ -90,27 +89,26 @@ class Search(index: SearchIndex, debug: Boolean = false) {
 
     val entries = termDocumentRanks
       .groupBy(_._1)
-      .map {
-        case (documentIdx, ranks) =>
-          val document = index.documentsMapping(documentIdx)
-          val documentSections =
-            document.sections.keys.toVector
-              .map(sid => sid -> sectionRef.getOrElse((documentIdx, sid), 0.0))
-              .filter(_._2 != 0.0)
-              .sortBy(-1 * _._2)
-              .take(3)
-              .map(_._1)
+      .map { case (documentIdx, ranks) =>
+        val document = index.documentsMapping(documentIdx)
+        val documentSections =
+          document.sections.keys.toVector
+            .map(sid => sid -> sectionRef.getOrElse((documentIdx, sid), 0.0))
+            .filter(_._2 != 0.0)
+            .sortBy(-1 * _._2)
+            .take(3)
+            .map(_._1)
 
-          debugPrint(s"document: ${document.title}, sections: ${documentSections}")
+        debugPrint(s"document: ${document.title}, sections: ${documentSections}")
 
-          debugPrint(s"document: ${document.title}, Section ref: $sectionRef")
+        debugPrint(s"document: ${document.title}, Section ref: $sectionRef")
 
-          val resultEntry = ResultsEntry(
-            document,
-            documentSections.map(document.sections).toList
-          )
+        val resultEntry = ResultsEntry(
+          document,
+          documentSections.map(document.sections).toList
+        )
 
-          resultEntry -> ranks.map(_._2).sum
+        resultEntry -> ranks.map(_._2).sum
       }
       .toVector
       .sortBy(-1 * _._2)
@@ -184,15 +182,13 @@ object Search {
   ) = {
     if (res.entries.isEmpty) println("NO RESULTS")
     else
-      res.entries.foreach {
-        case (ResultsEntry(document, sections), score) =>
-          println(Console.BOLD + score.toString() + Console.RESET + " " + document.title)
+      res.entries.foreach { case (ResultsEntry(document, sections), score) =>
+        println(Console.BOLD + score.toString() + Console.RESET + " " + document.title)
 
-          sections.foreach {
-            case SectionEntry(title, _) =>
-              println("   - " + title)
-              println()
-          }
+        sections.foreach { case SectionEntry(title, _) =>
+          println("   - " + title)
+          println()
+        }
       }
   }
 }
