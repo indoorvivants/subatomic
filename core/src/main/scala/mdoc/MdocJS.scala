@@ -37,7 +37,10 @@ class MdocJS(
   val logging = logger
 
   private lazy val runnerCp = cp(
-    unsafeParse(s"org.scalameta::mdoc-js:${config.mdocVersion}")
+    if (config.scalaBinaryVersion == "3")
+      unsafeParse(s"org.scalameta:mdoc-js_3:${config.mdocVersion}")
+    else
+      unsafeParse(s"org.scalameta::mdoc-js:${config.mdocVersion}")
   )
 
   val fullScala = config.scalaBinaryVersion match {
@@ -81,7 +84,8 @@ class MdocJS(
     val fileContent =
       List(
         "js-classpath=" + jsLibraryClasspath + depsCp,
-        "js-scalac-options=" + compilerPlug
+        "js-scalac-options=" + compilerPlug,
+        "classpath=" + runnerCp
       ).mkString("\n")
 
     os.write.over(tempDir / "mdoc.properties", fileContent)
@@ -126,19 +130,27 @@ class MdocJS(
       Seq("--in", from.toString, "--out", to.toString)
     }
 
-    os.proc(
-      "java",
-      "-classpath",
-      runnerCp + ":" + opts,
-      "mdoc.Main",
-      "--classpath",
-      fetchCp(dependencies),
-      argmap
-    ).call(
-      _pwd,
-      stderr = ProcessOutput.Readlines(logger.at("ERR")._println),
-      stdout = ProcessOutput.Readlines(logger.at("OUT")._println)
-    )
+    println(config)
+
+    val extraScala3CP = if (config.scalaBinaryVersion == "3") runnerCp + ":" else ""
+    val command =
+      Seq(
+        "java",
+        "-classpath",
+        runnerCp + ":" + opts,
+        "mdoc.Main",
+        "--classpath",
+        extraScala3CP + fetchCp(dependencies)
+      ) ++ argmap
+
+    command.foreach(println)
+
+    os.proc(command)
+      .call(
+        _pwd,
+        stderr = ProcessOutput.Readlines(logger.at("ERR")._println),
+        stdout = ProcessOutput.Readlines(logger.at("OUT")._println)
+      )
 
     mapping.toSeq.map { case (source, target) =>
       val tgDir = target / os.up

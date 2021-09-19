@@ -61,7 +61,7 @@ object MdocConfiguration {
   def default =
     MdocConfiguration(
       scalaBinaryVersion = BuildInfo.scalaBinaryVersion,
-      mdocVersion = "2.2.22",
+      mdocVersion = "2.2.23",
       inheritClasspath = true,
       inheritVariables = true,
       variables = Map.empty,
@@ -181,8 +181,10 @@ class Mdoc(
 
     val launcherJVM = mainCp + launcherClasspath.map(":" + _).getOrElse("")
 
+    val scala3CP = if (config.scalaBinaryVersion == "3") mainCp + ":" else ""
+
     val extraCP =
-      fetchCp(config.extraDependencies) + inheritedClasspath.map(":" + _).getOrElse("")
+      scala3CP + fetchCp(config.extraDependencies) + inheritedClasspath.map(":" + _).getOrElse("")
 
     val classpathArg =
       if (extraCP.trim != "")
@@ -197,14 +199,6 @@ class Mdoc(
       "mdoc.Main"
     ) ++ classpathArg
 
-    println(classpathArg)
-    val cmd = (base ++ args).mkString(" ")
-
-    // launcherJVM.split(":").sorted.map(_.replace("/USers/velvetbaldmime/.cache/coursier/", "")).foreach(println)
-    // val x = new scala.sys.process.ProcessBuilder()
-    import scala.sys.process._
-    println(cmd)
-    cmd.!!(ProcessLogger(println, println))
 
     scala.util.Try(
       os
