@@ -54,33 +54,33 @@ object MdocJSTests extends IOSuite {
     }
   }
 
-  // test("mdoc.js with dependencies works") { (res, log) =>
-  //   val content =
-  //     """
-  //   |hello!
-  //   |
-  //   |```scala mdoc:js
-  //   |import com.raquo.laminar.api.L._
-  //   |
-  //   |val nameVar = Var(initial = "world")
-  //   |
-  //   |val rootElement = div(
-  //   |  span(
-  //   |    "Hello, ",
-  //   |    child.text <-- nameVar.signal.map(_.toUpperCase)
-  //   |  )
-  //   |)
-  //   |
-  //   |render(node, rootElement)
-  //   |```""".stripMargin
+  test("mdoc.js with dependencies works") { (res, log) =>
+    val content =
+      """
+    |hello!
+    |
+    |```scala mdoc:js
+    |import com.raquo.laminar.api.L._
+    |
+    |val nameVar = Var(initial = "world")
+    |
+    |val rootElement = div(
+    |  span(
+    |    "Hello, ",
+    |    child.text <-- nameVar.signal.map(_.toUpperCase)
+    |  )
+    |)
+    |
+    |render(node, rootElement)
+    |```""".stripMargin
 
-  //   res.process(content, Set("com.raquo::laminar_sjs1:0.13.0"), log = log) { result =>
-  //     println(result)
-  //     expect.all(
-  //       read(result.mdFile).contains("mdoc-html-run0"),
-  //       read(result.mdjsFile).nonEmpty,
-  //       read(result.mdocFile).nonEmpty
-  //     )
-  //   }
-  // }
+    res.process(content, Set("com.raquo::laminar_sjs1:0.13.0"), log = log) { result =>
+      println(result)
+      expect.all(
+        read(result.mdFile).contains("mdoc-html-run0"),
+        read(result.mdjsFile).nonEmpty,
+        read(result.mdocFile).nonEmpty
+      )
+    }
+  }
 }

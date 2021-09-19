@@ -48,6 +48,7 @@ object ScalaJSConfig {
 
 case class MdocConfiguration(
     scalaBinaryVersion: String,
+    scalaVersion: String,
     mdocVersion: String,
     inheritClasspath: Boolean,
     inheritVariables: Boolean,
@@ -61,6 +62,7 @@ object MdocConfiguration {
   def default =
     MdocConfiguration(
       scalaBinaryVersion = BuildInfo.scalaBinaryVersion,
+      scalaVersion = BuildInfo.scalaVersion,
       mdocVersion = "2.2.23",
       inheritClasspath = true,
       inheritVariables = true,

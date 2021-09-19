@@ -2,7 +2,6 @@ package subatomic
 
 import com.vladsch.flexmark.util.misc.Extension
 import weaver.Expectations
-import weaver.SimpleMutableIOSuite
 
 object RelativizeLinksExtensionTests extends weaver.FunSuite {
 
