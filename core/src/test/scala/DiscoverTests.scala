@@ -1,12 +1,7 @@
 package subatomic
 
-import scala.util.Failure
-import scala.util.Success
-import scala.util.Try
-
 import weaver.SimpleMutableIOSuite
 import subatomic.Discover.MarkdownDocument
-import com.vladsch.flexmark.ext.yaml.front.matter.YamlFrontMatterNode
 import com.vladsch.flexmark.ext.yaml.front.matter.YamlFrontMatterExtension
 import weaver.Expectations
 import subatomic.Discover.YamlAttributes

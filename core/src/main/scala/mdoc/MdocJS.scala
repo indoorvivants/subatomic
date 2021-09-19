@@ -27,6 +27,43 @@ case class ScalaJSResult(
     mdocFile: os.Path
 )
 
+private[subatomic] case class Classpath(deps: List[Classpath.Item]) {
+  def `+`(other: Classpath.Item) = copy(other :: deps)
+  def `++`(other: Classpath)     = Classpath(deps ++ other.deps)
+  // lazy val resolutions = {
+  //   val fetched = fetchCp(deps.collect { case Classpath.Dep(d) => d })
+  // }
+  private def fetchCp(deps: Iterable[String], config: MdocConfiguration) = {
+    Fetch()
+      .addDependencies(
+        deps.toSeq
+          .map(DependencyParser.dependency(_, config.scalaBinaryVersion))
+          .map(_.left.map(new RuntimeException(_)).toTry.get): _*
+      )
+      .run()
+      .map(_.getAbsolutePath())
+  }
+  def render(config: MdocConfiguration): String = {
+    val fetched = fetchCp(deps.collect { case Classpath.Dep(d) => d }, config)
+
+    val pths = deps.collect { case Classpath.Path(p) => p.toIO.getAbsolutePath() }
+
+    (fetched ++ pths).mkString(":")
+  }
+}
+
+object Classpath {
+  sealed trait Item {
+    def cp = Classpath(List(this))
+  }
+  case class Dep(coord: String)  extends Item
+  case class Path(path: os.Path) extends Item
+
+  def empty = Classpath(Nil)
+
+  def dependencies(s: String*) = Classpath(s.map(Dep(_)).toList)
+}
+
 class MdocJS(
     config: MdocConfiguration,
     logger: Logger = Logger.default
@@ -36,45 +73,71 @@ class MdocJS(
 
   val logging = logger
 
-  private lazy val runnerCp = cp(
-    unsafeParse(s"org.scalameta::mdoc-js:${config.mdocVersion}")
-  )
-
-  private lazy val jsClasspath = cp(
-    unsafeParse(
-      s"org.scala-js::scalajs-library:${scalajsConfiguration.version}"
-    ),
-    unsafeParse(
-      s"org.scala-js::scalajs-dom_sjs1:${scalajsConfiguration.domVersion}"
-    )
-  )
+  private val runnerCp =
+    if (config.scalaBinaryVersion == "3")
+      Classpath.Dep(s"org.scalameta:mdoc-js_3:${config.mdocVersion}")
+    else
+      Classpath.Dep(s"org.scalameta::mdoc-js:${config.mdocVersion}")
 
   val fullScala = config.scalaBinaryVersion match {
     case "2.12" => "2.12.12"
     case "2.13" => "2.13.3"
+    case "3"    => "2.13.3"
   }
 
-  private lazy val compilerPlug = cp(
-    unsafeParse(
-      s"org.scala-js:scalajs-compiler_$fullScala:${scalajsConfiguration.version}",
-      transitive = false
-    )
-  )
+  val jsLibraryClasspath = {
+    val scalaSuffix = config.scalaBinaryVersion match {
+      case "2.13" => "2.13"
+      case "2.12" => "2.12"
+      case "3"    => "2.13"
+    }
+
+    val cp1 = Classpath
+      .Dep(
+        s"org.scala-js:scalajs-library_$scalaSuffix:${scalajsConfiguration.version}"
+      )
+      .cp
+
+    val cp2 = Classpath
+      .Dep(
+        s"org.scala-js:scalajs-dom_sjs1_$scalaSuffix:${scalajsConfiguration.domVersion}"
+      )
+      .cp
+
+    cp1 ++ cp2
+  }
+
+  val extraScala3CP =
+    if (config.scalaBinaryVersion == "3") {
+      Classpath.dependencies(
+        s"org.scala-lang:scala3-library_sjs1_3:${config.scalaVersion}"
+      )
+    } else Classpath.empty
+
+  private lazy val compilerPlug =
+    if (config.scalaBinaryVersion != "3")
+      "-Xplugin:" + cp(
+        unsafeParse(
+          s"org.scala-js:scalajs-compiler_$fullScala:${scalajsConfiguration.version}",
+          transitive = false
+        )
+      )
+    else "-scalajs"
 
   def optsFolder(deps: Iterable[String]) = {
     val tempDir = os.temp.dir()
 
-    val depsCp = if (deps.nonEmpty) ":" + fetchCp(deps) else ""
+    val depsCp = if (deps.nonEmpty) Classpath.dependencies(deps.toSeq: _*) else Classpath.empty
 
     val fileContent =
       List(
-        "js-classpath=" + jsClasspath + depsCp,
-        "js-scalac-options=-Xplugin:" + compilerPlug
+        "js-classpath=" + (jsLibraryClasspath ++ depsCp ++ extraScala3CP).render(config),
+        "js-scalac-options=" + compilerPlug
       ).mkString("\n")
 
     os.write.over(tempDir / "mdoc.properties", fileContent)
 
-    tempDir.toString
+    tempDir
   }
 
   def fetchCp(deps: Iterable[String]) = {
@@ -95,7 +158,7 @@ class MdocJS(
   ): Seq[(os.Path, ScalaJSResult)] = {
     val dependencies = config.extraDependencies
     val tempDir      = os.temp.dir()
-    val opts         = optsFolder(dependencies)
+    val opts         = Classpath.Path(optsFolder(dependencies))
 
     val logger = logging.at("MDOC.JS")
 
@@ -114,19 +177,24 @@ class MdocJS(
       Seq("--in", from.toString, "--out", to.toString)
     }
 
-    os.proc(
-      "java",
-      "-classpath",
-      runnerCp + ":" + opts,
-      "mdoc.Main",
-      "--classpath",
-      fetchCp(dependencies),
-      argmap
-    ).call(
-      _pwd,
-      stderr = ProcessOutput.Readlines(logger.at("ERR")._println),
-      stdout = ProcessOutput.Readlines(logger.at("OUT")._println)
-    )
+    val command =
+      Seq(
+        "java",
+        "-classpath",
+        (runnerCp.cp + opts).render(config),
+        "mdoc.Main"
+        // "--classpath",
+        // fetchCp(dependencies)
+      ) ++ argmap
+
+    // command.foreach(println)
+
+    os.proc(command)
+      .call(
+        _pwd,
+        stderr = ProcessOutput.Readlines(logger.at("ERR")._println),
+        stdout = ProcessOutput.Readlines(logger.at("OUT")._println)
+      )
 
     mapping.toSeq.map { case (source, target) =>
       val tgDir = target / os.up
@@ -144,7 +212,7 @@ class MdocJS(
       .mkString(":")
   }
 
-  private def unsafeParse(d: String, transitive: Boolean = true) = {
+  private def unsafeParse(d: String, transitive: Boolean) = {
 
     DependencyParser
       .dependency(

@@ -42,7 +42,7 @@ class Search(index: SearchIndex, debug: Boolean = false) {
         _ = debugPrint(s"token $tok resolved to $termIdx")
         docsWithTerm <- index.termsInDocuments.get(termIdx.value)
         _ = debugPrint(s"documents with $tok: $docsWithTerm")
-      } yield termIdx.value -> docsWithTerm
+      } yield termIdx -> docsWithTerm
     }
 
     val validTerms = terms.map(_._1)
@@ -54,16 +54,16 @@ class Search(index: SearchIndex, debug: Boolean = false) {
       val documentTerms = getDocumentTerms(documentId)
 
       validTerms.map { termId =>
-        documentTerms.get(termId) match {
+        documentTerms.get(termId.value) match {
           case Some(tdo) =>
             val TF = Algorithms.augmented_Term_Frequency(
-              termId,
+              termId.value,
               documentTerms.map { case (k, v) => k -> v.frequencyInDocument }
             )
 
             val IDF = Algorithms.inverse_Document_Frequency(
               index.collectionSize,
-              getGlobalTermFrequency(termId)
+              getGlobalTermFrequency(termId.value)
             )
 
             debugPrint(s"DocumentId: $documentId, Term: ${termId}, TF: $TF, IDF: $IDF")

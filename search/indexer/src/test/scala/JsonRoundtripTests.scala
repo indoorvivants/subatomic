@@ -2,14 +2,10 @@ package subatomic
 package search
 
 import upickle.default._
-import weaver.PureIOSuite
-import weaver.SimpleMutableIOSuite
+import scala.util.{Try, Success}
 
-import SearchIndex._
-
-object SearchFrontendTests extends SimpleMutableIOSuite {
-  pureTest("SearchIndex roundtrip") {
-
+class JsonRoundtripTests extends munit.FunSuite {
+  test("SearchIndex roundtrip") {
     val content = Vector(
       "/"            -> "lorem ipsum dolor amet lorem",
       "/hello"       -> "lorem dolor",
@@ -24,8 +20,14 @@ object SearchFrontendTests extends SimpleMutableIOSuite {
       )
     }
 
-    val o = read[SearchIndex](writeJs(idx).render())
+    def roundtrip[T: Writer: Reader](value: T) = {
+      val result = Try {
+        read[T](writeJs(value).render())
+      }
 
-    expect(o == idx)
+      assertEquals(result, Success(value))
+    }
+
+    roundtrip(idx)
   }
 }

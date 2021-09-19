@@ -1,16 +1,17 @@
 val Ver = new {
   val flexmark              = "0.62.2"
   val coursier              = "2.0.16"
-  val osLib                 = "0.7.2"
+  val osLib                 = "0.7.8"
   val scalaUri              = "3.2.0"
   val scalaCollectionCompat = "2.5.0"
   val scalatags             = "0.9.4"
-  val scalacss              = "0.7.0"
-  val decline               = "2.0.0"
-  val laminar               = "0.13.0"
+  val scalacss              = "0.8.0-RC1"
+  val scalacssFor2_12       = "0.7.0"
+  val decline               = "2.1.0"
+  val laminar               = "0.13.1"
   val upickle               = "1.4.0"
   val fansi                 = "0.2.14"
-  val weaver                = "0.6.4"
+  val weaver                = "0.6.6"
   val munit                 = "0.7.29"
 
   val Scala = new {
@@ -40,6 +41,8 @@ lazy val root = project
   )
   .settings(skipPublish)
 
+import commandmatrix._
+
 val flexmarkModules = Seq(
   "",
   "-ext-yaml-front-matter",
@@ -51,31 +54,43 @@ lazy val core = projectMatrix
   .settings(
     name := "subatomic-core",
     libraryDependencies ++= Seq(
-      "io.get-coursier"        %% "coursier"                % Ver.coursier,
+      "io.get-coursier" %% "coursier" % Ver.coursier cross CrossVersion.for3Use2_13 exclude ("org.scala-lang.modules", "scala-collection-compat_2.13"),
       "com.lihaoyi"            %% "os-lib"                  % Ver.osLib,
-      "io.lemonlabs"           %% "scala-uri"               % Ver.scalaUri,
       "org.scala-lang.modules" %% "scala-collection-compat" % Ver.scalaCollectionCompat
     )
+    /* Test / fork := true */
   )
   .settings(
     libraryDependencies ++= flexmarkModules
   )
-  .jvmPlatform(Ver.Scala.only_2)
+  .jvmPlatform(Ver.Scala.all)
   .settings(testSettings)
   .enablePlugins(BuildInfoPlugin)
   .settings(buildInfoSettings)
+  .configure()
 
 lazy val builders =
   projectMatrix
     .in(file("builders"))
     .dependsOn(core, searchIndex, searchFrontendPack, searchRetrieve)
     .settings(
-      name                                                  := "subatomic-builders",
-      libraryDependencies += "com.lihaoyi"                  %% "scalatags" % Ver.scalatags,
-      libraryDependencies += "com.github.japgolly.scalacss" %% "core"      % Ver.scalacss,
-      libraryDependencies += "com.monovore"                 %% "decline"   % Ver.decline
+      name := "subatomic-builders",
+      libraryDependencies += {
+        if (scalaVersion.value.startsWith("3"))
+          ("com.lihaoyi" %% "scalatags" % Ver.scalatags)
+            .exclude("com.lihaoyi", "geny_2.13") cross CrossVersion.for3Use2_13
+        else
+          ("com.lihaoyi" %% "scalatags" % Ver.scalatags)
+      },
+      libraryDependencies += {
+        if (scalaBinaryVersion.value != "2.12")
+          "com.github.japgolly.scalacss" %% "core" % Ver.scalacss
+        else
+          "com.github.japgolly.scalacss" %% "core" % Ver.scalacssFor2_12
+      },
+      libraryDependencies += "com.monovore" %% "decline" % Ver.decline
     )
-    .jvmPlatform(Ver.Scala.only_2)
+    .jvmPlatform(Ver.Scala.all)
     .settings(testSettings)
     .enablePlugins(BuildInfoPlugin)
     .settings(buildInfoSettings)
@@ -83,9 +98,9 @@ lazy val builders =
 lazy val searchFrontendPack = projectMatrix
   .in(file("search/pack"))
   .settings(name := "subatomic-search-frontend-pack")
-  .jvmPlatform(Ver.Scala.only_2)
+  .jvmPlatform(Ver.Scala.all)
   .settings(
-    resourceGenerators in Compile +=
+    Compile / resourceGenerators +=
       Def.taskIf {
         if (sys.env.contains("CI")) {
           val out = (Compile / resourceManaged).value / "search.js"
@@ -119,7 +134,7 @@ lazy val searchFrontend =
       libraryDependencies += "com.raquo" %%% "laminar" % Ver.laminar,
       scalaJSUseMainModuleInitializer     := true
     )
-    .jsPlatform(Ver.Scala.only_2_13)
+    .jsPlatform(Ver.Scala.all)
     .settings(testSettings)
     .settings(buildInfoSettings)
     .settings(batchModeOnCI)
@@ -129,15 +144,13 @@ lazy val searchCli =
     .in(file("search/cli"))
     .dependsOn(searchIndex, searchRetrieve)
     .settings(
-      name                                  := "subatomic-search-cli",
-      libraryDependencies += "com.lihaoyi" %%% "os-lib" % Ver.osLib,
-      scalacOptions += "-Wconf:cat=unused-imports:wv",
-      scalacOptions += "-Wconf:cat=unused-imports&site=subatomic.search.cli.SearchCLI:s,any:wv",
+      name                                             := "subatomic-search-cli",
+      libraryDependencies += "com.lihaoyi"            %%% "os-lib"                  % Ver.osLib,
       libraryDependencies += "org.scala-lang.modules" %%% "scala-collection-compat" % Ver.scalaCollectionCompat
     )
     .enablePlugins(JavaAppPackaging)
-    .jvmPlatform(Ver.Scala.only_2)
-    .nativePlatform(Ver.Scala.only_2_13)
+    .jvmPlatform(Ver.Scala.all)
+    .nativePlatform(Ver.Scala.only_2)
     .settings(testSettings)
     .settings(buildInfoSettings)
 
@@ -179,26 +192,26 @@ lazy val searchShared =
     .settings(buildInfoSettings)
     .enablePlugins(BuildInfoPlugin)
     .settings(
-      excludeFilter.in(headerSources) := HiddenFileFilter || "*Stemmer.scala"
+      headerSources / excludeFilter := HiddenFileFilter || "*Stemmer.scala"
     )
 
-lazy val docs = project
+lazy val docs = projectMatrix
   .in(file("docs"))
-  .dependsOn(builders.jvm(Ver.Scala.`2_12`), plugin.jvm(Ver.Scala.`2_12`), searchIndex.jvm(Ver.Scala.`2_12`))
+  .dependsOn(builders, plugin, searchIndex)
+  .jvmPlatform(Seq(Ver.Scala.`2_12`))
   .enablePlugins(SubatomicPlugin)
   .settings(
-    scalaVersion    := Ver.Scala.`2_12`,
     skip in publish := true,
     // To react to asset changes
     watchSources += WatchSource(
-      (baseDirectory in ThisBuild).value / "docs" / "assets"
+      (ThisBuild / baseDirectory).value / "docs" / "assets"
     ),
     watchSources += WatchSource(
-      (baseDirectory in ThisBuild).value / "docs" / "pages"
+      (ThisBuild / baseDirectory).value / "docs" / "pages"
     ),
     // To pick up Main.scala in docs/ (without the src/main/scala/ stuff)
-    unmanagedSourceDirectories in Compile +=
-      (baseDirectory in ThisBuild).value / "docs",
+    Compile / unmanagedSourceDirectories +=
+      (ThisBuild / baseDirectory).value / "docs",
     libraryDependencies += "com.lihaoyi" %% "fansi" % Ver.fansi,
     subatomicBuildersDependency          := false,
     subatomicCoreDependency              := false,
@@ -224,22 +237,19 @@ lazy val plugin = projectMatrix
   .settings(
     publishLocal := publishLocal
       .dependsOn(
-        publishLocal in core.jvm(Ver.Scala.`2_12`),
-        publishLocal in builders.jvm(Ver.Scala.`2_12`),
-        publishLocal in searchIndex.jvm(Ver.Scala.`2_12`),
-        publishLocal in searchFrontendPack.jvm(Ver.Scala.`2_12`),
-        publishLocal in searchShared.jvm(Ver.Scala.`2_12`),
-        publishLocal in searchRetrieve.jvm(Ver.Scala.`2_12`)
+        core.jvm(Ver.Scala.`2_12`) / publishLocal,
+        builders.jvm(Ver.Scala.`2_12`) / publishLocal,
+        searchIndex.jvm(Ver.Scala.`2_12`) / publishLocal,
+        searchFrontendPack.jvm(Ver.Scala.`2_12`) / publishLocal,
+        searchShared.jvm(Ver.Scala.`2_12`) / publishLocal,
+        searchRetrieve.jvm(Ver.Scala.`2_12`) / publishLocal
       )
       .value
   )
   .settings(
-    resourceGenerators in Compile += Def.task {
+    Compile / resourceGenerators += Def.task {
       val out =
-        managedResourceDirectories
-          .in(Compile)
-          .value
-          .head / "subatomic-plugin.properties"
+        (Compile / managedResourceDirectories).value.head / "subatomic-plugin.properties"
 
       val props = new java.util.Properties()
 
@@ -263,8 +273,7 @@ lazy val testSettings =
         "com.disneystreaming" %%% "weaver-scalacheck" % Ver.weaver % Test
       )
     ),
-    testFrameworks += new TestFramework("weaver.framework.CatsEffect"),
-    scalacOptions.in(Test) ~= filterConsoleScalacOptions
+    testFrameworks += new TestFramework("weaver.framework.CatsEffect")
   )
 
 lazy val munitTestSettings = Seq(
@@ -275,7 +284,7 @@ lazy val munitTestSettings = Seq(
 )
 
 lazy val skipPublish = Seq(
-  skip in publish := true
+  publish / skip := true
 )
 
 val batchModeOnCI =
@@ -361,15 +370,15 @@ ThisBuild / commands += Command.command("ci") { st =>
     "headerCheck" :: st
 }
 
-addCommandAlias("buildSite", "docs/run build")
+addCommandAlias("buildSite", "docs2_12/run build")
 
 import commandmatrix._
 
 inThisBuild(
   Seq(
     commands ++=
-      CrossCommand.single(
-        "test",
+      CrossCommand.all(
+        Seq("compile", "test", "publishLocal"),
         matrices =
           Seq(core, searchShared, searchIndex, searchRetrieve, builders, searchCli, searchFrontend, searchFrontendPack),
         dimensions = Seq(

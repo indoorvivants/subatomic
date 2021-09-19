@@ -1,10 +1,7 @@
 package subatomic
 
-import scala.util.Failure
-import scala.util.Success
 import scala.util.Try
 
-import weaver.SimpleMutableIOSuite
 import weaver.Expectations
 import weaver.{Log => WeaverLog}
 import cats.effect.IO
@@ -22,6 +19,8 @@ object SiteTests extends weaver.IOSuite {
     SiteRoot / "pages" / "hello" / "world.html" -> "worldpage!"
   )
 
+  def read(p: os.Path): String = os.read(p)
+
   test("populate: addPage") { (res, log) =>
     val site = baseSite(log).populate { case (site, (path, content)) =>
       site.addPage(path, content)
@@ -29,9 +28,9 @@ object SiteTests extends weaver.IOSuite {
 
     res.check(site) { result =>
       expect.all(
-        os.read(result / "pages" / "hello.html") == "hellopage",
-        os.read(result / "pages" / "hello" / "world.html") == "worldpage!",
-        os.read(result / "index.html") == "indexpage!"
+        read(result / "pages" / "hello.html") == "hellopage",
+        read(result / "pages" / "hello" / "world.html") == "worldpage!",
+        read(result / "index.html") == "indexpage!"
       )
     }
   }
@@ -71,9 +70,9 @@ object SiteTests extends weaver.IOSuite {
 
     res.check(site) { result =>
       expect.all(
-        os.read(result / "my-assets" / "my.img") == "My Image!",
-        os.read(result / "my-assets" / "scripts" / "my.js") == "My JS!",
-        os.read(result / "my-assets" / "styles" / "my.css") == "My CSS!"
+        read(result / "my-assets" / "my.img") == "My Image!",
+        read(result / "my-assets" / "scripts" / "my.js") == "My JS!",
+        read(result / "my-assets" / "styles" / "my.css") == "My CSS!"
       )
     }
   }
@@ -86,7 +85,7 @@ object SiteTests extends weaver.IOSuite {
 
     res.check(site) { result =>
       expect(
-        os.read(result / "test" / "CNAME") == "domain!"
+        read(result / "test" / "CNAME") == "domain!"
       )
     }
   }
@@ -99,7 +98,7 @@ object SiteTests extends weaver.IOSuite {
     val site = baseSite(log).addProcessed(SiteRoot / "test", processor, "what's up")
 
     res.check(site) { result =>
-      expect(evaluations == 1) and expect(os.read(result / "test") == "what's up")
+      expect(evaluations == 1) and expect(read(result / "test") == "what's up")
     }
   }
 
@@ -132,8 +131,8 @@ object SiteTests extends weaver.IOSuite {
       )
 
       val checkContent = expect.all(
-        os.read(result / "test") == "processed: content-1",
-        os.read(result / "test1") == "processed: content-2"
+        read(result / "test") == "processed: content-1",
+        read(result / "test1") == "processed: content-2"
       )
 
       checkLifecycle && checkContent

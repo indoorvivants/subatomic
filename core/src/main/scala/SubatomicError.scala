@@ -16,7 +16,7 @@
 
 package subatomic
 
-class SubatomicError(msg: String) extends Exception("no") with scala.util.control.NoStackTrace {
+class SubatomicError(msg: String) extends Exception(msg) with scala.util.control.NoStackTrace {
   final override def toString = SubatomicError.render(msg)
 }
 

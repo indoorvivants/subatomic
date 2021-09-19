@@ -43,23 +43,25 @@ object SitePathTests extends SimpleMutableIOSuite {
 
   pureTest("prepend: to RelPath") {
     expect.all(
-      SiteRoot.prepend(os.RelPath("hello/world")) == HelloWorldPath,
-      (SiteRoot / "world").prepend(os.RelPath("hello")) == HelloWorldPath
+      SiteRoot.prepend(relPath("hello/world")) == HelloWorldPath,
+      (SiteRoot / "world").prepend(relPath("hello")) == HelloWorldPath
     )
   }
 
   pureTest("fromRelPath") {
     expect.all(
-      SitePath.fromRelPath(os.RelPath("hello/world")) == HelloWorldPath,
-      SitePath.fromRelPath(os.RelPath("")) == SiteRoot,
-      SitePath.fromRelPath(os.RelPath("hello")) == SiteRoot / "hello"
+      SitePath.fromRelPath(relPath("hello/world")) == HelloWorldPath,
+      SitePath.fromRelPath(relPath("")) == SiteRoot,
+      SitePath.fromRelPath(relPath("hello")) == SiteRoot / "hello"
     )
   }
 
+  def relPath(s: String) = os.RelPath(s)
+
   pureTest("toRelPath") {
     expect.all(
-      SiteRoot.toRelPath == os.RelPath(""),
-      HelloWorldPath.toRelPath == os.RelPath("hello/world")
+      SiteRoot.toRelPath == relPath(""),
+      HelloWorldPath.toRelPath == relPath("hello/world")
     )
   }
 }

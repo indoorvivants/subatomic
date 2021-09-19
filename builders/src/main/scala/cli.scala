@@ -17,6 +17,8 @@
 package subatomic
 package builders
 
+import scala.util.Try
+
 import cats.implicits._
 import com.monovore.decline._
 
@@ -37,7 +39,7 @@ object cli {
   case class SearchConfig(mode: TestSearchMode, debug: Boolean) extends CommandConfig
 
   implicit val pathArgument: Argument[os.Path] =
-    Argument[String].map(s => os.Path.apply(s))
+    Argument[String].map { s => Try(os.Path.apply(s)).getOrElse(os.RelPath(s).resolveFrom(os.pwd)) }
 
   private val debug = Opts.flag("debug", "Output debugging information").orFalse
 
@@ -76,7 +78,7 @@ object cli {
     Opts.flag("force", "Overwrite files if present at destination").orFalse
 
   val build = Opts.subcommand("build", "Build the site")(
-    (destination, disableMdoc, overwrite).mapN[CommandConfig](BuildConfig)
+    (destination, disableMdoc, overwrite).mapN[CommandConfig](BuildConfig.apply)
   )
 
   val search = Opts.subcommand("search", "Test the generated search index")(

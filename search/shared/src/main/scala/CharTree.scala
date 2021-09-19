@@ -63,7 +63,7 @@ object CharTree {
   }
 
   def build(terms: Iterable[(TermName, TermIdx)]) = {
-    val node = MutableCharTree(mut.Map.empty, None)
+    val node = new MutableCharTree(mut.Map.empty, None)
 
     terms.foreach { case (name, idx) =>
       add(node, name.value.toList, idx)
