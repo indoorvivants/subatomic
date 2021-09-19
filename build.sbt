@@ -144,10 +144,8 @@ lazy val searchCli =
     .in(file("search/cli"))
     .dependsOn(searchIndex, searchRetrieve)
     .settings(
-      name                                  := "subatomic-search-cli",
-      libraryDependencies += "com.lihaoyi" %%% "os-lib" % Ver.osLib,
-      scalacOptions += "-Wconf:cat=unused-imports:wv",
-      scalacOptions += "-Wconf:cat=unused-imports&site=subatomic.search.cli.SearchCLI:s,any:wv",
+      name                                             := "subatomic-search-cli",
+      libraryDependencies += "com.lihaoyi"            %%% "os-lib"                  % Ver.osLib,
       libraryDependencies += "org.scala-lang.modules" %%% "scala-collection-compat" % Ver.scalaCollectionCompat
     )
     .enablePlugins(JavaAppPackaging)
