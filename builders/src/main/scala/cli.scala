@@ -19,6 +19,7 @@ package builders
 
 import cats.implicits._
 import com.monovore.decline._
+import scala.util.Try
 
 object cli {
 
@@ -37,7 +38,7 @@ object cli {
   case class SearchConfig(mode: TestSearchMode, debug: Boolean) extends CommandConfig
 
   implicit val pathArgument: Argument[os.Path] =
-    Argument[String].map(s => os.Path.apply(s))
+    Argument[String].map { s => Try(os.Path.apply(s)).getOrElse(os.RelPath(s).resolveFrom(os.pwd)) }
 
   private val debug = Opts.flag("debug", "Output debugging information").orFalse
 

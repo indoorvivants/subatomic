@@ -17,18 +17,16 @@
 package subatomic
 package search
 
-trait Primitive[T]
-
-case class TermIdx(value: Int)       extends Primitive[Int]
-case class TermName(value: String)   extends Primitive[String]
-case class SectionIdx(value: Int)    extends Primitive[Int]
-case class DocumentIdx(value: Int)   extends Primitive[Int]
-case class TermFrequency(value: Int) extends Primitive[Int]
-case class GlobalTermFrequency(value: Int) extends Primitive[Int] {
+case class TermIdx(value: Int)
+case class TermName(value: String)
+case class SectionIdx(value: Int)
+case class DocumentIdx(value: Int)
+case class TermFrequency(value: Int)
+case class GlobalTermFrequency(value: Int) {
   def inc            = copy(value + 1)
   def add(more: Int) = copy(value + more)
 }
-case class CollectionSize(value: Int) extends Primitive[Int]
+case class CollectionSize(value: Int)
 
 case class TermDocumentOccurence(
     frequencyInDocument: TermFrequency,
@@ -65,9 +63,9 @@ case class SearchIndex private[search] (
     charTree: CharTree
 ) {
 
-  case class Found[T] private[search] (value: T)
+  case class Found private[search] (value: TermIdx)
 
-  def resolveTerm(s: String): Option[Found[TermIdx]] =
+  def resolveTerm(s: String): Option[Found] =
     termMapping.get(TermName(s)).map(Found(_))
 
   def asJson: ujson.Value = {
@@ -98,30 +96,41 @@ object SearchIndex {
 
   implicit val gtfWriter: Writer[GlobalTermFrequency] =
     IntWriter.comap(_.value)
+
   implicit val csWriter: Writer[CollectionSize] =
     IntWriter.comap(_.value)
 
-  implicit val wct: Writer[CharTree] =
-    macroW[(Map[Char, CharTree], Option[TermIdx])].comap[CharTree](ct => (ct.data, ct.terminal))
+  implicit val wct: ReadWriter[CharTree] = {
+    def write(c: CharTree): ujson.Value = {
+      val termId = writeJs(c.terminal)
 
-  implicit val rct: Reader[CharTree] =
-    macroR[(Map[Char, CharTree], Option[TermIdx])].map(c => CharTree(c._1, c._2))
+      ujson.Arr(
+        ujson.Obj.from(c.data.toSeq.map { case (char, tree) =>
+          char.toString -> write(tree)
+        }),
+        termId
+      )
+    }
 
-  implicit val tdoR: Reader[TermDocumentOccurence] =
-    macroR[(TermFrequency, Map[SectionIdx, TermFrequency])].map(i => TermDocumentOccurence(i._1, i._2))
+    def read(c: ujson.Value): CharTree = {
+      val arr = c.arr
 
-  implicit val tdoW: Writer.MapWriter[TermDocumentOccurence, (TermFrequency, Map[SectionIdx, TermFrequency])] =
-    macroW[(TermFrequency, Map[SectionIdx, TermFrequency])].comap[TermDocumentOccurence](t =>
-      (t.frequencyInDocument, t.sectionOccurences)
-    )
-  implicit val secR: Reader[SectionEntry] = macroRW[(String, String)].map(s => SectionEntry(s._1, s._2))
-  implicit val secW: Writer[SectionEntry] = macroW[(String, String)].comap[SectionEntry](s => (s.title, s.url))
+      val termId = upickle.default.read[Option[TermIdx]](arr.apply(1))
+      val rest = arr.apply(0).obj.map { case (key, value) =>
+        key.charAt(0) -> read(value)
+      }
 
-  implicit val docR: Reader[DocumentEntry] =
-    macroR[(String, String, Map[SectionIdx, SectionEntry])].map(s => DocumentEntry(s._1, s._2, s._3))
-  implicit val docW: Writer.MapWriter[DocumentEntry, (String, String, Map[SectionIdx, SectionEntry])] =
-    macroW[(String, String, Map[SectionIdx, SectionEntry])].comap[DocumentEntry](d => (d.title, d.url, d.sections))
+      CharTree(rest.toMap, termId)
 
-  implicit val w: Writer[SearchIndex] = macroW[SearchIndex]
-  implicit val r: Reader[SearchIndex] = macroR[SearchIndex]
+    }
+    readwriter[ujson.Value].bimap[CharTree](write, read)
+  }
+
+  implicit val tdoR: ReadWriter[TermDocumentOccurence] =
+    macroRW
+
+  implicit val secR: ReadWriter[SectionEntry] = macroRW
+  implicit val doc: ReadWriter[DocumentEntry] = macroRW
+
+  implicit val w: ReadWriter[SearchIndex] = macroRW[SearchIndex]
 }
