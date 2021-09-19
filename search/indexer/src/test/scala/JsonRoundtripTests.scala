@@ -3,8 +3,7 @@ package search
 
 import upickle.default._
 import scala.util.{Try, Success}
-import subatomic.search.Document
-import subatomic.search.Indexer
+
 class JsonRoundtripTests extends munit.FunSuite {
   test("SearchIndex roundtrip") {
     val content = Vector(
@@ -27,14 +26,8 @@ class JsonRoundtripTests extends munit.FunSuite {
       }
 
       assertEquals(result, Success(value))
-
-      // expect.same(result, Success(value))
     }
 
-    import SearchIndex._
-    // val entry = SectionEntry("yo", "what")
-    // roundtrip(entry)
-
-    roundtrip(idx.charTree)
+    roundtrip(idx)
   }
 }
