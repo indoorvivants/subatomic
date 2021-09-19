@@ -10,7 +10,7 @@ val Ver = new {
   val laminar               = "0.13.0"
   val upickle               = "1.4.0"
   val fansi                 = "0.2.14"
-  val weaver                = "0.6.4"
+  val weaver                = "0.6.6"
   val munit                 = "0.7.29"
 
   val Scala = new {

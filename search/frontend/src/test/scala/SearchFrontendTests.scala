@@ -2,13 +2,11 @@ package subatomic
 package search
 
 import upickle.default._
-import weaver.PureIOSuite
-import weaver.SimpleMutableIOSuite
 
 import SearchIndex._
 
-object SearchFrontendTests extends SimpleMutableIOSuite {
-  pureTest("SearchIndex roundtrip") {
+object SearchFrontendTests extends weaver.FunSuite {
+  test("SearchIndex roundtrip") {
 
     val content = Vector(
       "/"            -> "lorem ipsum dolor amet lorem",
