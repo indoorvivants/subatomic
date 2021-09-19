@@ -32,7 +32,7 @@ trait Builder {
       }
       .getOrElse(Nil)
       .toList
-      .map(StylesheetPath)
+      .map(StylesheetPath(_))
 
   lazy val managedScripts: List[ScriptPath] =
     assetsRoot
@@ -42,7 +42,7 @@ trait Builder {
       }
       .getOrElse(Nil)
       .toList
-      .map(ScriptPath)
+      .map(ScriptPath(_))
 }
 
 object BuilderTemplate {

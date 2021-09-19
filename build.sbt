@@ -5,9 +5,10 @@ val Ver = new {
   val scalaUri              = "3.2.0"
   val scalaCollectionCompat = "2.5.0"
   val scalatags             = "0.9.4"
-  val scalacss              = "0.7.0"
-  val decline               = "2.0.0"
-  val laminar               = "0.13.0"
+  val scalacss              = "0.8.0-RC1"
+  val scalacssFor2_12       = "0.7.0"
+  val decline               = "2.1.0"
+  val laminar               = "0.13.1"
   val upickle               = "1.4.0"
   val fansi                 = "0.2.14"
   val weaver                = "0.6.6"
@@ -53,10 +54,10 @@ lazy val core = projectMatrix
   .settings(
     name := "subatomic-core",
     libraryDependencies ++= Seq(
-      "io.get-coursier"        %% "coursier"                % Ver.coursier cross CrossVersion.for3Use2_13 exclude ("org.scala-lang.modules", "scala-collection-compat_2.13"),
+      "io.get-coursier" %% "coursier" % Ver.coursier cross CrossVersion.for3Use2_13 exclude ("org.scala-lang.modules", "scala-collection-compat_2.13"),
       "com.lihaoyi"            %% "os-lib"                  % Ver.osLib,
       "org.scala-lang.modules" %% "scala-collection-compat" % Ver.scalaCollectionCompat
-    ),
+    )
     /* Test / fork := true */
   )
   .settings(
@@ -73,12 +74,23 @@ lazy val builders =
     .in(file("builders"))
     .dependsOn(core, searchIndex, searchFrontendPack, searchRetrieve)
     .settings(
-      name                                                  := "subatomic-builders",
-      libraryDependencies += "com.lihaoyi"                  %% "scalatags" % Ver.scalatags,
-      libraryDependencies += "com.github.japgolly.scalacss" %% "core"      % Ver.scalacss,
-      libraryDependencies += "com.monovore"                 %% "decline"   % Ver.decline
+      name := "subatomic-builders",
+      libraryDependencies += {
+        if (scalaVersion.value.startsWith("3"))
+          ("com.lihaoyi" %% "scalatags" % Ver.scalatags)
+            .exclude("com.lihaoyi", "geny_2.13") cross CrossVersion.for3Use2_13
+        else
+          ("com.lihaoyi" %% "scalatags" % Ver.scalatags)
+      },
+      libraryDependencies += {
+        if (scalaBinaryVersion.value != "2.12")
+          "com.github.japgolly.scalacss" %% "core" % Ver.scalacss
+        else
+          "com.github.japgolly.scalacss" %% "core" % Ver.scalacssFor2_12
+      },
+      libraryDependencies += "com.monovore" %% "decline" % Ver.decline
     )
-    .jvmPlatform(Ver.Scala.only_2)
+    .jvmPlatform(Ver.Scala.all)
     .settings(testSettings)
     .enablePlugins(BuildInfoPlugin)
     .settings(buildInfoSettings)
@@ -86,7 +98,7 @@ lazy val builders =
 lazy val searchFrontendPack = projectMatrix
   .in(file("search/pack"))
   .settings(name := "subatomic-search-frontend-pack")
-  .jvmPlatform(Ver.Scala.only_2)
+  .jvmPlatform(Ver.Scala.all)
   .settings(
     Compile / resourceGenerators +=
       Def.taskIf {
@@ -139,7 +151,7 @@ lazy val searchCli =
       libraryDependencies += "org.scala-lang.modules" %%% "scala-collection-compat" % Ver.scalaCollectionCompat
     )
     .enablePlugins(JavaAppPackaging)
-    .jvmPlatform(Ver.Scala.only_2)
+    .jvmPlatform(Ver.Scala.all)
     .nativePlatform(Ver.Scala.only_2)
     .settings(testSettings)
     .settings(buildInfoSettings)
@@ -360,7 +372,7 @@ ThisBuild / commands += Command.command("ci") { st =>
     "headerCheck" :: st
 }
 
-addCommandAlias("buildSite", "docs/run build")
+addCommandAlias("buildSite", "docs2_12/run build")
 
 import commandmatrix._
 

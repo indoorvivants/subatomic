@@ -225,8 +225,6 @@ class Mdoc(
     processAll(Seq(file), None).head._2
   }
 
-  println(config.scalaBinaryVersion)
-
   private val mdocDep = {
     if (config.scalaBinaryVersion == "3")
       DependencyParser

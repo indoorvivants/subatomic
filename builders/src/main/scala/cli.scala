@@ -76,7 +76,7 @@ object cli {
     Opts.flag("force", "Overwrite files if present at destination").orFalse
 
   val build = Opts.subcommand("build", "Build the site")(
-    (destination, disableMdoc, overwrite).mapN[CommandConfig](BuildConfig)
+    (destination, disableMdoc, overwrite).mapN[CommandConfig](BuildConfig.apply)
   )
 
   val search = Opts.subcommand("search", "Test the generated search index")(
