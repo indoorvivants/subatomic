@@ -15,12 +15,3 @@ addSbtPlugin("org.scala-js"              % "sbt-scalajs"               % "1.7.0"
 addSbtPlugin("org.scala-native"          % "sbt-scala-native"          % "0.4.0")
 addSbtPlugin("com.typesafe.sbt"          % "sbt-native-packager"       % "1.8.0")
 addSbtPlugin("com.indoorvivants"         % "sbt-commandmatrix"         % "0.0.4")
-
-// so that we can use SubatomicPlugin in the build itself
-// like many build-related things, this was copied from Mdoc's excellent
-// configuration
-//
-// https://github.com/scalameta/mdoc/blob/master/project/plugins.sbt#L12
-unmanagedSourceDirectories.in(Compile) +=
-  baseDirectory.in(ThisBuild).value.getParentFile /
-    "sbt-plugin" / "src" / "main" / "scala"

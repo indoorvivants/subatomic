@@ -13,6 +13,7 @@ val Ver = new {
   val fansi                 = "0.2.14"
   val weaver                = "0.6.6"
   val munit                 = "0.7.29"
+  val geny                  = "0.6.10"
 
   val Scala = new {
     val `2_12` = "2.12.13"
@@ -75,12 +76,15 @@ lazy val builders =
     .dependsOn(core, searchIndex, searchFrontendPack, searchRetrieve)
     .settings(
       name := "subatomic-builders",
-      libraryDependencies += {
+      libraryDependencies ++= {
         if (scalaVersion.value.startsWith("3"))
-          ("com.lihaoyi" %% "scalatags" % Ver.scalatags)
-            .exclude("com.lihaoyi", "geny_2.13") cross CrossVersion.for3Use2_13
+          Seq(
+            ("com.lihaoyi" %% "scalatags" % Ver.scalatags)
+              .exclude("com.lihaoyi", "geny_2.13")
+              .exclude("com.lihaoyi", "sourcecode_2.13") cross CrossVersion.for3Use2_13
+          )
         else
-          ("com.lihaoyi" %% "scalatags" % Ver.scalatags)
+          Seq("com.lihaoyi" %% "scalatags" % Ver.scalatags)
       },
       libraryDependencies += {
         if (scalaBinaryVersion.value != "2.12")
@@ -88,7 +92,8 @@ lazy val builders =
         else
           "com.github.japgolly.scalacss" %% "core" % Ver.scalacssFor2_12
       },
-      libraryDependencies += "com.monovore" %% "decline" % Ver.decline
+      libraryDependencies += "com.monovore" %% "decline" % Ver.decline,
+      libraryDependencies += "com.lihaoyi"  %% "geny"    % Ver.geny
     )
     .jvmPlatform(Ver.Scala.all)
     .settings(testSettings)
@@ -197,11 +202,10 @@ lazy val searchShared =
 
 lazy val docs = projectMatrix
   .in(file("docs"))
-  .dependsOn(builders, plugin, searchIndex)
-  .jvmPlatform(Seq(Ver.Scala.`2_12`))
-  .enablePlugins(SubatomicPlugin)
+  .dependsOn(builders)
+  .jvmPlatform(Ver.Scala.all)
   .settings(
-    skip in publish := true,
+    publish / skip := true,
     // To react to asset changes
     watchSources += WatchSource(
       (ThisBuild / baseDirectory).value / "docs" / "assets"
@@ -212,18 +216,32 @@ lazy val docs = projectMatrix
     // To pick up Main.scala in docs/ (without the src/main/scala/ stuff)
     Compile / unmanagedSourceDirectories +=
       (ThisBuild / baseDirectory).value / "docs",
-    libraryDependencies += "com.lihaoyi" %% "fansi" % Ver.fansi,
-    subatomicBuildersDependency          := false,
-    subatomicCoreDependency              := false,
-    subatomicInheritClasspath            := true
+    libraryDependencies += "com.lihaoyi" %% "fansi" % Ver.fansi
+  )
+  .settings(
+    Compile / resourceGenerators += Def.task {
+      val properties = new java.util.Properties()
+      val out        = (Compile / unmanagedResourceDirectories).value.head / "subatomic.properties"
+
+      val classpath =
+        (Compile / classDirectory).value :: (Compile / dependencyClasspath).value.iterator.map(file => file.data).toList
+
+      properties.setProperty("variable.VERSION", version.value)
+
+      properties.setProperty("classpath.default", classpath.mkString(java.io.File.pathSeparator))
+
+      IO.write(properties, "props", out)
+
+      Seq(out)
+    }
   )
 
 lazy val plugin = projectMatrix
   .in(file("sbt-plugin"))
   .withId("plugin")
   .settings(
-    sbtPlugin                      := true,
-    sbtVersion in pluginCrossBuild := "1.4.4"
+    sbtPlugin                     := true,
+    pluginCrossBuild / sbtVersion := "1.4.4"
   )
   .jvmPlatform(scalaVersions = Seq(Ver.Scala.`2_12`))
   .settings(
@@ -370,7 +388,7 @@ ThisBuild / commands += Command.command("ci") { st =>
     "headerCheck" :: st
 }
 
-addCommandAlias("buildSite", "docs2_12/run build")
+addCommandAlias("buildSite", "docs/run build")
 
 import commandmatrix._
 
