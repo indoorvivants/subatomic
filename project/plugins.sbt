@@ -21,6 +21,6 @@ addSbtPlugin("com.indoorvivants"         % "sbt-commandmatrix"         % "0.0.4"
 // configuration
 //
 // https://github.com/scalameta/mdoc/blob/master/project/plugins.sbt#L12
-unmanagedSourceDirectories.in(Compile) +=
-  baseDirectory.in(ThisBuild).value.getParentFile /
-    "sbt-plugin" / "src" / "main" / "scala"
+/* unmanagedSourceDirectories.in(Compile) += */
+/*   baseDirectory.in(ThisBuild).value.getParentFile / */
+/*     "modules" / "sbt-plugin" / "src" / "main" / "scala" */

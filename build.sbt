@@ -50,7 +50,7 @@ val flexmarkModules = Seq(
 ).map(mName => "com.vladsch.flexmark" % s"flexmark$mName" % Ver.flexmark)
 
 lazy val core = projectMatrix
-  .in(file("core"))
+  .in(file("modules/core"))
   .settings(
     name := "subatomic-core",
     libraryDependencies ++= Seq(
@@ -71,7 +71,7 @@ lazy val core = projectMatrix
 
 lazy val builders =
   projectMatrix
-    .in(file("builders"))
+    .in(file("modules/builders"))
     .dependsOn(core, searchIndex, searchFrontendPack, searchRetrieve)
     .settings(
       name := "subatomic-builders",
@@ -96,7 +96,7 @@ lazy val builders =
     .settings(buildInfoSettings)
 
 lazy val searchFrontendPack = projectMatrix
-  .in(file("search/pack"))
+  .in(file("modules/search/pack"))
   .settings(name := "subatomic-search-frontend-pack")
   .jvmPlatform(Ver.Scala.all)
   .settings(
@@ -127,7 +127,7 @@ lazy val searchFrontendPack = projectMatrix
 
 lazy val searchFrontend =
   projectMatrix
-    .in(file("search/frontend"))
+    .in(file("modules/search/frontend"))
     .dependsOn(searchRetrieve, searchIndex)
     .settings(name := "subatomic-search-frontend")
     .settings(
@@ -141,7 +141,7 @@ lazy val searchFrontend =
 
 lazy val searchCli =
   projectMatrix
-    .in(file("search/cli"))
+    .in(file("modules/search/cli"))
     .dependsOn(searchIndex, searchRetrieve)
     .settings(
       name                                             := "subatomic-search-cli",
@@ -156,7 +156,7 @@ lazy val searchCli =
 
 lazy val searchIndex =
   projectMatrix
-    .in(file("search/indexer"))
+    .in(file("modules/search/indexer"))
     .dependsOn(searchShared)
     .settings(name := "subatomic-search-indexer")
     .jvmPlatform(Ver.Scala.all)
@@ -167,7 +167,7 @@ lazy val searchIndex =
 
 lazy val searchRetrieve =
   projectMatrix
-    .in(file("search/retrieve"))
+    .in(file("modules/search/retrieve"))
     .dependsOn(searchIndex)
     .settings(
       name := "subatomic-search-retrieve"
@@ -180,7 +180,7 @@ lazy val searchRetrieve =
 
 lazy val searchShared =
   projectMatrix
-    .in(file("search/shared"))
+    .in(file("modules/search/shared"))
     .settings(
       name                                  := "subatomic-search-shared",
       libraryDependencies += "com.lihaoyi" %%% "upickle" % Ver.upickle
@@ -197,11 +197,10 @@ lazy val searchShared =
 
 lazy val docs = projectMatrix
   .in(file("docs"))
-  .dependsOn(builders, plugin, searchIndex)
-  .jvmPlatform(Seq(Ver.Scala.`2_12`))
-  .enablePlugins(SubatomicPlugin)
+  .dependsOn(builders, searchIndex)
+  .jvmPlatform(Ver.Scala.all)
   .settings(
-    skip in publish := true,
+    publish / skip := true,
     // To react to asset changes
     watchSources += WatchSource(
       (ThisBuild / baseDirectory).value / "docs" / "assets"
@@ -212,18 +211,30 @@ lazy val docs = projectMatrix
     // To pick up Main.scala in docs/ (without the src/main/scala/ stuff)
     Compile / unmanagedSourceDirectories +=
       (ThisBuild / baseDirectory).value / "docs",
-    libraryDependencies += "com.lihaoyi" %% "fansi" % Ver.fansi,
-    subatomicBuildersDependency          := false,
-    subatomicCoreDependency              := false,
-    subatomicInheritClasspath            := true
+    libraryDependencies += "com.lihaoyi" %% "fansi" % Ver.fansi
   )
+  .settings(Compile / resourceGenerators += Def.task {
+    val properties = new java.util.Properties()
+    val out        = (Compile / unmanagedResourceDirectories).value.head / "subatomic.properties"
+
+    val classpath =
+      (Compile / classDirectory).value :: (Compile / dependencyClasspath).value.iterator.map(file => file.data).toList
+
+    properties.setProperty("variable.VERSION", version.value)
+
+    properties.setProperty("classpath.default", classpath.mkString(java.io.File.pathSeparator))
+
+    IO.write(properties, "props", out)
+
+    Seq(out)
+  })
 
 lazy val plugin = projectMatrix
-  .in(file("sbt-plugin"))
+  .in(file("modules/sbt-plugin"))
   .withId("plugin")
   .settings(
-    sbtPlugin                      := true,
-    sbtVersion in pluginCrossBuild := "1.4.4"
+    sbtPlugin                     := true,
+    pluginCrossBuild / sbtVersion := "1.4.4"
   )
   .jvmPlatform(scalaVersions = Seq(Ver.Scala.`2_12`))
   .settings(
@@ -370,7 +381,7 @@ ThisBuild / commands += Command.command("ci") { st =>
     "headerCheck" :: st
 }
 
-addCommandAlias("buildSite", "docs2_12/run build")
+addCommandAlias("buildSite", "docs/run build")
 
 import commandmatrix._
 
