@@ -48,6 +48,21 @@ val flexmarkModules = Seq(
   "-ext-yaml-front-matter",
   "-ext-anchorlink"
 ).map(mName => "com.vladsch.flexmark" % s"flexmark$mName" % Ver.flexmark)
+import commandmatrix.extra._
+
+lazy val disableScalafixForScala3 =
+  MatrixAction.ForScala(_.isScala3).Configure(_.disablePlugins(ScalafixPlugin))
+
+lazy val disableNativeForScala3 =
+  MatrixAction((scalaV, axes) => scalaV.isScala3 && axes.contains(VirtualAxis.native)).Skip
+
+lazy val scalajsOverrides =
+  MatrixAction.ForPlatform(_ == VirtualAxis.js).Settings {
+    if (sys.env.contains("CI")) Seq(scalaJSLinkerConfig ~= {
+      _.withBatchMode(true)
+    })
+    else Seq.empty
+  }
 
 lazy val core = projectMatrix
   .in(file("core"))
@@ -58,12 +73,14 @@ lazy val core = projectMatrix
       "com.lihaoyi"            %% "os-lib"                  % Ver.osLib,
       "org.scala-lang.modules" %% "scala-collection-compat" % Ver.scalaCollectionCompat
     )
-    /* Test / fork := true */
   )
   .settings(
     libraryDependencies ++= flexmarkModules
   )
-  .jvmPlatform(Ver.Scala.all)
+  .someVariations(
+    Ver.Scala.all.toList,
+    List(VirtualAxis.jvm)
+  )(disableScalafixForScala3)
   .settings(testSettings)
   .enablePlugins(BuildInfoPlugin)
   .settings(buildInfoSettings)
@@ -90,7 +107,10 @@ lazy val builders =
       },
       libraryDependencies += "com.monovore" %% "decline" % Ver.decline
     )
-    .jvmPlatform(Ver.Scala.all)
+    .someVariations(
+      Ver.Scala.all.toList,
+      List(VirtualAxis.jvm)
+    )(disableScalafixForScala3)
     .settings(testSettings)
     .enablePlugins(BuildInfoPlugin)
     .settings(buildInfoSettings)
@@ -98,7 +118,10 @@ lazy val builders =
 lazy val searchFrontendPack = projectMatrix
   .in(file("search/pack"))
   .settings(name := "subatomic-search-frontend-pack")
-  .jvmPlatform(Ver.Scala.all)
+  .someVariations(
+    Ver.Scala.all.toList,
+    List(VirtualAxis.jvm)
+  )(disableScalafixForScala3)
   .settings(
     Compile / resourceGenerators +=
       Def.taskIf {
@@ -134,10 +157,12 @@ lazy val searchFrontend =
       libraryDependencies += "com.raquo" %%% "laminar" % Ver.laminar,
       scalaJSUseMainModuleInitializer     := true
     )
-    .jsPlatform(Ver.Scala.all)
+    .someVariations(
+      Ver.Scala.all.toList,
+      List(VirtualAxis.js)
+    )(disableScalafixForScala3, scalajsOverrides)
     .settings(testSettings)
     .settings(buildInfoSettings)
-    .settings(batchModeOnCI)
 
 lazy val searchCli =
   projectMatrix
@@ -149,8 +174,14 @@ lazy val searchCli =
       libraryDependencies += "org.scala-lang.modules" %%% "scala-collection-compat" % Ver.scalaCollectionCompat
     )
     .enablePlugins(JavaAppPackaging)
-    .jvmPlatform(Ver.Scala.all)
-    .nativePlatform(Ver.Scala.only_2)
+    .someVariations(
+      Ver.Scala.all.toList,
+      List(VirtualAxis.jvm, VirtualAxis.native)
+    )(
+      disableScalafixForScala3,
+      disableNativeForScala3,
+      scalajsOverrides
+    )
     .settings(testSettings)
     .settings(buildInfoSettings)
 
@@ -159,9 +190,14 @@ lazy val searchIndex =
     .in(file("search/indexer"))
     .dependsOn(searchShared)
     .settings(name := "subatomic-search-indexer")
-    .jvmPlatform(Ver.Scala.all)
-    .jsPlatform(Ver.Scala.all, batchModeOnCI)
-    .nativePlatform(Ver.Scala.only_2)
+    .someVariations(
+      Ver.Scala.all.toList,
+      List(VirtualAxis.jvm, VirtualAxis.js, VirtualAxis.native)
+    )(
+      disableScalafixForScala3,
+      disableNativeForScala3,
+      scalajsOverrides
+    )
     .settings(munitTestSettings)
     .settings(buildInfoSettings)
 
@@ -172,9 +208,14 @@ lazy val searchRetrieve =
     .settings(
       name := "subatomic-search-retrieve"
     )
-    .jvmPlatform(Ver.Scala.all)
-    .jsPlatform(Ver.Scala.all, batchModeOnCI)
-    .nativePlatform(Ver.Scala.only_2)
+    .someVariations(
+      Ver.Scala.all.toList,
+      List(VirtualAxis.jvm, VirtualAxis.js, VirtualAxis.native)
+    )(
+      disableScalafixForScala3,
+      disableNativeForScala3,
+      scalajsOverrides
+    )
     .settings(munitTestSettings)
     .settings(buildInfoSettings)
 
@@ -185,9 +226,14 @@ lazy val searchShared =
       name                                  := "subatomic-search-shared",
       libraryDependencies += "com.lihaoyi" %%% "upickle" % Ver.upickle
     )
-    .jvmPlatform(Ver.Scala.all)
-    .jsPlatform(Ver.Scala.all, batchModeOnCI)
-    .nativePlatform(Ver.Scala.only_2)
+    .someVariations(
+      Ver.Scala.all.toList,
+      List(VirtualAxis.jvm, VirtualAxis.js, VirtualAxis.native)
+    )(
+      disableScalafixForScala3,
+      disableNativeForScala3,
+      scalajsOverrides
+    )
     .settings(munitTestSettings)
     .settings(buildInfoSettings)
     .enablePlugins(BuildInfoPlugin)
@@ -286,12 +332,6 @@ lazy val munitTestSettings = Seq(
 lazy val skipPublish = Seq(
   publish / skip := true
 )
-
-val batchModeOnCI =
-  if (sys.env.contains("CI")) Seq(scalaJSLinkerConfig ~= {
-    _.withBatchMode(true)
-  })
-  else Seq.empty
 
 val platform = settingKey[String]("")
 
