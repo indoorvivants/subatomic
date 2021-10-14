@@ -80,7 +80,7 @@ case class SearchIndex private[search] (
 import upickle.default._
 
 object SearchIndex {
-  implicit val termIdxReader: Reader[TermIdx]         = IntReader.map(TermIdx(_))
+  implicit val termIdx: Reader[TermIdx]               = IntReader.map(TermIdx(_))
   implicit val termNameReader: Reader[TermName]       = StringReader.map(TermName(_))
   implicit val docIdxReader: Reader[DocumentIdx]      = IntReader.map(DocumentIdx(_))
   implicit val tfReader: Reader[TermFrequency]        = IntReader.map(TermFrequency(_))
