@@ -122,7 +122,13 @@ case class Site[Content] private (pages: Vector[Entry], content: Iterable[(SiteP
       case CopyOf(source) =>
         os.makeDir.all(destination / os.up)
 
-        os.copy(from = source, to = destination, replaceExisting = true)
+        os.copy.apply(
+          from = source,
+          to = destination,
+          replaceExisting = overwrite,
+          createFolders = true,
+          followLinks = true
+        )
       case CreatedFile(from, to) =>
         val destination = destinationFolder / to.toRelPath
 

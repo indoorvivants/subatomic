@@ -19,7 +19,6 @@ package search
 package cli
 
 import scala.util.Try
-// import scala.collection.compat._
 
 object SearchCLI {
   def main(argArr: Array[String]): Unit = {
@@ -39,7 +38,6 @@ object SearchCLI {
       target <- path(indexfile)
       idx = indexPath(root)
       _   = os.write(target, idx.asJsonString)
-      _   = println("howdy")
     } yield println("indexing complete")
   }
 

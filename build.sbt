@@ -2,6 +2,7 @@ val Ver = new {
   val flexmark              = "0.62.2"
   val coursier              = "2.0.16"
   val osLib                 = "0.7.8"
+  val osLib_old             = "0.7.2"
   val scalaUri              = "3.2.0"
   val scalaCollectionCompat = "2.5.0"
   val scalatags             = "0.9.4"
@@ -71,7 +72,7 @@ lazy val core = projectMatrix
     name := "subatomic-core",
     libraryDependencies ++= Seq(
       "io.get-coursier" %% "coursier" % Ver.coursier cross CrossVersion.for3Use2_13 exclude ("org.scala-lang.modules", "scala-collection-compat_2.13"),
-      "com.lihaoyi"            %% "os-lib"                  % Ver.osLib,
+      "com.lihaoyi" %% "os-lib" % { if (scalaVersion.value.startsWith("2")) Ver.osLib_old else Ver.osLib },
       "org.scala-lang.modules" %% "scala-collection-compat" % Ver.scalaCollectionCompat
     )
   )
