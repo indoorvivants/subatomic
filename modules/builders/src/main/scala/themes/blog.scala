@@ -28,8 +28,9 @@ object default extends StyleSheet.Standalone {
   val whenOnNarrowScreen = media.screen.minWidth(1024.px).maxWidth(1600.px)
   val whenOnMobile       = media.screen.maxWidth(1023.px)
 
-  def sidebarColor           = c"#131c21"
-  def bodyColor              = c"#fff9f2"
+  def sidebarColor = c"#131c21"
+  // def bodyColor              = c"#fff9f2"
+  def bodyColor              = articleColor
   def articleColor           = c"#eae0d5"
   def articleTextColor       = c"#0a0908"
   def blogTagBackgroundColor = c"#d6d6d6"
@@ -40,15 +41,18 @@ object default extends StyleSheet.Standalone {
   "html, body" - (
     fontFamily.attr := "sans-serif",
     fontSize(19.px),
-    height(100.%%),
     padding(0.px),
     margin(0.px),
+    height(100.%%),
+    minHeight(100.%%),
     backgroundColor(bodyColor)
   )
 
   "div.wrapper" - (
-    height(100.%%),
+    height.auto,
+    minHeight(100.%%),
     margin(0.px),
+    display.block,
     whenOnWideScreen - (
       flexDirection.row,
       display.flex,
@@ -98,7 +102,6 @@ object default extends StyleSheet.Standalone {
 
   "article.content-wrapper" - (
     backgroundColor(articleColor),
-    height(100.%%),
     height.auto,
     color(articleTextColor),
     whenOnWideScreen - (
@@ -115,6 +118,7 @@ object default extends StyleSheet.Standalone {
     backgroundColor(sidebarColor),
     color(sidebarTextColor),
     padding(10.px),
+    height.auto,
     whenOnWideScreen - (
       flexShrink(0),
       flexGrow(0),

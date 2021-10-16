@@ -410,11 +410,12 @@ val scalafixRules = Seq(
 ).mkString(" ")
 
 ThisBuild / commands += Command.command("preCI") { st =>
-  s"scalafix --rules $scalafixRules" ::
-    "test:scalafmtAll" ::
-    "compile:scalafmtAll" ::
+  "Test/scalafmtAll" ::
+    "scalafmtAll" ::
     "scalafmtSbt" ::
-    "headerCreate" :: st
+    "headerCreate" ::
+    s"scalafix --rules $scalafixRules" ::
+    st
 }
 
 ThisBuild / commands += Command.command("ci") { st =>
