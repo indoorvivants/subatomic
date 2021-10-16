@@ -23,10 +23,11 @@ import subatomic.builders._
 
 object DevBlog extends subatomic.builders.blog.Blog.App {
   import subatomic.builders.blog._
-  val base = os.pwd / "docs" / "blog"
+  val docsBase = os.pwd / "docs" / "blog"
   def config =
     Blog(
-      contentRoot = base / "content",
+      contentRoot = docsBase / "content",
+      base = SiteRoot / "blog",
       name = "Subatomic Blog",
       search = true,
       tagline = Some(

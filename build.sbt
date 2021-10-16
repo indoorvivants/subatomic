@@ -60,10 +60,15 @@ lazy val disableNativeForScala3 =
 
 lazy val scalajsOverrides =
   MatrixAction.ForPlatform(_ == VirtualAxis.js).Settings {
-    if (sys.env.contains("CI")) Seq(scalaJSLinkerConfig ~= {
-      _.withBatchMode(true)
-    })
-    else Seq.empty
+    val base =
+      if (sys.env.contains("CI"))
+        Seq(
+          scalaJSLinkerConfig ~= {
+            _.withBatchMode(true)
+          }
+        )
+      else Seq.empty
+    base ++ Seq(Test / scalaJSLinkerConfig ~= { _.withModuleKind(ModuleKind.CommonJSModule) })
   }
 
 lazy val core = projectMatrix
@@ -345,8 +350,7 @@ lazy val testSettings =
 lazy val munitTestSettings = Seq(
   libraryDependencies += "org.scalameta" %%% "munit"            % Ver.munit % Test,
   libraryDependencies += "org.scalameta" %%% "munit-scalacheck" % Ver.munit % Test,
-  testFrameworks += new TestFramework("munit.Framework"),
-  Test / scalaJSLinkerConfig ~= { _.withModuleKind(ModuleKind.CommonJSModule) }
+  testFrameworks += new TestFramework("munit.Framework")
 )
 
 lazy val skipPublish = Seq(
