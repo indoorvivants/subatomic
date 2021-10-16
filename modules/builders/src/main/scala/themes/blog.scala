@@ -28,14 +28,27 @@ object default extends StyleSheet.Standalone {
   val whenOnNarrowScreen = media.screen.minWidth(1024.px).maxWidth(1600.px)
   val whenOnMobile       = media.screen.maxWidth(1023.px)
 
+  def sidebarColor           = c"#131c21"
+  def bodyColor              = c"#fff9f2"
+  def articleColor           = c"#eae0d5"
+  def articleTextColor       = c"#0a0908"
+  def blogTagBackgroundColor = c"#d6d6d6"
+  def articleLinkColor       = c"#22333b"
+  def sidebarLinkColor       = c"#eae0d5"
+  def sidebarTextColor       = c"#c6ac8f"
+
   "html, body" - (
     fontFamily.attr := "sans-serif",
     fontSize(19.px),
     height(100.%%),
-    backgroundColor(c"#22333b"),
+    padding(0.px),
+    margin(0.px),
+    backgroundColor(bodyColor)
   )
 
   "div.wrapper" - (
+    height(100.%%),
+    margin(0.px),
     whenOnWideScreen - (
       flexDirection.row,
       display.flex,
@@ -54,7 +67,7 @@ object default extends StyleSheet.Standalone {
 
   "span.blog-tag" - (
     margin(3.px),
-    backgroundColor(c"#d6d6d6"),
+    backgroundColor(blogTagBackgroundColor),
     padding(2.px),
     color.black,
     borderWidth(1.px, 1.px, 1.px, 5.px),
@@ -68,26 +81,26 @@ object default extends StyleSheet.Standalone {
 
   "img" - maxWidth(100.%%)
 
-  "aside.sidebar a" - color(c"#eae0d5")
+  "aside.sidebar a" - color(sidebarLinkColor)
 
-  "aside.sidebar a:hover" - color(c"#eae0d5")
+  "aside.sidebar a:hover" - color(sidebarLinkColor)
 
   "article.content-wrapper" - (width(35.em), padding(3.5.em))
 
   "article.content-wrapper a" - (
-    color(c"#22333b"),
+    color(articleLinkColor),
     textDecorationLine.underline
   )
   "article.content-wrapper a:hover" - (
-    color(c"#22333b"),
+    color(articleLinkColor),
     textDecorationLine.none
   )
 
   "article.content-wrapper" - (
-    backgroundColor(c"#eae0d5"),
+    backgroundColor(articleColor),
     height(100.%%),
     height.auto,
-    color(c"#0a0908"),
+    color(articleTextColor),
     whenOnWideScreen - (
       flexGrow(0),
       flexShrink(0),
@@ -99,15 +112,19 @@ object default extends StyleSheet.Standalone {
   )
 
   "aside.sidebar" - (
-    backgroundColor(c"#22333b"),
-    color(c"#c6ac8f"),
+    backgroundColor(sidebarColor),
+    color(sidebarTextColor),
     padding(10.px),
     whenOnWideScreen - (
       flexShrink(0),
       flexGrow(0),
+      width(300.px),
       maxWidth(300.px)
     ),
-    whenOnNarrowScreen - maxWidth(300.px)
+    whenOnNarrowScreen - (
+      maxWidth(300.px),
+      width(300.px)
+    )
   )
 
   "div.blog-card-title a" - (
@@ -116,20 +133,8 @@ object default extends StyleSheet.Standalone {
   )
 
   "p.blog-card-text" - (
-    marginLeft(20.px),
-    paddingLeft(10.px),
-    borderLeftColor(c"#436475"),
-    borderLeftWidth(2.px),
-    borderLeftStyle.solid,
-    fontStyle.italic
-  )
-
-  "article.content-wrapper code" - (
-    backgroundColor(c"#404239"),
-    padding(3.px),
-    borderRadius(1.px),
-    fontSize(75.%%),
-    color.white
+    marginTop(0.px),
+    fontSize(17.px)
   )
 
   "article.content-wrapper" - (
@@ -152,8 +157,6 @@ object default extends StyleSheet.Standalone {
     borderLeftStyle.solid,
     paddingLeft(1.em)
   )
-
-  "article.content-wrapper code.hljs" - padding(10.px)
 
   def asString: String = this.renderA[String]
 }

@@ -20,9 +20,32 @@ package docs
 import java.time.LocalDate
 
 import subatomic.builders._
-import subatomic.builders.librarysite._
 
-object Docs extends LibrarySite.App {
+object DevBlog extends subatomic.builders.blog.Blog.App {
+  import subatomic.builders.blog._
+  val base = os.pwd / "docs" / "blog"
+  def config =
+    Blog(
+      contentRoot = base / "content",
+      name = "Subatomic Blog",
+      search = true,
+      tagline = Some(
+        "Subatomic - development blog"
+      ),
+      links = Vector(
+        "Back to the site" -> "https://subatomic.indoorvivants.com",
+        "Github"           -> "https://github.com/indoorvivants/subatomic"
+      ),
+      highlightJS = HighlightJS.default
+        .copy(
+          languages = List("scala", "r", "python"),
+          theme = "monokai-sublime"
+        )
+    )
+}
+
+object Docs extends subatomic.builders.librarysite.LibrarySite.App {
+  import subatomic.builders.librarysite._
   override def extra(site: Site[LibrarySite.Doc]) = {
     site
       .addCopyOf(SiteRoot / "CNAME", os.pwd / "docs" / "assets" / "CNAME")
