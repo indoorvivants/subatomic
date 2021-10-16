@@ -133,11 +133,7 @@ object default extends StyleSheet.Standalone {
   )
 
   "p.blog-card-text" - (
-    // marginLeft(20.px),
     marginTop(0.px),
-    // paddingLeft(10.px),
-    // borderLeftStyle.solid,
-    // fontStyle.italic
     fontSize(17.px)
   )
 
