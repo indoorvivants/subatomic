@@ -27,7 +27,6 @@ object DevBlog extends subatomic.builders.blog.Blog.App {
   def config =
     Blog(
       contentRoot = base / "content",
-      assetsRoot = Some(base / "assets"),
       name = "Subatomic Blog",
       search = true,
       tagline = Some(
