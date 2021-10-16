@@ -1,15 +1,18 @@
 html, body {
   font-family: sans-serif;
   font-size: 19px;
-  height: 100%;
   padding: 0;
   margin: 0;
-  background-color: #fff9f2;
+  height: 100%;
+  min-height: 100%;
+  background-color: #eae0d5;
 }
 
 div.wrapper {
-  height: 100%;
+  height: auto;
+  min-height: 100%;
   margin: 0;
+  display: block;
 }
 
 span.blog-tag {
@@ -61,7 +64,6 @@ article.content-wrapper a:hover {
 
 article.content-wrapper {
   background-color: #eae0d5;
-  height: 100%;
   height: auto;
   color: #0a0908;
 }
@@ -74,6 +76,7 @@ aside.sidebar {
   background-color: #131c21;
   color: #c6ac8f;
   padding: 10px;
+  height: auto;
 }
 
 div.blog-card-title a {
