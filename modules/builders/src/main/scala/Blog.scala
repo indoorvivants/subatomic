@@ -421,11 +421,18 @@ trait Template {
             staticNav,
             searchSection,
             tagCloud,
+            archiveLink,
             navigationSection(navigation)
           ),
           article(cls := "content-wrapper", content)
         )
       )
+    )
+  }
+
+  def archiveLink = {
+    section(
+      h4(a(href := linker.unsafe(_ / "archive.html"), "Archive"))
     )
   }
 
@@ -550,9 +557,7 @@ trait Template {
     basePage(
       None,
       div(
-        h3("Posts"),
-        div(cls := "card-columns", blogs.sortBy(-_.date.toEpochDay()).map(blogCard).toVector),
-        a(href  := linker.unsafe(_ / "archive.html"), "Archive")
+        div(cls := "card-columns", blogs.sortBy(-_.date.toEpochDay()).map(blogCard).toVector)
       )
     )
   }

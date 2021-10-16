@@ -249,7 +249,7 @@ lazy val searchShared =
 lazy val docs = projectMatrix
   .in(file("docs"))
   .dependsOn(builders)
-  .jvmPlatform(Ver.Scala.all)
+  .someVariations(Ver.Scala.all.toList, List(VirtualAxis.jvm))(disableScalafixForScala3)
   .settings(
     publish / skip := true,
     // To react to asset changes
@@ -259,27 +259,13 @@ lazy val docs = projectMatrix
     watchSources += WatchSource(
       (ThisBuild / baseDirectory).value / "docs" / "pages"
     ),
+    watchSources += WatchSource(
+      (ThisBuild / baseDirectory).value / "docs" / "blog"
+    ),
     // To pick up Main.scala in docs/ (without the src/main/scala/ stuff)
     Compile / unmanagedSourceDirectories +=
       (ThisBuild / baseDirectory).value / "docs",
     libraryDependencies += "com.lihaoyi" %% "fansi" % Ver.fansi
-  )
-  .settings(
-    Compile / resourceGenerators += Def.task {
-      val properties = new java.util.Properties()
-      val out        = (Compile / unmanagedResourceDirectories).value.head / "subatomic.properties"
-
-      val classpath =
-        (Compile / classDirectory).value :: (Compile / dependencyClasspath).value.iterator.map(file => file.data).toList
-
-      properties.setProperty("variable.VERSION", version.value)
-
-      properties.setProperty("classpath.default", classpath.mkString(java.io.File.pathSeparator))
-
-      IO.write(properties, "props", out)
-
-      Seq(out)
-    }
   )
   .settings(Compile / resourceGenerators += Def.task {
     val properties = new java.util.Properties()
@@ -443,7 +429,8 @@ ThisBuild / commands += Command.command("ci") { st =>
     "headerCheck" :: st
 }
 
-addCommandAlias("buildSite", "docs/run build")
+addCommandAlias("buildSite", "docs/runMain subatomic.docs.Docs build")
+addCommandAlias("buildBlog", "docs/runMain subatomic.docs.DevBlog build")
 
 import commandmatrix._
 
