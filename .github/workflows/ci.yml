@@ -15,10 +15,10 @@ jobs:
         os: [ubuntu-latest]
         # java: [adopt@1.8, adopt@1.11, 17]
         java: [adopt@1.8]
-        scalaVersion: ["2_12", "2_13", "3_0"]
+        scalaVersion: ["2_12", "2_13", "3_1"]
         scalaPlatform: ["jvm", "js", "native"]
         exclude:
-          - scalaVersion: "3_0"
+          - scalaVersion: "3_1"
             scalaPlatform: "native"
     runs-on: ${{ matrix.os }}
     env:
