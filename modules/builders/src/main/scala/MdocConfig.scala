@@ -40,7 +40,7 @@ object MdocJSConfig {
 
     val enabled        = attrs.optionalOne("scala-mdoc-js").getOrElse("false").toBoolean
     val dependencies   = attrs.optionalOne("scala-mdoc-js-dependencies").map(_.split(",").toList).getOrElse(Nil)
-    val scalaJSVersion = attrs.optionalOne("scala-mdoc-js-version").getOrElse("1.1.0")
+    val scalaJSVersion = attrs.optionalOne("scala-mdoc-js-version").getOrElse("1.7.1")
 
     if (enabled) Some(MdocJSConfig(dependencies, scalaJSVersion)) else None
   }

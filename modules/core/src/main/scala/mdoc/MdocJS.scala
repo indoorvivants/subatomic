@@ -157,7 +157,7 @@ class MdocJS(
       files: Seq[os.Path]
   ): Seq[(os.Path, ScalaJSResult)] = {
     val dependencies = config.extraDependencies
-    val tempDir      = os.temp.dir()
+    val tempDir      = os.temp.dir(deleteOnExit = false)
     val opts         = Classpath.Path(optsFolder(dependencies))
 
     val logger = logging.at("MDOC.JS")
@@ -182,12 +182,10 @@ class MdocJS(
         "java",
         "-classpath",
         (runnerCp.cp + opts).render(config),
-        "mdoc.Main"
-        // "--classpath",
-        // fetchCp(dependencies)
+        "mdoc.Main",
+        "--classpath",
+        fetchCp(dependencies)
       ) ++ argmap
-
-    // command.foreach(println)
 
     os.proc(command)
       .call(

@@ -18,8 +18,8 @@ val Ver = new {
 
   val Scala = new {
     val `2_12` = "2.12.15"
-    val `2_13` = "2.13.6"
-    val `3`    = "3.0.2"
+    val `2_13` = "2.13.7"
+    val `3`    = "3.1.0"
 
     val only_2    = Seq(`2_12`, `2_13`)
     val only_2_13 = Seq(`2_13`)

@@ -50,7 +50,6 @@ class MdocJSProcessor[C] private (pwd: os.Path, toMdocFile: PartialFunction[C, M
   override def retrieve(content: C): MdocJSResult[C] = {
 
     val triggerKey = internalTriggers(content)
-    println(triggerKey)
 
     if (!internalResults.contains(triggerKey)) {
       val filesToProcess = internalFiles(triggerKey)
