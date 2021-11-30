@@ -14,7 +14,7 @@ class IndexerSuite extends munit.FunSuite {
   )
 
   val idx =
-    Indexer.default(content).processAll { case (path, sections) => //Document.section(s"Document at $path", path, text)
+    Indexer.default(content).processAll { case (path, sections) => // Document.section(s"Document at $path", path, text)
 
       Document(
         s"Document at $path",

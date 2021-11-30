@@ -45,7 +45,7 @@ trait Colors {
   import Console._
 
   private lazy val colors = true
-  //System.console() != null && System.getenv().get("TERM") != null
+  // System.console() != null && System.getenv().get("TERM") != null
 
   def _blue(s: String)  = if (!colors) s else CYAN + s + RESET
   def _red(s: String)   = if (!colors) s else RED + s + RESET

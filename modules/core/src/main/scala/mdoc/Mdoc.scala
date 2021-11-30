@@ -35,7 +35,7 @@ case class ScalaJSConfig(
 )
 
 object ScalaJSConfig {
-  def default = ScalaJSConfig(version = "1.5.0", "1.0.0")
+  def default = ScalaJSConfig(version = "1.7.1", "1.0.0")
 
   def fromAttrs(attrs: Discover.YamlAttributes): Option[ScalaJSConfig] = {
     val enabled    = attrs.optionalOne("mdoc-js").map(_.toBoolean).getOrElse(false)
