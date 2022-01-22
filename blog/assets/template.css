@@ -5,7 +5,7 @@ html, body {
   margin: 0;
   height: 100%;
   min-height: 100%;
-  background-color: #eae0d5;
+  background-color: #fdfcfb;
 }
 
 div.wrapper {
@@ -63,9 +63,9 @@ article.content-wrapper a:hover {
 }
 
 article.content-wrapper {
-  background-color: #eae0d5;
+  background-color: #fdfcfb;
   height: auto;
-  color: #0a0908;
+  color: #000;
 }
 
 div.searchContainer a {
