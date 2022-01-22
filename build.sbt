@@ -5,21 +5,21 @@ val Ver = new {
   val osLib_old             = "0.7.2"
   val scalaUri              = "3.2.0"
   val scalaCollectionCompat = "2.5.0"
-  val scalatags             = "0.9.4"
-  val scalacss              = "0.8.0-RC1"
+  val scalatags             = "0.11.1"
+  val scalacss              = "1.0.0"
   val scalacssFor2_12       = "0.7.0"
   val decline               = "2.1.0"
   val laminar               = "0.13.1"
   val upickle               = "1.4.0"
   val fansi                 = "0.2.14"
-  val weaver                = "0.6.6"
+  val weaver                = "0.6.9"
   val munit                 = "0.7.29"
   val geny                  = "0.6.10"
 
   val Scala = new {
     val `2_12` = "2.12.15"
-    val `2_13` = "2.13.7"
-    val `3`    = "3.1.0"
+    val `2_13` = "2.13.8"
+    val `3`    = "3.1.1"
 
     val only_2    = Seq(`2_12`, `2_13`)
     val only_2_13 = Seq(`2_13`)
@@ -59,7 +59,7 @@ lazy val disableNativeForScala3 =
   MatrixAction((scalaV, axes) => scalaV.isScala3 && axes.contains(VirtualAxis.native)).Skip
 
 lazy val scalajsOverrides =
-  MatrixAction.ForPlatform(_ == VirtualAxis.js).Settings {
+  MatrixAction.ForPlatforms(VirtualAxis.js).Settings {
     val base =
       if (sys.env.contains("CI"))
         Seq(
@@ -99,24 +99,15 @@ lazy val builders =
     .dependsOn(core, searchIndex, searchFrontendPack, searchRetrieve)
     .settings(
       name := "subatomic-builders",
-      libraryDependencies ++= {
-        if (scalaVersion.value.startsWith("3"))
-          Seq(
-            ("com.lihaoyi" %% "scalatags" % Ver.scalatags)
-              .exclude("com.lihaoyi", "geny_2.13")
-              .exclude("com.lihaoyi", "sourcecode_2.13") cross CrossVersion.for3Use2_13
-          )
-        else
-          Seq("com.lihaoyi" %% "scalatags" % Ver.scalatags)
-      },
       libraryDependencies += {
         if (scalaBinaryVersion.value != "2.12")
           "com.github.japgolly.scalacss" %% "core" % Ver.scalacss
         else
           "com.github.japgolly.scalacss" %% "core" % Ver.scalacssFor2_12
       },
-      libraryDependencies += "com.monovore" %% "decline" % Ver.decline,
-      libraryDependencies += "com.lihaoyi"  %% "geny"    % Ver.geny
+      libraryDependencies += "com.monovore" %% "decline"   % Ver.decline,
+      libraryDependencies += "com.lihaoyi"  %% "geny"      % Ver.geny,
+      libraryDependencies += "com.lihaoyi"  %% "scalatags" % Ver.scalatags
     )
     .someVariations(
       Ver.Scala.all.toList,
@@ -190,8 +181,8 @@ lazy val searchCli =
       List(VirtualAxis.jvm, VirtualAxis.native)
     )(
       disableScalafixForScala3,
-      disableNativeForScala3,
-      scalajsOverrides
+      scalajsOverrides,
+      disableNativeForScala3
     )
     .settings(testSettings)
     .settings(buildInfoSettings)
@@ -206,8 +197,8 @@ lazy val searchIndex =
       List(VirtualAxis.jvm, VirtualAxis.js, VirtualAxis.native)
     )(
       disableScalafixForScala3,
-      disableNativeForScala3,
-      scalajsOverrides
+      scalajsOverrides,
+      disableNativeForScala3
     )
     .settings(munitTestSettings)
     .settings(buildInfoSettings)
@@ -224,8 +215,8 @@ lazy val searchRetrieve =
       List(VirtualAxis.jvm, VirtualAxis.js, VirtualAxis.native)
     )(
       disableScalafixForScala3,
-      disableNativeForScala3,
-      scalajsOverrides
+      scalajsOverrides,
+      disableNativeForScala3
     )
     .settings(munitTestSettings)
     .settings(buildInfoSettings)
@@ -235,15 +226,16 @@ lazy val searchShared =
     .in(file("modules/search/shared"))
     .settings(
       name                                  := "subatomic-search-shared",
-      libraryDependencies += "com.lihaoyi" %%% "upickle" % Ver.upickle
+      libraryDependencies += "com.lihaoyi" %%% "upickle" % Ver.upickle,
+      resolvers += Resolver.sonatypeRepo("snapshots")
     )
     .someVariations(
       Ver.Scala.all.toList,
       List(VirtualAxis.jvm, VirtualAxis.js, VirtualAxis.native)
     )(
       disableScalafixForScala3,
-      disableNativeForScala3,
-      scalajsOverrides
+      scalajsOverrides,
+      disableNativeForScala3
     )
     .settings(munitTestSettings)
     .settings(buildInfoSettings)
@@ -356,6 +348,8 @@ lazy val munitTestSettings = Seq(
 lazy val skipPublish = Seq(
   publish / skip := true
 )
+
+Global / onChangedBuildSource := ReloadOnSourceChanges
 
 val platform = settingKey[String]("")
 

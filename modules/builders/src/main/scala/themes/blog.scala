@@ -29,10 +29,10 @@ object default extends StyleSheet.Standalone {
   val whenOnMobile       = media.screen.maxWidth(1023.px)
 
   def sidebarColor = c"#131c21"
-  // def bodyColor              = c"#fff9f2"
+  // def sidebarColor           = c"#000"
   def bodyColor              = articleColor
-  def articleColor           = c"#eae0d5"
-  def articleTextColor       = c"#0a0908"
+  def articleColor           = c"#FDFCFB"
+  def articleTextColor       = c"#000"
   def blogTagBackgroundColor = c"#d6d6d6"
   def articleLinkColor       = c"#22333b"
   def sidebarLinkColor       = c"#eae0d5"
