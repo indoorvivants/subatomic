@@ -37,8 +37,9 @@ case class Blog(
     tagline: Option[String] = None,
     customTemplate: Option[Template] = None,
     links: Vector[(String, String)] = Vector.empty,
-    override val highlightJS: HighlightJS = HighlightJS.default,
+    override val highlighting: SyntaxHighlighting = SyntaxHighlighting.PrismJS.default,
     override val assetsFilter: os.Path => Boolean = _ => true,
+    override val trackers: Seq[Tracker] = Seq.empty,
     search: Boolean = true
 ) extends subatomic.builders.Builder
 
@@ -361,6 +362,20 @@ trait Template {
 
   def rawHtml(rawHtml: String) = div(raw(rawHtml))
 
+  import SyntaxHighlighting._
+
+  def highlightingHeader(sh: SyntaxHighlighting) =
+    sh match {
+      case hljs: HighlightJS => HighlightJS.templateBlock(hljs)
+      case pjs: PrismJS      => PrismJS.includes(pjs).styles
+    }
+
+  def highlightingBody(sh: SyntaxHighlighting): Seq[TypedTag[String]] =
+    sh match {
+      case pjs: PrismJS => PrismJS.includes(pjs).bodyScripts
+      case _            => Seq.empty
+    }
+
   private def searchScripts = {
     val paths =
       if (site.search)
@@ -399,7 +414,7 @@ trait Template {
       lang := "en",
       head(
         scalatags.Text.tags2.title(site.name + ":" + pageTitle),
-        HighlightJS.templateBlock(site.highlightJS),
+        highlightingHeader(site.highlighting),
         BuilderTemplate.managedStylesBlock(linker, site.managedStyles),
         BuilderTemplate.managedScriptsBlock(linker, site.managedScripts),
         searchScripts,
@@ -425,7 +440,11 @@ trait Template {
             navigationSection(navigation)
           ),
           article(cls := "content-wrapper", content)
-        )
+        ),
+        highlightingBody(site.highlighting),
+        site.trackers.collect { case ga: Tracker.GoogleAnalytics =>
+          ga.scripts
+        }
       )
     )
   }
@@ -481,7 +500,7 @@ trait Template {
         a(href := linker.unsafe(_ / "tags" / s"$tag.html"), small(tag))
       )
     }
-    "<!DOCTYPE html>" + page(navigation, div(h2(title), p(tagline), hr, content)).render
+    "<!DOCTYPE html>" + page(navigation, div(h2(cls := "blog-post-title", title), p(tagline), hr, content)).render
   }
 
   def tagPage(

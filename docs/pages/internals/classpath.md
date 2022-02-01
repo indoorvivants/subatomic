@@ -65,7 +65,7 @@ Doing so leads to two things happening:
 
 The **subatomic.properties** file can be accessed by Subatomic when building the site and in our example it will contain the following information:
 
-```
+```text
 classpath=...
 variable.VERSION=...
 ```

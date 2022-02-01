@@ -19,7 +19,7 @@ package docs
 
 import java.time.LocalDate
 
-import subatomic.builders._
+import subatomic.builders.Tracker
 
 object DevBlog extends subatomic.builders.blog.Blog.App {
   import subatomic.builders.blog._
@@ -37,11 +37,7 @@ object DevBlog extends subatomic.builders.blog.Blog.App {
         "Back to the site" -> "https://subatomic.indoorvivants.com",
         "Github"           -> "https://github.com/indoorvivants/subatomic"
       ),
-      highlightJS = HighlightJS.default
-        .copy(
-          languages = List("scala", "r", "python"),
-          theme = "monokai-sublime"
-        )
+      trackers = Seq(Tracker.GoogleAnalytics("G-9RNQGQHVLB"))
     )
 }
 
@@ -63,9 +59,6 @@ object Docs extends subatomic.builders.librarysite.LibrarySite.App {
       copyright = Some(s"© 2020-$currentYear Anton Sviridov"),
       tagline = Some("Watch this space, but please don't use it yet"),
       githubUrl = Some("https://github.com/indoorvivants/subatomic"),
-      highlightJS = HighlightJS.default.copy(
-        languages = List("scala"),
-        theme = "monokai-sublime"
-      )
+      trackers = Seq(Tracker.GoogleAnalytics("G-9RNQGQHVLB"))
     )
 }

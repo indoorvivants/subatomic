@@ -89,7 +89,7 @@ object default extends StyleSheet.Standalone {
 
   "aside.sidebar a:hover" - color(sidebarLinkColor)
 
-  "article.content-wrapper" - (width(35.em), padding(3.5.em))
+  "article.content-wrapper" - (width(35.em), padding(30.px))
 
   "article.content-wrapper a" - (
     color(articleLinkColor),
@@ -132,13 +132,13 @@ object default extends StyleSheet.Standalone {
   )
 
   "div.blog-card-title a" - (
-    fontSize(22.px),
+    fontSize(2.5.rem),
     fontWeight.bold,
   )
 
   "p.blog-card-text" - (
     marginTop(0.px),
-    fontSize(17.px)
+    fontSize(1.5.rem)
   )
 
   "article.content-wrapper" - (
@@ -149,7 +149,7 @@ object default extends StyleSheet.Standalone {
       flexGrow(4),
       maxWidth(1000.px),
     ),
-    whenOnMobile - (maxWidth(100.%%), padding(3.px)),
+    whenOnMobile - (maxWidth(100.%%), padding(10.px)),
     whenOnNarrowScreen - (flexGrow(4), maxWidth(1000.px))
   )
 

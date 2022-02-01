@@ -27,7 +27,7 @@ LibrarySite(
 
 Search adds the following three paths to your site:
 
-```
+```text
 assets/search-index.js
     ^--copy-of--> /tmp/5284770261000098655.tmp
 assets/search.js

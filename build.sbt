@@ -1,3 +1,4 @@
+import java.io.FileReader
 val Ver = new {
   val flexmark              = "0.62.2"
   val coursier              = "2.0.16"
@@ -276,9 +277,19 @@ lazy val docs = projectMatrix
 
     properties.setProperty("classpath.default", classpath.mkString(java.io.File.pathSeparator))
 
-    IO.write(properties, "props", out)
+    lazy val propsAreTheSame = {
+      val p = (new java.util.Properties())
+      p.load(new FileReader(out))
+      streams.value.log
+        .debug(s"Loaded properties are: $p, current properties are: $properties --- (${p.equals(properties)})")
+      properties.equals(p)
+    }
 
-    Seq(out)
+    if (!out.exists() || !propsAreTheSame) {
+      IO.write(properties, "props", out)
+
+      Seq(out)
+    } else Seq.empty
   })
 
 lazy val plugin = projectMatrix
