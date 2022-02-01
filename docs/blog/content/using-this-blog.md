@@ -1,5 +1,5 @@
 ---
-title: Using this blog to test the blog theme
+title: Using this blog "to" test the blog theme
 date: 2021-10-16
 tags: subatomic,blog,development,css
 description: Where we pad our blogpost with enough content for it to be a feasible test of blog theme
@@ -57,3 +57,7 @@ Integer ultricies ultricies porta. Vestibulum id nibh aliquet, blandit nisi ac, 
 Ut at elementum libero. Fusce tincidunt metus mi, in vestibulum augue faucibus eget. Nunc at urna eu mauris porta rhoncus. Donec a lorem vestibulum, pulvinar massa at, pellentesque lacus. Sed id rhoncus sapien, sed maximus ex. Vivamus fermentum rhoncus lacinia. Etiam vel lacinia eros, commodo suscipit dolor. Vivamus luctus dolor suscipit dolor scelerisque, non consequat orci auctor. Duis imperdiet ipsum eros, et semper risus viverra et.
 
 Nunc et porttitor turpis, hendrerit molestie dolor. Mauris accumsan, magna quis malesuada posuere, nisl libero aliquam dolor, eu scelerisque tellus ante at odio. Vivamus sit amet sapien et nunc consectetur laoreet. Nullam ut malesuada arcu. Sed turpis massa, tincidunt non congue vel, blandit eget orci. Vivamus vitae tincidunt metus, at fringilla libero. Sed egestas pretium leo vitae malesuada.
+
+## A title with "quotes"
+
+As apparently it's problematic

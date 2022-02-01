@@ -57,9 +57,18 @@ class BuilderSteps(markdown: Markdown) {
       content: Vector[(SitePath, Doc)]
   ): Site[Doc] => Site[Doc] = {
 
-    val indexJson = buildSearchIndex(linker, d)(content).asJsonString
+    val indexJson      = buildSearchIndex(linker, d)(content).asJsonString
+    val doubleQ        = '"'.toString()
+    val escapedDoubleQ = """ \" """.trim()
 
-    val lines = indexJson.grouped(500).map(_.replace("'", "\\'")).map(str => s"'${str}'").mkString(",\n")
+    val lines = indexJson
+      .grouped(500)
+      .map(
+        _.replace("'", raw"\'")
+          .replace(doubleQ, escapedDoubleQ)
+      )
+      .map(str => s"'${str}'")
+      .mkString(",\n")
 
     val tmpFile = os.temp {
       s"""

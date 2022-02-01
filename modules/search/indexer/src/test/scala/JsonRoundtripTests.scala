@@ -9,7 +9,8 @@ class JsonRoundtripTests extends munit.FunSuite {
     val content = Vector(
       "/"            -> "lorem ipsum dolor amet lorem",
       "/hello"       -> "lorem dolor",
-      "/hello/world" -> "amet ipsum amet dolor"
+      "/hello/world" -> "amet ipsum amet dolor",
+      "/bla/bla"     -> """   "Hello quotes!" """
     )
 
     val idx = Indexer.default[(String, String)](content).processAll { case (path, text) =>
