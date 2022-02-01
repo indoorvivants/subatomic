@@ -12,7 +12,7 @@ Out of the box we support Mdoc's [ability](https://scalameta.org/mdoc/docs/js.ht
 All you need to do is to have this setting turned on in the head of 
 your Markdown document:
 
-```
+```text
 scala-mdoc-js: true
 scala-mdoc-js-dependencies: com.raquo::laminar_sjs1:0.11.0
 ```

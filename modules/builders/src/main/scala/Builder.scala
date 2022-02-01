@@ -21,8 +21,9 @@ trait Builder {
   val contentRoot: os.Path
   val assetsRoot: Option[os.Path]      = None
   val base: SitePath                   = SiteRoot
-  val highlightJS: HighlightJS         = HighlightJS.default
+  val highlighting: SyntaxHighlighting = SyntaxHighlighting.PrismJS.default
   val assetsFilter: os.Path => Boolean = _ => true
+  val trackers: Seq[Tracker]           = Nil
 
   lazy val managedStyles: List[StylesheetPath] =
     assetsRoot

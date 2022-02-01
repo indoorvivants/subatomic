@@ -36,7 +36,8 @@ case class LibrarySite(
     tagline: Option[String] = None,
     customTemplate: (LibrarySite, Linker) => Template = (s, l) => new Default(s, l),
     links: Vector[(String, String)] = Vector.empty,
-    override val highlightJS: HighlightJS = HighlightJS.default,
+    override val highlighting: SyntaxHighlighting = SyntaxHighlighting.PrismJS.default,
+    override val trackers: Seq[Tracker] = Seq.empty,
     search: Boolean = true
 ) extends subatomic.builders.Builder
 
@@ -337,6 +338,20 @@ trait Template {
   def doc(title: String, content: String, links: Navigation): String =
     doc(title, RawHTML(content), links)
 
+  import SyntaxHighlighting._
+
+  def highlightingHeader(sh: SyntaxHighlighting) =
+    sh match {
+      case hljs: HighlightJS => HighlightJS.templateBlock(hljs)
+      case pjs: PrismJS      => PrismJS.includes(pjs).styles
+    }
+
+  def highlightingBody(sh: SyntaxHighlighting) =
+    sh match {
+      case pjs: PrismJS => PrismJS.includes(pjs).bodyScripts
+      case _            => Seq.empty
+    }
+
   def doc(
       title: String,
       content: TypedTag[_],
@@ -345,7 +360,7 @@ trait Template {
     html(
       head(
         scalatags.Text.tags2.title(s"${site.name}: $title"),
-        HighlightJS.templateBlock(site.highlightJS),
+        highlightingHeader(site.highlighting),
         BuilderTemplate.managedScriptsBlock(linker, site.managedScripts),
         BuilderTemplate.managedStylesBlock(linker, site.managedStyles),
         templateStyles,
@@ -361,7 +376,11 @@ trait Template {
           hr,
           content
         ),
-        Footer
+        Footer,
+        highlightingBody(site.highlighting),
+        site.trackers.collect { case ga: Tracker.GoogleAnalytics =>
+          ga.scripts
+        }
       )
     ).render
   }
