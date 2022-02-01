@@ -47,7 +47,7 @@ aside.sidebar a:hover {
 
 article.content-wrapper {
   width: 35em;
-  padding: 3.5em;
+  padding: 30px;
 }
 
 article.content-wrapper a {
@@ -80,13 +80,13 @@ aside.sidebar {
 }
 
 div.blog-card-title a {
-  font-size: 22px;
+  font-size: 2.5rem;
   font-weight: bold;
 }
 
 p.blog-card-text {
   margin-top: 0;
-  font-size: 17px;
+  font-size: 1.5rem;
 }
 
 article.content-wrapper {
@@ -120,7 +120,7 @@ blockquote {
   }
   article.content-wrapper {
     max-width: 100%;
-    padding: 3px;
+    padding: 10px;
   }
 }
 
