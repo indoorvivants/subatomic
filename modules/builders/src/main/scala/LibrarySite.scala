@@ -366,7 +366,11 @@ trait Template {
         templateStyles,
         searchScripts,
         searchStyles,
-        meta(charset := "UTF-8")
+        meta(charset := "UTF-8"),
+        meta(
+          name            := "viewport",
+          attr("content") := "width=device-width, initial-scale=1"
+        )
       ),
       body(
         div(

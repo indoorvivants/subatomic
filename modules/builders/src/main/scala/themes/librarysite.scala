@@ -35,7 +35,7 @@ object default extends StyleSheet.Standalone {
     backgroundColor(rgb(254, 255, 248)),
     borderRadius(5.px),
     padding(30.px),
-    width(80.pc),
+    width(80.%%),
     margin(30.px),
     media.screen.minWidth(1600.px) - (
       width(50.%%),

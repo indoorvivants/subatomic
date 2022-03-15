@@ -162,5 +162,9 @@ object default extends StyleSheet.Standalone {
     paddingLeft(1.em)
   )
 
+  "a.heading-link" - (
+    textDecorationLine.none,
+  )
+
   def asString: String = this.renderA[String]
 }
