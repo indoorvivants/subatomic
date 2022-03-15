@@ -104,6 +104,11 @@ blockquote {
   padding-left: 1em;
 }
 
+a.heading-link {
+  -moz-text-decoration-line: none;
+  text-decoration-line: none;
+}
+
 @media screen and (max-width:1023px) {
   div.wrapper {
     max-width: 100%;
