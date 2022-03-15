@@ -122,8 +122,9 @@ class Markdown(extensions: List[Extension]) {
   import Markdown.Section
 
   def extractMarkdownSections(documentTitle: String, baseUrl: String, p: os.Path): Vector[Section] = {
+    case class Header(title: String, level: Int, anchorId: String)
     type Result = Either[
-      (String, String),
+      Header,
       String
     ]
 
@@ -135,24 +136,24 @@ class Markdown(extensions: List[Extension]) {
 
     val sect = recursiveCollect[Result](document) {
       case head: Heading =>
-        Collector.Collect(Seq(Left(head.getText().toStringOrNull() -> head.getAnchorRefId())))
+        Collector.Collect(Seq(Left(Header(head.getText().toStringOrNull(), head.getLevel(), head.getAnchorRefId()))))
       case t: TextContainer =>
         Collector.Collect(Seq(Right(t.getChars().toStringOrNull())))
       case _: FencedCodeBlock | _: YamlFrontMatterNode => Collector.Skip
       case _: Node                                     => Collector.Recurse()
     }
 
-    var currentSection: String => Section = Section(documentTitle, None, _)
+    var currentSection: String => Section = Section(documentTitle, 1, None, _)
 
     val sections = ArrayBuffer[Section]()
 
     val collectedText = new StringBuilder
 
     sect.foreach {
-      case Left((title, id)) =>
+      case Left(Header(title, lev, id)) =>
         sections.append(currentSection(collectedText.result()))
         collectedText.clear()
-        currentSection = Section(title, Some(baseUrl + s"#$id"), _)
+        currentSection = Section(title, lev, Some(baseUrl + s"#$id"), _)
       case Right(content) =>
         collectedText.append(content + "\n")
     }
@@ -164,6 +165,6 @@ class Markdown(extensions: List[Extension]) {
 }
 
 object Markdown {
-  case class Section(title: String, url: Option[String], text: String)
+  case class Section(title: String, level: Int, url: Option[String], text: String)
   def apply(extensions: Extension*) = new Markdown(extensions.toList)
 }

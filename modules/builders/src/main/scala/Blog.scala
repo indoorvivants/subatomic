@@ -54,10 +54,16 @@ case class Post(
     description: Option[String],
     tags: List[String],
     mdocConfig: Option[MdocConfiguration],
-    archived: Boolean
+    archived: Boolean,
+    headings: Vector[Heading]
 ) extends Doc {
   def scalajsEnabled: Boolean = mdocConfig.exists(_.scalajsConfig.nonEmpty)
 }
+object Post {
+  implicit val ordering: Ordering[Post] = Ordering.by(_.date.toEpochDay())
+}
+
+case class Heading(level: Int, title: String, url: String)
 
 case class TagPage(
     tag: String,
@@ -94,11 +100,13 @@ object Blog {
   }
 
   def createNavigation(linker: Linker, content: Vector[Doc]): Doc => Vector[NavLink] = {
+
     val all = content
       .collect {
         case doc: Post if !doc.archived => doc -> NavLink(linker.find(doc), doc.title, selected = false)
       }
-      .sortBy(-_._1.date.toEpochDay())
+      .sortBy(_._1)
+      .reverse
 
     { piece =>
       all.map {
@@ -130,6 +138,11 @@ object Blog {
 
         val mdocConfig = MdocConfiguration.fromAttrs(attributes)
 
+        val md = Markdown(YamlFrontMatterExtension.create(), AnchorLinkExtension.create())
+        val headings =
+          md.extractMarkdownSections("", "", path).collect { case Markdown.Section(title, level, Some(url), _) =>
+            Heading(level, title, url)
+          }
         val post = Post(
           title,
           path,
@@ -137,7 +150,8 @@ object Blog {
           description,
           tags,
           mdocConfig,
-          archived
+          archived,
+          headings
         ): Doc
 
         sitePath -> post
@@ -153,7 +167,8 @@ object Blog {
       .groupBy(_._1)
       .toVector
       .map { case (tag, posts) =>
-        SiteRoot / "tags" / s"$tag.html" -> TagPage(tag, posts.map(_._2).toList)
+        SiteRoot / "tags" / s"$tag.html" ->
+          TagPage(tag, posts.map(_._2).sorted.reverse.toList)
       }
 
     posts ++ tagPages
@@ -185,7 +200,7 @@ object Blog {
     val mdocProcessor =
       if (!buildConfig.disableMdoc)
         MdocProcessor.create[Post]() {
-          case Post(_, path, _, _, _, Some(config), _) if config.scalajsConfig.nonEmpty => MdocFile(path, config)
+          case Post(_, path, _, _, _, Some(config), _, _) if config.scalajsConfig.nonEmpty => MdocFile(path, config)
         }
       else {
         Processor.simple[Post, MdocResult[Post]](doc => MdocResult(doc, doc.path))
@@ -195,7 +210,7 @@ object Blog {
       if (!buildConfig.disableMdoc)
         MdocJSProcessor
           .create[Post]() {
-            case Post(_, path, _, _, _, Some(config), _) if config.scalajsConfig.nonEmpty => MdocFile(path, config)
+            case Post(_, path, _, _, _, Some(config), _, _) if config.scalajsConfig.nonEmpty => MdocFile(path, config)
           }
           .map { result =>
             result.original -> Option(result)
@@ -203,11 +218,19 @@ object Blog {
       else {
         Processor.simple(doc => doc -> None)
       }
-    def renderPost(title: String, tags: Seq[String], file: os.Path, links: Vector[NavLink]) = {
+
+    def renderPost(
+        title: String,
+        tags: Seq[String],
+        file: os.Path,
+        links: Vector[NavLink],
+        headings: Vector[Heading]
+    ) = {
       val renderedMarkdown = markdown.renderToString(file)
       val renderedHtml =
         template.post(
           links,
+          headings,
           title,
           tags,
           renderedMarkdown
@@ -222,7 +245,8 @@ object Blog {
           mdocResult.original.title,
           mdocResult.original.tags,
           mdocResult.resultFile,
-          navigation(mdocResult.original)
+          navigation(mdocResult.original),
+          mdocResult.original.headings
         )
       }
     val mdocJSPageRenderer: Processor[Post, Map[SitePath => SitePath, SiteAsset]] = mdocJSProcessor
@@ -232,7 +256,7 @@ object Blog {
           case (doc, Some(mdocResult)) =>
             Map(
               (identity[SitePath] _) ->
-                renderPost(doc.title, doc.tags, mdocResult.markdownFile, navigation(doc)),
+                renderPost(doc.title, doc.tags, mdocResult.markdownFile, navigation(doc), doc.headings),
               ((sp: SitePath) => sp.up / mdocResult.jsSnippetsFile.last) ->
                 CopyOf(mdocResult.jsSnippetsFile),
               ((sp: SitePath) => sp.up / mdocResult.jsInitialisationFile.last) ->
@@ -243,7 +267,7 @@ object Blog {
 
           case (doc, None) =>
             Map(
-              (identity[SitePath] _) -> renderPost(doc.title, doc.tags, doc.path, navigation(doc))
+              (identity[SitePath] _) -> renderPost(doc.title, doc.tags, doc.path, navigation(doc), doc.headings)
             )
         }
       }
@@ -262,7 +286,7 @@ object Blog {
               doc
             )
           case (sitePath, doc: Post) =>
-            site.add(sitePath, renderPost(doc.title, doc.tags, doc.path, navigation(doc)))
+            site.add(sitePath, renderPost(doc.title, doc.tags, doc.path, navigation(doc), doc.headings))
           case (sitePath, doc: TagPage) =>
             site.addPage(sitePath, template.tagPage(navigation(doc), doc.tag, doc.posts).render)
         }
@@ -351,7 +375,7 @@ trait Template {
 
   def Nav(navigation: Vector[NavLink]) = {
     div(
-      navigation.sortBy(_.title).map {
+      navigation.map {
         case NavLink(_, title, selected) if selected =>
           p(strong(title))
         case NavLink(url, title, _) =>
@@ -403,7 +427,7 @@ trait Template {
     BuilderTemplate.managedStylesBlock(linker, paths)
   }
 
-  def basePage(navigation: Option[Vector[NavLink]], content: TypedTag[_]) = {
+  def basePage(navigation: Option[Vector[NavLink]], headings: Option[Vector[Heading]], content: TypedTag[_]) = {
     val pageTitle = navigation
       .flatMap(_.find(_.selected))
       .map(_.title)
@@ -437,7 +461,8 @@ trait Template {
             searchSection,
             tagCloud,
             archiveLink,
-            navigationSection(navigation)
+            navigationSection(navigation),
+            headingsSection(headings)
           ),
           article(cls := "content-wrapper", content)
         ),
@@ -466,6 +491,23 @@ trait Template {
       case None => span()
     }
 
+  private def headingsSection(headings: Option[Vector[Heading]]) =
+    headings match {
+      case None => span()
+      case Some(value) =>
+        div(
+          style := "position: sticky; position: -webkit-sticky; top: 0",
+          h4("contents"),
+          value.filter(_.level <= 3).map { hd =>
+            span(
+              raw("&nbsp;&nbsp;" * (hd.level - 1)),
+              a(href := hd.url, cls := "heading-link", small(hd.title)),
+              br
+            )
+          }
+        )
+    }
+
   private def blogTitleSection =
     section(
       cls := "site-title",
@@ -478,18 +520,20 @@ trait Template {
       div(id := "searchContainer", cls := "searchContainer")
     )
 
-  def page(navigation: Vector[NavLink], content: TypedTag[_]) =
-    basePage(Some(navigation), content)
+  def page(navigation: Vector[NavLink], headings: Option[Vector[Heading]], content: TypedTag[_]) =
+    basePage(Some(navigation), headings, content)
 
   def post(
       navigation: Vector[NavLink],
+      headings: Vector[Heading],
       title: String,
       tags: Seq[String],
       content: String
-  ): String = post(navigation, title, tags, rawHtml(content))
+  ): String = post(navigation, headings, title, tags, rawHtml(content))
 
   def post(
       navigation: Vector[NavLink],
+      headings: Vector[Heading],
       title: String,
       tags: Seq[String],
       content: TypedTag[_]
@@ -500,7 +544,11 @@ trait Template {
         a(href := linker.unsafe(_ / "tags" / s"$tag.html"), small(tag))
       )
     }
-    "<!DOCTYPE html>" + page(navigation, div(h2(cls := "blog-post-title", title), p(tagline), hr, content)).render
+    "<!DOCTYPE html>" + page(
+      navigation,
+      Some(headings),
+      div(h2(cls := "blog-post-title", title), p(tagline), hr, content)
+    ).render
   }
 
   def tagPage(
@@ -510,6 +558,7 @@ trait Template {
   ) = {
     page(
       navigation,
+      None,
       div(
         h3(span("Posts tagged with ", span(cls := "blog-tag", tag))),
         div(cls := "card-columns", blogs.map(blogCard).toVector)
@@ -563,9 +612,10 @@ trait Template {
   ) = {
     basePage(
       None,
+      None,
       div(
         h3(title),
-        div(cls := "card-columns", blogs.sortBy(-_.date.toEpochDay()).map(blogCard).toVector)
+        div(cls := "card-columns", blogs.sorted.reverse.map(blogCard).toVector)
       )
     )
   }
@@ -575,8 +625,9 @@ trait Template {
   ) = {
     basePage(
       None,
+      None,
       div(
-        div(cls := "card-columns", blogs.sortBy(-_.date.toEpochDay()).map(blogCard).toVector)
+        div(cls := "card-columns", blogs.sorted.reverse.map(blogCard).toVector)
       )
     )
   }
@@ -586,9 +637,10 @@ trait Template {
   ) = {
     basePage(
       None,
+      None,
       div(
         h3("Archive"),
-        div(cls := "card-columns", blogs.sortBy(-_.date.toEpochDay()).map(blogCard).toVector)
+        div(cls := "card-columns", blogs.sorted.reverse.map(blogCard).toVector)
       )
     )
   }
