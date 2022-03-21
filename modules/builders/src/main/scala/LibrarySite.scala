@@ -382,9 +382,7 @@ trait Template {
         ),
         Footer,
         highlightingBody(site.highlighting),
-        site.trackers.collect { case ga: Tracker.GoogleAnalytics =>
-          ga.scripts
-        }
+        site.trackers.flatMap(_.scripts)
       )
     ).render
   }
