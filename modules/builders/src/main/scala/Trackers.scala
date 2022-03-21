@@ -18,14 +18,16 @@ package subatomic.builders
 
 import scalatags.Text
 
-sealed trait Tracker extends Product with Serializable
+sealed trait Tracker extends Product with Serializable {
+  def scripts: Seq[Text.TypedTag[String]]
+}
 object Tracker {
   case class GoogleAnalytics(
       measurementId: String,
       config: GoogleAnalytics.Config = GoogleAnalytics.Config(),
       additional: Map[String, GoogleAnalytics.Config] = Map.empty
   ) extends Tracker {
-    def scripts: Seq[Text.TypedTag[String]] = {
+    override def scripts: Seq[Text.TypedTag[String]] = {
       import scalatags.Text.all._
       val ref = script(src := s"https://www.googletagmanager.com/gtag/js?id=$measurementId")
       val init = script(
@@ -44,5 +46,20 @@ object Tracker {
 
   object GoogleAnalytics {
     case class Config(send_page_view: Boolean = true)
+  }
+
+  case class Pirsch(dataCode: String) extends Tracker {
+    override def scripts: Seq[Text.TypedTag[String]] = {
+      import scalatags.Text.all._
+      val init = script(
+        `type`            := "text/javascript",
+        src               := "https://api.pirsch.io/pirsch.js",
+        id                := "pirschjs",
+        attr("data-code") := dataCode,
+        defer             := true
+      )
+
+      Seq(init)
+    }
   }
 }

@@ -467,9 +467,7 @@ trait Template {
           article(cls := "content-wrapper", content)
         ),
         highlightingBody(site.highlighting),
-        site.trackers.collect { case ga: Tracker.GoogleAnalytics =>
-          ga.scripts
-        }
+        site.trackers.flatMap(_.scripts)
       )
     )
   }
