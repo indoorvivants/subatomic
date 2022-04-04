@@ -52,6 +52,7 @@ trait Colors {
   def _green(s: String) = if (!colors) s else GREEN + s + RESET
   def _bold(s: String)  = if (!colors) s else BOLD + s + RESET
 
-  def _redLines(s: String) = if (!colors) s else s.linesIterator.map(_red).mkString("\n")
+  def _redLines(s: String) =
+    if (!colors) s else s.linesIterator.map(_red).mkString("\n")
 
 }

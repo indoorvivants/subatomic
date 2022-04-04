@@ -193,7 +193,8 @@ private[subatomic] class TF_IDF(
             val currentStats = getTermDocumentOccurennce(termIdx, docIdx)
 
             val newStats = currentStats.copy(
-              frequencyInDocument = currentStats.frequencyInDocument + termFrequency,
+              frequencyInDocument =
+                currentStats.frequencyInDocument + termFrequency,
               sectionOccurences = currentStats.sectionOccurences
                 .updated(sectionIdx, termFrequency)
             )
@@ -207,7 +208,8 @@ private[subatomic] class TF_IDF(
     def +(other: TermFrequency) = TermFrequency(tf.value + other.value)
   }
 
-  lazy val invertTermsToDocuments: Map[DocumentIdx, Map[TermIdx, TermDocumentOccurence]] = {
+  lazy val invertTermsToDocuments
+      : Map[DocumentIdx, Map[TermIdx, TermDocumentOccurence]] = {
     val acc =
       mutable.Map[DocumentIdx, mutable.Map[TermIdx, TermDocumentOccurence]]()
 

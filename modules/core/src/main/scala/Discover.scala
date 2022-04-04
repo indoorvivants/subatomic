@@ -31,7 +31,9 @@ object Discover extends App {
       data
         .get(field)
         .flatMap(_.headOption)
-        .getOrElse(throw SubatomicError.fileConfiguration(path, _.fieldMissing(field)))
+        .getOrElse(
+          throw SubatomicError.fileConfiguration(path, _.fieldMissing(field))
+        )
     def optionalOne(field: String): Option[String] = data.get(field).map(_.head)
 
     def requiredMany(field: String): List[String]         = data(field)
@@ -56,7 +58,11 @@ object Discover extends App {
 
     visitor.visit(doc)
 
-    val data = visitor.getData().asScala.map { case (k, v) => k -> v.asScala.toList }.toMap
+    val data = visitor
+      .getData()
+      .asScala
+      .map { case (k, v) => k -> v.asScala.toList }
+      .toMap
 
     YamlAttributes(data, path)
   }
@@ -68,17 +74,20 @@ object Discover extends App {
 
     val total = f.lift
 
-    os.walk(root, maxDepth = maxDepth).filter(_.toIO.isFile()).filter(_.ext == "md").flatMap { path =>
-      val filename   = path.baseName
-      val attributes = readYaml(path, md)
+    os.walk(root, maxDepth = maxDepth)
+      .filter(_.toIO.isFile())
+      .filter(_.ext == "md")
+      .flatMap { path =>
+        val filename   = path.baseName
+        val attributes = readYaml(path, md)
 
-      val doc = MarkdownDocument(
-        path,
-        filename,
-        attributes
-      )
+        val doc = MarkdownDocument(
+          path,
+          filename,
+          attributes
+        )
 
-      total(doc)
-    }
+        total(doc)
+      }
   }
 }

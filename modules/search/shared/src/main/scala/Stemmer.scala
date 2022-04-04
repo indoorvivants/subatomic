@@ -3,14 +3,17 @@ package search
 
 /** Anton:
   *
-  * This is just the initial implementation, copied from https://tartarus.org/martin/PorterStemmer/scala.txt
+  * This is just the initial implementation, copied from
+  * https://tartarus.org/martin/PorterStemmer/scala.txt
   *
-  * I intend to rewrite it in a more condensed way, reducing the number of passes.
+  * I intend to rewrite it in a more condensed way, reducing the number of
+  * passes.
   *
   * I've insourced it for now, given that the licensing is permissive:
   *
-  * "In every case where the software is not written by me (Martin Porter), this licensing arrangement has been endorsed
-  * by the contributor, and it is therefore unnecessary to ask the contributor again to confirm it."
+  * "In every case where the software is not written by me (Martin Porter), this
+  * licensing arrangement has been endorsed by the contributor, and it is
+  * therefore unnecessary to ask the contributor again to confirm it."
   *
   * See FAW at https://tartarus.org/martin/PorterStemmer/ *
   */
@@ -128,7 +131,11 @@ object PorterStemmer {
     }
 
     // returns true if it did the change.
-    def replacer(orig: String, replace: String, checker: Int => Boolean): Boolean = {
+    def replacer(
+        orig: String,
+        replace: String,
+        checker: Int => Boolean
+    ): Boolean = {
 
       val l          = b.length
       val origLength = orig.length
@@ -151,7 +158,10 @@ object PorterStemmer {
 
     // process the list of tuples to find which prefix matches the case.
     // checker is the conditional checker for m.
-    def processSubList(l: List[(String, String)], checker: Int => Boolean): Boolean = {
+    def processSubList(
+        l: List[(String, String)],
+        checker: Int => Boolean
+    ): Boolean = {
       val iter = l.iterator
       var done = false
 
@@ -177,7 +187,11 @@ object PorterStemmer {
       // step 1b
       if (!(replacer("eed", "ee", _ > 0))) {
 
-        if ((vowelInStem("ed") && replacer("ed", "", _ >= 0)) || (vowelInStem("ing") && replacer("ing", "", _ >= 0))) {
+        if (
+          (vowelInStem("ed") && replacer("ed", "", _ >= 0)) || (vowelInStem(
+            "ing"
+          ) && replacer("ing", "", _ >= 0))
+        ) {
 
           vals = List(("at", "ate"), ("bl", "ble"), ("iz", "ize"))
 
@@ -279,7 +293,15 @@ object PorterStemmer {
 
       // third part.
       if (!res) {
-        val vals = List(("ou", ""), ("ism", ""), ("ate", ""), ("iti", ""), ("ous", ""), ("ive", ""), ("ize", ""))
+        val vals = List(
+          ("ou", ""),
+          ("ism", ""),
+          ("ate", ""),
+          ("iti", ""),
+          ("ous", ""),
+          ("ive", ""),
+          ("ize", "")
+        )
         res = processSubList(vals, _ > 1)
 
       }

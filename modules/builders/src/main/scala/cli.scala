@@ -36,10 +36,13 @@ object cli {
       overwrite: Boolean
   ) extends CommandConfig
 
-  case class SearchConfig(mode: TestSearchMode, debug: Boolean) extends CommandConfig
+  case class SearchConfig(mode: TestSearchMode, debug: Boolean)
+      extends CommandConfig
 
   implicit val pathArgument: Argument[os.Path] =
-    Argument[String].map { s => Try(os.Path.apply(s)).getOrElse(os.RelPath(s).resolveFrom(os.pwd)) }
+    Argument[String].map { s =>
+      Try(os.Path.apply(s)).getOrElse(os.RelPath(s).resolveFrom(os.pwd))
+    }
 
   private val debug = Opts.flag("debug", "Output debugging information").orFalse
 
@@ -65,7 +68,8 @@ object cli {
     .map[TestSearchMode](Query(_))
 
   private val testsearchConfig =
-    (testSearchInteractive.orElse(testSearchQuery), debug).mapN[CommandConfig](SearchConfig(_, _))
+    (testSearchInteractive.orElse(testSearchQuery), debug)
+      .mapN[CommandConfig](SearchConfig(_, _))
 
   private val destination = Opts
     .option[os.Path](

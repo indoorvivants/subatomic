@@ -8,9 +8,12 @@ object LibrarySiteTest extends SimpleIOSuite with BuildersHelpers {
 
   pureTest("discovery: attributes and paths") {
     val basic = prepareContent(
-      SiteRoot / "base.md"           -> page(Map("title" -> "base"), "hello!"),
-      SiteRoot / "test.md"           -> page(Map("title" -> "Test"), "testing!"),
-      SiteRoot / "check" / "test.md" -> page(Map("title" -> "check"), "checking!")
+      SiteRoot / "base.md" -> page(Map("title" -> "base"), "hello!"),
+      SiteRoot / "test.md" -> page(Map("title" -> "Test"), "testing!"),
+      SiteRoot / "check" / "test.md" -> page(
+        Map("title" -> "check"),
+        "checking!"
+      )
     )
 
     val conf = LibrarySite(contentRoot = basic.root, name = "hello")
@@ -21,8 +24,12 @@ object LibrarySiteTest extends SimpleIOSuite with BuildersHelpers {
       content.exists(_._2.title == "base"),
       content.exists(_._2.title == "Test"),
       content.exists(_._2.title == "check"),
-      content.get(SiteRoot / "base" / "index.html").exists(_.path == basic.files(SiteRoot / "base.md")),
-      content.get(SiteRoot / "test" / "index.html").exists(_.path == basic.files(SiteRoot / "test.md")),
+      content
+        .get(SiteRoot / "base" / "index.html")
+        .exists(_.path == basic.files(SiteRoot / "base.md")),
+      content
+        .get(SiteRoot / "test" / "index.html")
+        .exists(_.path == basic.files(SiteRoot / "test.md")),
       content
         .get(SiteRoot / "check" / "test" / "index.html")
         .exists(_.path == basic.files(SiteRoot / "check" / "test.md"))
@@ -35,7 +42,11 @@ object LibrarySiteTest extends SimpleIOSuite with BuildersHelpers {
 
     val testDependency = "org.typelevel::cats:2.3.1"
     val mdocPage = page(
-      Map("title" -> "mdoc", "mdoc" -> "true", "mdoc-dependencies" -> testDependency),
+      Map(
+        "title"             -> "mdoc",
+        "mdoc"              -> "true",
+        "mdoc-dependencies" -> testDependency
+      ),
       "test mdoc"
     )
 
@@ -49,10 +60,14 @@ object LibrarySiteTest extends SimpleIOSuite with BuildersHelpers {
     val content = LibrarySite.discoverContent(conf).toMap
 
     expect.all(
-      content.get(SiteRoot / "base" / "index.html").exists(_.mdocConfig.isEmpty),
+      content
+        .get(SiteRoot / "base" / "index.html")
+        .exists(_.mdocConfig.isEmpty),
       content
         .get(SiteRoot / "mdoc" / "index.html")
-        .exists(_.mdocConfig.exists(_.extraDependencies.contains(testDependency)))
+        .exists(
+          _.mdocConfig.exists(_.extraDependencies.contains(testDependency))
+        )
     )
   }
 }
@@ -64,7 +79,9 @@ trait BuildersHelpers {
   import weaver.{Log => WeaverLog}
 
   class Check(blocker: Blocker)(implicit cs: ContextShift[IO]) {
-    def check[C](site: Site[C])(f: os.Path => Expectations): IO[Expectations] = {
+    def check[C](
+        site: Site[C]
+    )(f: os.Path => Expectations): IO[Expectations] = {
       blocker.blockOn(IO {
         val destination = os.temp.dir()
 
@@ -76,7 +93,9 @@ trait BuildersHelpers {
   }
 
   def baseSite[Doc](content: Iterable[(SitePath, Doc)])(log: WeaverLog[IO]) =
-    Site.init(content).changeLogger(s => log.info(s.replace("\n", "  ")).unsafeRunSync())
+    Site
+      .init(content)
+      .changeLogger(s => log.info(s.replace("\n", "  ")).unsafeRunSync())
 
   case class PreparedContent(root: os.Path, files: Map[SitePath, os.Path])
 
@@ -93,7 +112,8 @@ trait BuildersHelpers {
   }
 
   def page(attrs: Map[String, String], content: String) = {
-    val header = attrs.map { case (k, v) => s"$k: $v" }.mkString("---\n", "\n", "\n---\n")
+    val header =
+      attrs.map { case (k, v) => s"$k: $v" }.mkString("---\n", "\n", "\n---\n")
 
     header + content
   }

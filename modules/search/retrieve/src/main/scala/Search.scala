@@ -48,7 +48,8 @@ class Search(index: SearchIndex, debug: Boolean = false) {
     val validTerms = terms.map(_._1)
     val candidates = terms.flatMap(_._2.keys)
 
-    val sectionRef = scala.collection.mutable.HashMap[(DocumentIdx, SectionIdx), Double]()
+    val sectionRef =
+      scala.collection.mutable.HashMap[(DocumentIdx, SectionIdx), Double]()
 
     val termDocumentRanks = candidates.flatMap { documentId =>
       val documentTerms = getDocumentTerms(documentId)
@@ -66,7 +67,9 @@ class Search(index: SearchIndex, debug: Boolean = false) {
               getGlobalTermFrequency(termId.value)
             )
 
-            debugPrint(s"DocumentId: $documentId, Term: ${termId}, TF: $TF, IDF: $IDF")
+            debugPrint(
+              s"DocumentId: $documentId, Term: ${termId}, TF: $TF, IDF: $IDF"
+            )
 
             val TERM_SCORE = TF * IDF
 
@@ -77,7 +80,8 @@ class Search(index: SearchIndex, debug: Boolean = false) {
               )
               sectionRef.update(
                 key,
-                frequencyInSection.value * TERM_SCORE + sectionRef.getOrElseUpdate(key, 0.0)
+                frequencyInSection.value * TERM_SCORE + sectionRef
+                  .getOrElseUpdate(key, 0.0)
               )
             }
 
@@ -99,7 +103,9 @@ class Search(index: SearchIndex, debug: Boolean = false) {
             .take(3)
             .map(_._1)
 
-        debugPrint(s"document: ${document.title}, sections: ${documentSections}")
+        debugPrint(
+          s"document: ${document.title}, sections: ${documentSections}"
+        )
 
         debugPrint(s"document: ${document.title}, Section ref: $sectionRef")
 
@@ -120,7 +126,9 @@ class Search(index: SearchIndex, debug: Boolean = false) {
   def getDocumentSections(documentId: DocumentIdx): List[SectionIdx] =
     index.sectionMapping(documentId)
 
-  def getDocumentTerms(documentId: DocumentIdx): Map[TermIdx, TermDocumentOccurence] =
+  def getDocumentTerms(
+      documentId: DocumentIdx
+  ): Map[TermIdx, TermDocumentOccurence] =
     index.documentTerms(documentId)
 
   def getGlobalTermFrequency(termId: TermIdx): GlobalTermFrequency =
@@ -147,7 +155,9 @@ object Algorithms {
       globalTermFrequency: GlobalTermFrequency
   ) = {
     if (globalTermFrequency.value == numDocuments.value)
-      math.log(numDocuments.value.toDouble / (numDocuments.value.toDouble + 1.0))
+      math.log(
+        numDocuments.value.toDouble / (numDocuments.value.toDouble + 1.0)
+      )
     else
       math.log(numDocuments.value.toDouble / globalTermFrequency.value.toDouble)
   }
@@ -183,7 +193,9 @@ object Search {
     if (res.entries.isEmpty) println("NO RESULTS")
     else
       res.entries.foreach { case (ResultsEntry(document, sections), score) =>
-        println(Console.BOLD + score.toString() + Console.RESET + " " + document.title)
+        println(
+          Console.BOLD + score.toString() + Console.RESET + " " + document.title
+        )
 
         sections.foreach { case SectionEntry(title, _) =>
           println("   - " + title)

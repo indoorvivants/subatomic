@@ -137,8 +137,9 @@ object CharTree {
 
 object Test {
   def main(args: Array[String]): Unit = {
-    val words = List("taps", "tops", "top", "tap").zipWithIndex.map { case (n, idx) =>
-      TermName(n) -> TermIdx(idx)
+    val words = List("taps", "tops", "top", "tap").zipWithIndex.map {
+      case (n, idx) =>
+        TermName(n) -> TermIdx(idx)
     }
 
     val struct = CharTree.build(words)

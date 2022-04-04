@@ -42,11 +42,14 @@ object Props {
 sealed trait DocDependency extends Product with Serializable {
   def group: String
 }
-case class ModuleDocDependency(mid: ModuleID, group: String)          extends DocDependency
-case class ClassesDocDependency(folder: Seq[File], group: String)     extends DocDependency
-case class ProjectDocDependency(ref: ProjectReference, group: String) extends DocDependency
-case class ThisProjectClasses(group: String)                          extends DocDependency
-case class ThisProjectDependencies(group: String)                     extends DocDependency
+case class ModuleDocDependency(mid: ModuleID, group: String)
+    extends DocDependency
+case class ClassesDocDependency(folder: Seq[File], group: String)
+    extends DocDependency
+case class ProjectDocDependency(ref: ProjectReference, group: String)
+    extends DocDependency
+case class ThisProjectClasses(group: String)      extends DocDependency
+case class ThisProjectDependencies(group: String) extends DocDependency
 
 object SubatomicPlugin extends AutoPlugin {
   object autoImport {
@@ -71,12 +74,20 @@ object SubatomicPlugin extends AutoPlugin {
     val subatomicDependencies = settingKey[Seq[DocDependency]]("")
 
     object Subatomic {
-      def dependency(mid: ModuleID, group: String = "default"): DocDependency = ModuleDocDependency(mid, group)
-      def paths(classes: Seq[File], group: String = "default"): DocDependency = ClassesDocDependency(classes, group)
-      def path(classes: File, group: String = "default"): DocDependency = ClassesDocDependency(Seq(classes), group)
-      def project(proj: ProjectReference, group: String = "default"): DocDependency = ProjectDocDependency(proj, group)
-      def thisProjectClasses(group: String)                                         = ThisProjectClasses(group)
-      def thisProjectDependencies(group: String)                                    = ThisProjectDependencies(group)
+      def dependency(mid: ModuleID, group: String = "default"): DocDependency =
+        ModuleDocDependency(mid, group)
+      def paths(classes: Seq[File], group: String = "default"): DocDependency =
+        ClassesDocDependency(classes, group)
+      def path(classes: File, group: String = "default"): DocDependency =
+        ClassesDocDependency(Seq(classes), group)
+      def project(
+          proj: ProjectReference,
+          group: String = "default"
+      ): DocDependency = ProjectDocDependency(proj, group)
+      def thisProjectClasses(group: String) = ThisProjectClasses(group)
+      def thisProjectDependencies(group: String) = ThisProjectDependencies(
+        group
+      )
     }
   }
 
@@ -101,8 +112,11 @@ object SubatomicPlugin extends AutoPlugin {
       subatomicInheritClasspath   := true,
       subatomicCoreDependency     := true,
       subatomicBuildersDependency := true,
-      subatomicDependencies       := List(ThisProjectClasses("default"), ThisProjectDependencies("default")),
-      subatomicMdocVariables      := Map("VERSION" -> version.value),
+      subatomicDependencies := List(
+        ThisProjectClasses("default"),
+        ThisProjectDependencies("default")
+      ),
+      subatomicMdocVariables := Map("VERSION" -> version.value),
       libraryDependencies ++= {
         (
           subatomicBuildersDependency.value,
@@ -145,9 +159,11 @@ object SubatomicPlugin extends AutoPlugin {
           val mut = List.newBuilder[(String, File)]
 
           subatomicDependencies.value.collect {
-            case ModuleDocDependency(mid, gr)  => mut ++= getJars(mid).map(gr -> _)
+            case ModuleDocDependency(mid, gr) =>
+              mut ++= getJars(mid).map(gr -> _)
             case ClassesDocDependency(cls, gr) => mut ++= cls.map(gr -> _)
-            case ThisProjectClasses(gr)        => mut += gr -> (Compile / classDirectory).value
+            case ThisProjectClasses(gr) =>
+              mut += gr -> (Compile / classDirectory).value
             case ThisProjectDependencies(gr) =>
               mut ++= dependencyClasspath
                 .in(Compile)

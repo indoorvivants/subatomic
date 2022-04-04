@@ -1,7 +1,7 @@
 package subatomic
 package search
 
-class TokenizerTests extends munit.FunSuite {
+object TokenizerTests extends verify.BasicTestSuite {
 
   val tokens = DefaultTokenizer
 

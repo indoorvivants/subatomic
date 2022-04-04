@@ -38,9 +38,15 @@ object ScalaJSConfig {
   def default = ScalaJSConfig(version = "1.7.1", "1.0.0")
 
   def fromAttrs(attrs: Discover.YamlAttributes): Option[ScalaJSConfig] = {
-    val enabled    = attrs.optionalOne("mdoc-js").map(_.toBoolean).getOrElse(false)
-    val version    = attrs.optionalOne("mdoc-js-scalajs").map(_.trim).getOrElse(default.version)
-    val domVersion = attrs.optionalOne("mdoc-js-dom-version").map(_.trim).getOrElse(default.domVersion)
+    val enabled = attrs.optionalOne("mdoc-js").map(_.toBoolean).getOrElse(false)
+    val version = attrs
+      .optionalOne("mdoc-js-scalajs")
+      .map(_.trim)
+      .getOrElse(default.version)
+    val domVersion = attrs
+      .optionalOne("mdoc-js-dom-version")
+      .map(_.trim)
+      .getOrElse(default.domVersion)
 
     if (enabled) Some(ScalaJSConfig(version, domVersion)) else None
   }
@@ -80,9 +86,16 @@ object MdocConfiguration {
       .map(_.split(",").toList.map(_.trim).toSet)
       .getOrElse(default.extraDependencies)
 
-    val scalaVersion = attrs.optionalOne("mdoc-scala").map(_.trim).getOrElse(defaultConfig.scalaBinaryVersion)
-    val group        = attrs.optionalOne("mdoc-group").map(_.trim).getOrElse(defaultConfig.group)
-    val version      = attrs.optionalOne("mdoc-version").map(_.trim).getOrElse(defaultConfig.mdocVersion)
+    val scalaVersion = attrs
+      .optionalOne("mdoc-scala")
+      .map(_.trim)
+      .getOrElse(defaultConfig.scalaBinaryVersion)
+    val group =
+      attrs.optionalOne("mdoc-group").map(_.trim).getOrElse(defaultConfig.group)
+    val version = attrs
+      .optionalOne("mdoc-version")
+      .map(_.trim)
+      .getOrElse(defaultConfig.mdocVersion)
 
     val scalajs = ScalaJSConfig.fromAttrs(attrs: Discover.YamlAttributes)
 
@@ -186,7 +199,9 @@ class Mdoc(
     val scala3CP = if (config.scalaBinaryVersion == "3") mainCp + ":" else ""
 
     val extraCP =
-      scala3CP + fetchCp(config.extraDependencies) + inheritedClasspath.map(":" + _).getOrElse("")
+      scala3CP + fetchCp(config.extraDependencies) + inheritedClasspath
+        .map(":" + _)
+        .getOrElse("")
 
     val classpathArg =
       if (extraCP.trim != "")
@@ -213,8 +228,13 @@ class Mdoc(
     ) match {
       case scala.util.Success(_) =>
       case scala.util.Failure(ex) =>
-        val tmp = os.temp(deleteOnExit = false, contents = (base ++ args).mkString(" "))
-        throw SubatomicError.mdocInvocationError(ex.toString(), files.map(_.toString()), tmp)
+        val tmp =
+          os.temp(deleteOnExit = false, contents = (base ++ args).mkString(" "))
+        throw SubatomicError.mdocInvocationError(
+          ex.toString(),
+          files.map(_.toString()),
+          tmp
+        )
     }
 
     os.write.over(os.pwd / "mdoc-invocation.txt", (base ++ args).mkString(" "))
@@ -228,11 +248,17 @@ class Mdoc(
   private val mdocDep = {
     if (config.scalaBinaryVersion == "3")
       DependencyParser
-        .dependency(s"org.scalameta:mdoc_3:${config.mdocVersion}", config.scalaBinaryVersion)
+        .dependency(
+          s"org.scalameta:mdoc_3:${config.mdocVersion}",
+          config.scalaBinaryVersion
+        )
         .getOrElse(throw new Exception("oh noes"))
     else
       DependencyParser
-        .dependency(s"org.scalameta::mdoc:${config.mdocVersion}", config.scalaBinaryVersion)
+        .dependency(
+          s"org.scalameta::mdoc:${config.mdocVersion}",
+          config.scalaBinaryVersion
+        )
         .getOrElse(throw new Exception("Unspeakable has happened"))
   }
 

@@ -24,7 +24,8 @@ object SyntaxHighlighting {
       languages: List[String] = List("scala"),
       theme: String = "default"
   ) extends SyntaxHighlighting {
-    private val urlBase = s"//cdn.jsdelivr.net/gh/highlightjs/cdn-release@$version/build"
+    private val urlBase =
+      s"//cdn.jsdelivr.net/gh/highlightjs/cdn-release@$version/build"
     private def url(segments: String*): String = {
       (Seq(urlBase) ++ segments).mkString("/")
     }
@@ -47,11 +48,13 @@ object SyntaxHighlighting {
   object HighlightJS {
     def default: HighlightJS = HighlightJS()
 
-    def templateBlock(conf: HighlightJS): Seq[scalatags.Text.TypedTag[String]] = {
+    def templateBlock(
+        conf: HighlightJS
+    ): Seq[scalatags.Text.TypedTag[String]] = {
       import scalatags.Text.all._
 
-      val styles     = conf.styles.map(s => link(rel := "stylesheet", href := s))
-      val scripts    = conf.scripts.map(s => script(src := s))
+      val styles  = conf.styles.map(s => link(rel := "stylesheet", href := s))
+      val scripts = conf.scripts.map(s => script(src := s))
       val initScript = script(raw(conf.initScript))
 
       (styles ++ scripts) ++ List(initScript)
@@ -95,7 +98,7 @@ object SyntaxHighlighting {
         conf: PrismJS
     ) {
 
-      def styles      = conf.styles.map(s => link(rel := "stylesheet", href := s))
+      def styles = conf.styles.map(s => link(rel := "stylesheet", href := s))
       def bodyScripts = conf.bodyScripts.map(s => script(src := s))
     }
 

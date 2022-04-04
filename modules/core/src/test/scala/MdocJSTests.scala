@@ -8,8 +8,10 @@ import cats.effect.Resource
 
 object MdocJSTests extends IOSuite {
   override type Res = Processor
-  override def sharedResource: Resource[IO, Res] = Blocker[IO].map(new Processor(_))
-  override def maxParallelism: Int               = sys.env.get("CI").map(_ => 1).getOrElse(100)
+  override def sharedResource: Resource[IO, Res] =
+    Blocker[IO].map(new Processor(_))
+  override def maxParallelism: Int =
+    sys.env.get("CI").map(_ => 1).getOrElse(100)
 
   val HelloWorldPath = SiteRoot / "hello" / "world"
 
@@ -17,18 +19,30 @@ object MdocJSTests extends IOSuite {
       blocker: Blocker
   ) {
 
-    def process(content: String, dependencies: Set[String] = Set.empty, log: Log[IO])(
+    def process(
+        content: String,
+        dependencies: Set[String] = Set.empty,
+        log: Log[IO]
+    )(
         result: ScalaJSResult => Expectations
     ): IO[Expectations] = {
-      val logger = new Logger(s => log.info(s.replace("\n", "  ")).unsafeRunSync())
+      val logger = new Logger(s =>
+        log.info(s.replace("\n", "  ")).unsafeRunSync()
+      )
 
       val config =
-        MdocConfiguration.default.copy(scalajsConfig = Some(ScalaJSConfig.default), extraDependencies = dependencies)
+        MdocConfiguration.default.copy(
+          scalajsConfig = Some(ScalaJSConfig.default),
+          extraDependencies = dependencies
+        )
       val mdoc = new MdocJS(config, logger)
 
       val tmpFile = os.temp(content, suffix = ".md")
 
-      blocker.blockOn(IO(mdoc.processAll(os.pwd, Seq(tmpFile)))).map(_.head._2).map(result)
+      blocker
+        .blockOn(IO(mdoc.processAll(os.pwd, Seq(tmpFile))))
+        .map(_.head._2)
+        .map(result)
     }
   }
 
@@ -74,12 +88,13 @@ object MdocJSTests extends IOSuite {
     |render(node, rootElement)
     |```""".stripMargin
 
-    res.process(content, Set("com.raquo::laminar_sjs1:0.13.0"), log = log) { result =>
-      expect.all(
-        read(result.mdFile).contains("mdoc-html-run0"),
-        read(result.mdjsFile).nonEmpty,
-        read(result.mdocFile).nonEmpty
-      )
+    res.process(content, Set("com.raquo::laminar_sjs1:0.13.0"), log = log) {
+      result =>
+        expect.all(
+          read(result.mdFile).contains("mdoc-html-run0"),
+          read(result.mdjsFile).nonEmpty,
+          read(result.mdocFile).nonEmpty
+        )
     }
   }
 }

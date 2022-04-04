@@ -1,7 +1,7 @@
 package subatomic
 package search
 
-class PorterStemmerTests extends munit.FunSuite {
+object PorterStemmerTests extends verify.BasicTestSuite {
   import PorterStemmer.stem
   test("stems?") {
     assert(stem("doing") == "do")

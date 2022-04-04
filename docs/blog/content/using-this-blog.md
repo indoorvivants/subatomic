@@ -23,6 +23,8 @@ A few [links](https://subatomic.indoorvivants.com) that point to some sites.
 
 Additionally, `inline` code blocks, some `longer than the others`.
 
+inline link: https://sn-bindgen.indoorvivants.com
+
 But most importantly, multiline code block!
 
 ```scala

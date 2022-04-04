@@ -80,13 +80,15 @@ case class SearchIndex private[search] (
 import upickle.default._
 
 object SearchIndex {
-  implicit val termIdx: Reader[TermIdx]               = IntReader.map(TermIdx(_))
-  implicit val termNameReader: Reader[TermName]       = StringReader.map(TermName(_))
-  implicit val docIdxReader: Reader[DocumentIdx]      = IntReader.map(DocumentIdx(_))
-  implicit val tfReader: Reader[TermFrequency]        = IntReader.map(TermFrequency(_))
-  implicit val gtfReader: Reader[GlobalTermFrequency] = IntReader.map(GlobalTermFrequency(_))
-  implicit val csReader: Reader[CollectionSize]       = IntReader.map(CollectionSize(_))
-  implicit val sectIdxR: Reader[SectionIdx]           = IntReader.map(SectionIdx(_))
+  implicit val termIdx: Reader[TermIdx]          = IntReader.map(TermIdx(_))
+  implicit val termNameReader: Reader[TermName]  = StringReader.map(TermName(_))
+  implicit val docIdxReader: Reader[DocumentIdx] = IntReader.map(DocumentIdx(_))
+  implicit val tfReader: Reader[TermFrequency] = IntReader.map(TermFrequency(_))
+  implicit val gtfReader: Reader[GlobalTermFrequency] =
+    IntReader.map(GlobalTermFrequency(_))
+  implicit val csReader: Reader[CollectionSize] =
+    IntReader.map(CollectionSize(_))
+  implicit val sectIdxR: Reader[SectionIdx] = IntReader.map(SectionIdx(_))
 
   implicit val termIdxWriter: Writer[TermIdx]    = IntWriter.comap(_.value)
   implicit val termNameWriter: Writer[TermName]  = StringWriter.comap(_.value)

@@ -1,21 +1,22 @@
 import java.io.FileReader
 val Ver = new {
   val flexmark              = "0.62.2"
-  val coursier              = "2.0.16"
+  val coursier              = "2.1.0-M5"
   val osLib                 = "0.7.8"
   val osLib_old             = "0.7.2"
-  val scalaUri              = "3.2.0"
+  val scalaUri              = "4.0.1"
   val scalaCollectionCompat = "2.5.0"
   val scalatags             = "0.11.1"
   val scalacss              = "1.0.0"
   val scalacssFor2_12       = "0.7.0"
   val decline               = "2.1.0"
   val laminar               = "0.13.1"
-  val upickle               = "1.4.0"
+  val upickle               = "1.5.0"
   val fansi                 = "0.2.14"
   val weaver                = "0.6.9"
-  val munit                 = "0.7.29"
+  val verify                = "1.0.0"
   val geny                  = "0.6.10"
+  val scalaXml              = "2.1.0"
 
   val Scala = new {
     val `2_12` = "2.12.15"
@@ -49,15 +50,13 @@ import commandmatrix._
 val flexmarkModules = Seq(
   "",
   "-ext-yaml-front-matter",
-  "-ext-anchorlink"
+  "-ext-anchorlink",
+  "-ext-autolink"
 ).map(mName => "com.vladsch.flexmark" % s"flexmark$mName" % Ver.flexmark)
 import commandmatrix.extra._
 
 lazy val disableScalafixForScala3 =
   MatrixAction.ForScala(_.isScala3).Configure(_.disablePlugins(ScalafixPlugin))
-
-lazy val disableNativeForScala3 =
-  MatrixAction((scalaV, axes) => scalaV.isScala3 && axes.contains(VirtualAxis.native)).Skip
 
 lazy val scalajsOverrides =
   MatrixAction.ForPlatforms(VirtualAxis.js).Settings {
@@ -69,17 +68,33 @@ lazy val scalajsOverrides =
           }
         )
       else Seq.empty
-    base ++ Seq(Test / scalaJSLinkerConfig ~= { _.withModuleKind(ModuleKind.CommonJSModule) })
+    base ++ Seq(Test / scalaJSLinkerConfig ~= {
+      _.withModuleKind(ModuleKind.CommonJSModule)
+    })
   }
 
 lazy val core = projectMatrix
   .in(file("modules/core"))
   .settings(
     name := "subatomic-core",
+    libraryDependencies ++= {
+      if (scalaVersion.value.startsWith("3."))
+        Seq(
+          ("io.get-coursier" %% "coursier" % Ver.coursier cross CrossVersion.for3Use2_13)
+            .exclude("org.scala-lang.modules", "scala-collection-compat_2.13")
+        )
+      else
+        Seq(
+          "io.get-coursier" %% "coursier" % Ver.coursier
+        )
+
+    },
     libraryDependencies ++= Seq(
-      "io.get-coursier" %% "coursier" % Ver.coursier cross CrossVersion.for3Use2_13 exclude ("org.scala-lang.modules", "scala-collection-compat_2.13"),
-      "com.lihaoyi" %% "os-lib" % { if (scalaVersion.value.startsWith("2")) Ver.osLib_old else Ver.osLib },
-      "org.scala-lang.modules" %% "scala-collection-compat" % Ver.scalaCollectionCompat
+      "com.lihaoyi" %% "os-lib" % {
+        if (scalaVersion.value.startsWith("2")) Ver.osLib_old else Ver.osLib
+      },
+      "org.scala-lang.modules" %% "scala-collection-compat" % Ver.scalaCollectionCompat,
+      "io.lemonlabs" %% "scala-uri" % Ver.scalaUri
     )
   )
   .settings(
@@ -132,7 +147,9 @@ lazy val searchFrontendPack = projectMatrix
           val out = (Compile / resourceManaged).value / "search.js"
 
           // doesn't matter which Scala version we use, it's compiled to JS anyways
-          val fullOpt = (searchFrontend.js(Ver.Scala.`2_13`) / Compile / fullOptJS).value.data
+          val fullOpt = (searchFrontend.js(
+            Ver.Scala.`2_13`
+          ) / Compile / fullOptJS).value.data
 
           IO.copyFile(fullOpt, out)
 
@@ -141,7 +158,9 @@ lazy val searchFrontendPack = projectMatrix
           val out = (Compile / resourceManaged).value / "search.js"
 
           // doesn't matter which Scala version we use, it's compiled to JS anyways
-          val fullOpt = (searchFrontend.js(Ver.Scala.`2_13`) / Compile / fastOptJS).value.data
+          val fullOpt = (searchFrontend.js(
+            Ver.Scala.`2_13`
+          ) / Compile / fastOptJS).value.data
 
           IO.copyFile(fullOpt, out)
 
@@ -172,8 +191,8 @@ lazy val searchCli =
     .in(file("modules/search/cli"))
     .dependsOn(searchIndex, searchRetrieve)
     .settings(
-      name                                             := "subatomic-search-cli",
-      libraryDependencies += "com.lihaoyi"            %%% "os-lib"                  % Ver.osLib,
+      name                                  := "subatomic-search-cli",
+      libraryDependencies += "com.lihaoyi" %%% "os-lib" % Ver.osLib,
       libraryDependencies += "org.scala-lang.modules" %%% "scala-collection-compat" % Ver.scalaCollectionCompat
     )
     .enablePlugins(JavaAppPackaging)
@@ -183,7 +202,9 @@ lazy val searchCli =
     )(
       disableScalafixForScala3,
       scalajsOverrides,
-      disableNativeForScala3
+      MatrixAction((scalaV, axes) =>
+        scalaV.isScala3 && axes.contains(VirtualAxis.native)
+      ).Skip
     )
     .settings(testSettings)
     .settings(buildInfoSettings)
@@ -198,8 +219,7 @@ lazy val searchIndex =
       List(VirtualAxis.jvm, VirtualAxis.js, VirtualAxis.native)
     )(
       disableScalafixForScala3,
-      scalajsOverrides,
-      disableNativeForScala3
+      scalajsOverrides
     )
     .settings(munitTestSettings)
     .settings(buildInfoSettings)
@@ -216,8 +236,7 @@ lazy val searchRetrieve =
       List(VirtualAxis.jvm, VirtualAxis.js, VirtualAxis.native)
     )(
       disableScalafixForScala3,
-      scalajsOverrides,
-      disableNativeForScala3
+      scalajsOverrides
     )
     .settings(munitTestSettings)
     .settings(buildInfoSettings)
@@ -235,8 +254,7 @@ lazy val searchShared =
       List(VirtualAxis.jvm, VirtualAxis.js, VirtualAxis.native)
     )(
       disableScalafixForScala3,
-      scalajsOverrides,
-      disableNativeForScala3
+      scalajsOverrides
     )
     .settings(munitTestSettings)
     .settings(buildInfoSettings)
@@ -248,7 +266,9 @@ lazy val searchShared =
 lazy val docs = projectMatrix
   .in(file("docs"))
   .dependsOn(builders)
-  .someVariations(Ver.Scala.all.toList, List(VirtualAxis.jvm))(disableScalafixForScala3)
+  .someVariations(Ver.Scala.all.toList, List(VirtualAxis.jvm))(
+    disableScalafixForScala3
+  )
   .settings(
     publish / skip := true,
     // To react to asset changes
@@ -268,20 +288,28 @@ lazy val docs = projectMatrix
   )
   .settings(Compile / resourceGenerators += Def.task {
     val properties = new java.util.Properties()
-    val out        = (Compile / unmanagedResourceDirectories).value.head / "subatomic.properties"
+    val out =
+      (Compile / unmanagedResourceDirectories).value.head / "subatomic.properties"
 
     val classpath =
-      (Compile / classDirectory).value :: (Compile / dependencyClasspath).value.iterator.map(file => file.data).toList
+      (Compile / classDirectory).value :: (Compile / dependencyClasspath).value.iterator
+        .map(file => file.data)
+        .toList
 
     properties.setProperty("variable.VERSION", version.value)
 
-    properties.setProperty("classpath.default", classpath.mkString(java.io.File.pathSeparator))
+    properties.setProperty(
+      "classpath.default",
+      classpath.mkString(java.io.File.pathSeparator)
+    )
 
     lazy val propsAreTheSame = {
       val p = (new java.util.Properties())
       p.load(new FileReader(out))
       streams.value.log
-        .debug(s"Loaded properties are: $p, current properties are: $properties --- (${p.equals(properties)})")
+        .debug(
+          s"Loaded properties are: $p, current properties are: $properties --- (${p.equals(properties)})"
+        )
       properties.equals(p)
     }
 
@@ -351,9 +379,11 @@ lazy val testSettings =
   )
 
 lazy val munitTestSettings = Seq(
-  libraryDependencies += "org.scalameta" %%% "munit"            % Ver.munit % Test,
-  libraryDependencies += "org.scalameta" %%% "munit-scalacheck" % Ver.munit % Test,
-  testFrameworks += new TestFramework("munit.Framework")
+  libraryDependencies += "com.eed3si9n.verify" %%% "verify" % Ver.verify % Test,
+  resolvers +=
+    "Sonatype S01 OSS Snapshots" at "https://s01.oss.sonatype.org/content/repositories/snapshots",
+  libraryDependencies += "org.scalacheck" %%% "scalacheck" % "1.16-0ac8005-SNAPSHOT" % Test,
+  testFrameworks += new TestFramework("verify.runner.Framework")
 )
 
 lazy val skipPublish = Seq(
@@ -385,15 +415,15 @@ lazy val buildInfoSettings = {
 
 inThisBuild(
   List(
-    scalaVersion                                   := Ver.Scala.`2_13`,
+    scalaVersion := Ver.Scala.`2_13`,
     scalafixDependencies += "com.github.liancheng" %% "organize-imports" % "0.5.0",
-    semanticdbEnabled                              := true,
-    semanticdbVersion                              := scalafixSemanticdb.revision,
-    scalafixScalaBinaryVersion                     := scalaBinaryVersion.value,
-    organization                                   := "com.indoorvivants",
-    organizationName                               := "Anton Sviridov",
-    homepage                                       := Some(url("https://github.com/indoorvivants/subatomic")),
-    startYear                                      := Some(2020),
+    semanticdbEnabled          := true,
+    semanticdbVersion          := scalafixSemanticdb.revision,
+    scalafixScalaBinaryVersion := scalaBinaryVersion.value,
+    organization               := "com.indoorvivants",
+    organizationName           := "Anton Sviridov",
+    homepage  := Some(url("https://github.com/indoorvivants/subatomic")),
+    startYear := Some(2020),
     licenses := List(
       "Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")
     ),
@@ -450,8 +480,16 @@ inThisBuild(
     commands ++=
       CrossCommand.all(
         Seq("compile", "test", "publishLocal"),
-        matrices =
-          Seq(core, searchShared, searchIndex, searchRetrieve, builders, searchCli, searchFrontend, searchFrontendPack),
+        matrices = Seq(
+          core,
+          searchShared,
+          searchIndex,
+          searchRetrieve,
+          builders,
+          searchCli,
+          searchFrontend,
+          searchFrontendPack
+        ),
         dimensions = Seq(
           Dimension.scala("2.13", fullFor3 = false),
           Dimension.platform()
@@ -461,9 +499,21 @@ inThisBuild(
     commands ++=
       CrossCommand.composite(
         "codeQuality",
-        Seq("scalafmtCheckAll", s"scalafix --check $scalafixRules", "headerCheck"),
-        matrices =
-          Seq(core, searchShared, searchIndex, searchRetrieve, builders, searchCli, searchFrontend, searchFrontendPack),
+        Seq(
+          "scalafmtCheckAll",
+          s"scalafix --check $scalafixRules",
+          "headerCheck"
+        ),
+        matrices = Seq(
+          core,
+          searchShared,
+          searchIndex,
+          searchRetrieve,
+          builders,
+          searchCli,
+          searchFrontend,
+          searchFrontendPack
+        ),
         dimensions = Seq(
           Dimension.scala("2.13", fullFor3 = false),
           Dimension.platform()
@@ -477,7 +527,8 @@ inThisBuild(
         Seq("scripted"),
         matrices = Seq(plugin),
         dimensions = Seq(
-          Dimension.scala("2.12", fullFor3 = false), // "2.12" is the default one
+          Dimension
+            .scala("2.12", fullFor3 = false), // "2.12" is the default one
           Dimension.platform()
         ),
         filter = axes =>

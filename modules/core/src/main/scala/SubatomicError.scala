@@ -16,7 +16,9 @@
 
 package subatomic
 
-class SubatomicError(msg: String) extends Exception(msg) with scala.util.control.NoStackTrace {
+class SubatomicError(msg: String)
+    extends Exception(msg)
+    with scala.util.control.NoStackTrace {
   final override def toString = SubatomicError.render(msg)
 }
 
@@ -27,8 +29,8 @@ object SubatomicError {
 
     val maxLineLength = msg.linesIterator.map(_.length).max
     val header        = "-" * maxLineLength
-    val fireMsg       = msg.linesIterator.map(_.trim).map("🔥 " + _).mkString("\n")
-    val newMsg        = header + "\n" + fireMsg + "\n" + header
+    val fireMsg = msg.linesIterator.map(_.trim).map("🔥 " + _).mkString("\n")
+    val newMsg  = header + "\n" + fireMsg + "\n" + header
     Logger._redLines("\n " + newMsg)
   }
 
@@ -65,7 +67,11 @@ object SubatomicError {
     | .buildAt(destination, ${Logger._bold("overwrite = true")})
       """.trim.stripMargin
     )
-  def mdocInvocationError(reason: String, files: Seq[String], commandFile: os.Path) =
+  def mdocInvocationError(
+      reason: String,
+      files: Seq[String],
+      commandFile: os.Path
+  ) =
     SubatomicError(s"""
    | Failed to invoke Mdoc
    | 

@@ -58,16 +58,19 @@ object RelativizeLinksExtension {
           link
         case Failure(_) =>
           val fakeBase = "http://localhost"
-          val fakeUrl  = if (url.startsWith("/")) fakeBase + url else fakeBase + "/" + url
-          val parsed   = new java.net.URI(fakeUrl)
+          val fakeUrl =
+            if (url.startsWith("/")) fakeBase + url else fakeBase + "/" + url
+          val parsed = new java.net.URI(fakeUrl)
           val pathSegments =
-            if (parsed.getPath() == "/" || parsed.getPath() == "") Seq() else parsed.getPath().split("/").toSeq.tail
+            if (parsed.getPath() == "/" || parsed.getPath() == "") Seq()
+            else parsed.getPath().split("/").toSeq.tail
 
           val shiftedPath = "" +: (base.segments ++ pathSegments)
           val sb          = new StringBuilder
           sb.append(shiftedPath.mkString("/"))
           if (parsed.getQuery() != null) sb.append("?" + parsed.getQuery())
-          if (parsed.getFragment() != null) sb.append("#" + parsed.getFragment())
+          if (parsed.getFragment() != null)
+            sb.append("#" + parsed.getFragment())
 
           link.withUrl(sb.result())
         case _ => link

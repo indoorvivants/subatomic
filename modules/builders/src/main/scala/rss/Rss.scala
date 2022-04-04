@@ -16,39 +16,34 @@
 
 package subatomic.builders.util.rss
 
-import java.time.OffsetDateTime
+case class RSS(version: String = "2.0", channel: Channel) {
+  def render = {
+    import scalatags.Text
+    import Text.all._
+    val t = (n: String) => Text.tags.tag(n)
 
-case class Item(
-    title: String,
-    description: Option[String],
-    content: String,
-    publicationDate: Option[OffsetDateTime],
-    link: String,
-    tags: List[String]
-)
-
-object Item {
-  def create(title: String, content: String, link: String): Item =
-    Item(
-      title = title,
-      content = content,
-      link = link,
-      tags = List.empty,
-      publicationDate = None,
-      description = None
+    val document = t("rss")(attr("version") := "2.0")(
+      t("channel")(
+        t("title")(channel.title.value),
+        t("link")(channel.link.value),
+        t("description")(channel.description.value),
+        for (item <- channel.items) yield {
+          t("item")(
+            t("title")(item.title.value),
+            t("link")(item.link.value),
+            item.description.map(d => t("description")(d.value)),
+            item.publicationDate.map(odt =>
+              t("pubDate")(
+                odt.format(
+                  java.time.format.DateTimeFormatter.RFC_1123_DATE_TIME
+                )
+              )
+            )
+          )
+        }
+      )
     )
-}
 
-case class Channel(
-    items: List[Item],
-    link: String,
-    description: String,
-    title: String,
-    language: Option[String],
-    copyright: Option[String],
-    tags: List[String]
-) {
-  def addItems(items: Item*): Channel =
-    this.copy(items = this.items ++ items)
-  def render = <hello>this.link</hello>
+    """<?xml version="1.0"?>""" ++ document.render
+  }
 }

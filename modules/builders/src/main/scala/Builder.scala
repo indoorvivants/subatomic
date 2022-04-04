@@ -29,7 +29,10 @@ trait Builder {
     assetsRoot
       .filter(assetsFilter)
       .map { path =>
-        os.walk(path).filter(_.ext == "css").map(_.relativeTo(path)).map(rel => SiteRoot / "assets" / rel)
+        os.walk(path)
+          .filter(_.ext == "css")
+          .map(_.relativeTo(path))
+          .map(rel => SiteRoot / "assets" / rel)
       }
       .getOrElse(Nil)
       .toList
@@ -39,7 +42,10 @@ trait Builder {
     assetsRoot
       .filter(assetsFilter)
       .map { path =>
-        os.walk(path).filter(_.ext == "js").map(_.relativeTo(path)).map(rel => SiteRoot / "assets" / rel)
+        os.walk(path)
+          .filter(_.ext == "js")
+          .map(_.relativeTo(path))
+          .map(rel => SiteRoot / "assets" / rel)
       }
       .getOrElse(Nil)
       .toList
