@@ -16,21 +16,32 @@
 
 package subatomic.builders.util.rss
 
-case class RSS(version: String = "2.0", channel: Channel) {
+import io.lemonlabs.uri.Url
+
+case class RSS(version: String = "2.0", feedUrl: Url, channel: Channel) {
   def render = {
     import scalatags.Text
     import Text.all._
     val t = (n: String) => Text.tags.tag(n)
 
-    val document = t("rss")(attr("version") := "2.0")(
+    val document = t("rss")(
+      attr("version")    := "2.0",
+      attr("xmlns:atom") := "http://www.w3.org/2005/Atom"
+    )(
       t("channel")(
         t("title")(channel.title.value),
         t("link")(channel.link.value),
+        t("atom:link")(
+          href := feedUrl.toString,
+          rel  := "self",
+          tpe  := "application/rss+xml"
+        ),
         t("description")(channel.description.value),
         for (item <- channel.items) yield {
           t("item")(
             t("title")(item.title.value),
             t("link")(item.link.value),
+            t("guid")(item.link.value),
             item.description.map(d => t("description")(d.value)),
             item.publicationDate.map(odt =>
               t("pubDate")(

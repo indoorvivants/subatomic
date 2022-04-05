@@ -28,6 +28,13 @@ import com.vladsch.flexmark.ext.anchorlink.AnchorLinkExtension
 import com.vladsch.flexmark.ext.autolink.AutolinkExtension
 import com.vladsch.flexmark.ext.yaml.front.matter.YamlFrontMatterExtension
 import com.vladsch.flexmark.util.misc.Extension
+import io.lemonlabs.uri.Url
+
+case class RSSConfig(
+    blogUrl: Url,
+    description: String,
+    title: String
+)
 
 case class Blog(
     override val contentRoot: os.Path,
@@ -44,7 +51,8 @@ case class Blog(
     override val assetsFilter: os.Path => Boolean = _ => true,
     override val trackers: Seq[Tracker] = Seq.empty,
     search: Boolean = true,
-    additionalMarkdownExtensions: Vector[Extension] = Vector.empty
+    additionalMarkdownExtensions: Vector[Extension] = Vector.empty,
+    rssConfig: Option[RSSConfig] = None
 ) extends subatomic.builders.Builder {
   def markdownExtensions =
     RelativizeLinksExtension(base.toRelPath) +:
@@ -117,31 +125,45 @@ object Blog {
     )
   }
 
-  private[subatomic] def createRss(
-      config: Blog,
+  def createRss(
+      config: RSSConfig,
       linker: Linker,
-      domain: String,
       content: Vector[Doc]
   ) = {
+    val rssPath = "rss.xml"
+    val at      = SiteRoot / rssPath
+
     val posts = content.collect { case p: Post => p }
+
+    val feedUrl = config.blogUrl.removeEmptyPathParts().addPathPart(rssPath)
 
     import util.rss._
 
     val items = posts.map { p =>
+      val path = config.blogUrl.removeEmptyPathParts().path
+
+      val absolute =
+        config.blogUrl.withPath(
+          path.addParts(linker.findRelativePath(p).segments)
+        )
+
       Item
-        .create(Item.Title(p.title), Item.Link(domain + "/" + linker.find(p)))
+        .create(
+          Item.Title(p.title),
+          Item.Link(absolute.toString())
+        )
         .copy(description = p.description.map(Item.Description.apply))
     }
 
     val channel = Channel
       .create(
-        title = Channel.Title(config.name),
-        link = Channel.Link(domain),
-        description = Channel.Description(config.tagline.getOrElse(""))
+        title = Channel.Title(config.title),
+        link = Channel.Link(config.blogUrl.toString),
+        description = Channel.Description(config.description)
       )
       .addItems(items: _*)
 
-    RSS(channel = channel).render
+    at -> RSS(channel = channel, feedUrl = feedUrl).render
   }
 
   def createNavigation(
@@ -408,10 +430,16 @@ object Blog {
       site.add(SiteRoot / "assets" / "template.css", Page(default.asString))
 
     val addRSSPage: Site[Doc] => Site[Doc] = site =>
-      site.add(
-        SiteRoot / "atom.xml",
-        Page(createRss(siteConfig, linker, "hello", content.map(_._2)))
-      )
+      siteConfig.rssConfig match {
+        case None => site
+        case Some(rss) =>
+          val (at, xmlfeed) = createRss(rss, linker, content.map(_._2))
+
+          site.add(
+            at,
+            Page(xmlfeed)
+          )
+      }
 
     val builderSteps = new BuilderSteps(markdown)
 

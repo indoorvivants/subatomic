@@ -21,6 +21,8 @@ import java.time.LocalDate
 
 import subatomic.builders.Tracker
 
+import io.lemonlabs.uri.Url
+
 object DevBlog extends subatomic.builders.blog.Blog.App {
   import subatomic.builders.blog._
   val docsBase = os.pwd / "docs" / "blog"
@@ -37,7 +39,14 @@ object DevBlog extends subatomic.builders.blog.Blog.App {
         "Back to the site" -> "https://subatomic.indoorvivants.com",
         "Github"           -> "https://github.com/indoorvivants/subatomic"
       ),
-      trackers = Seq(Tracker.GoogleAnalytics("G-9RNQGQHVLB"))
+      trackers = Seq(Tracker.GoogleAnalytics("G-9RNQGQHVLB")),
+      rssConfig = Some(
+        RSSConfig(
+          blogUrl = Url.parse("https://subatomic.indoorvivants.com/blog/"),
+          description = "Subatomic development blog",
+          title = "Subatomic blog"
+        )
+      )
     )
 }
 

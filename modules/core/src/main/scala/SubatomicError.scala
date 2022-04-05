@@ -67,6 +67,7 @@ object SubatomicError {
     | .buildAt(destination, ${Logger._bold("overwrite = true")})
       """.trim.stripMargin
     )
+
   def mdocInvocationError(
       reason: String,
       files: Seq[String],
