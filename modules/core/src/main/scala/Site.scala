@@ -16,38 +16,63 @@
 
 package subatomic
 
-sealed trait SiteAsset                                extends Product with Serializable
-case class Page(content: String)                      extends SiteAsset
-case class CopyOf(source: os.Path)                    extends SiteAsset
+sealed trait SiteAsset             extends Product with Serializable
+case class Page(content: String)   extends SiteAsset
+case class CopyOf(source: os.Path) extends SiteAsset
 case class CreatedFile(source: os.Path, to: SitePath) extends SiteAsset
 
-sealed trait Entry                                                                  extends Product with Serializable
-case class Ready(path: SitePath, content: SiteAsset)                                extends Entry
-case class Delayed(path: SitePath, processor: () => SiteAsset, original: String)    extends Entry
-case class DelayedMany(processor: () => Map[SitePath, SiteAsset], original: String) extends Entry
+sealed trait Entry extends Product with Serializable
+case class Ready(path: SitePath, content: SiteAsset) extends Entry
+case class Delayed(path: SitePath, processor: () => SiteAsset, original: String)
+    extends Entry
+case class DelayedMany(
+    processor: () => Map[SitePath, SiteAsset],
+    original: String
+) extends Entry
 
-case class Site[Content] private (pages: Vector[Entry], content: Iterable[(SitePath, Content)], logger: Logger) {
+case class Site[Content] private (
+    pages: Vector[Entry],
+    content: Iterable[(SitePath, Content)],
+    logger: Logger
+) {
   private[subatomic] def addReadyAsset(path: SitePath, asset: SiteAsset) =
     copy(pages = pages :+ Ready(path, asset))
 
-  private[subatomic] def addDelayedAsset(path: SitePath, asset: () => SiteAsset, original: String) =
+  private[subatomic] def addDelayedAsset(
+      path: SitePath,
+      asset: () => SiteAsset,
+      original: String
+  ) =
     copy(pages = pages :+ Delayed(path, asset, original))
 
-  private[subatomic] def addDelayedAssets(assets: () => Map[SitePath, SiteAsset], original: String) =
+  private[subatomic] def addDelayedAssets(
+      assets: () => Map[SitePath, SiteAsset],
+      original: String
+  ) =
     copy(pages = pages :+ DelayedMany(assets, original))
 
-  def add(path: SitePath, asset: SiteAsset): Site[Content] = addReadyAsset(path, asset)
+  def add(path: SitePath, asset: SiteAsset): Site[Content] =
+    addReadyAsset(path, asset)
 
-  def addPage(path: SitePath, page: String): Site[Content]      = addReadyAsset(path, Page(page))
-  def addCopyOf(path: SitePath, source: os.Path): Site[Content] = addReadyAsset(path, CopyOf(source))
+  def addPage(path: SitePath, page: String): Site[Content] =
+    addReadyAsset(path, Page(page))
+  def addCopyOf(path: SitePath, source: os.Path): Site[Content] =
+    addReadyAsset(path, CopyOf(source))
 
-  def addProcessed[C1 <: Content](path: SitePath, processor: Processor[C1, SiteAsset], content: C1) = {
+  def addProcessed[C1 <: Content](
+      path: SitePath,
+      processor: Processor[C1, SiteAsset],
+      content: C1
+  ) = {
     processor.register(content)
 
     addDelayedAsset(path, () => processor.retrieve(content), content.toString())
   }
 
-  def addProcessed[C1 <: Content](processor: Processor[C1, Map[SitePath, SiteAsset]], content: C1) = {
+  def addProcessed[C1 <: Content](
+      processor: Processor[C1, Map[SitePath, SiteAsset]],
+      content: C1
+  ) = {
     processor.register(content)
     addDelayedAssets(() => processor.retrieve(content), content.toString())
   }
@@ -56,11 +81,16 @@ case class Site[Content] private (pages: Vector[Entry], content: Iterable[(SiteP
 
   def changeLogger(logger: String => Unit) = copy(logger = new Logger(logger))
 
-  def copyAll(root: os.Path, siteBase: SitePath, filter: os.Path => Boolean = _ => true): Site[Content] = {
-    os.walk(root).filter(_.toIO.isFile()).filter(filter).foldLeft(this) { case (site, file) =>
-      val relativePath = file.relativeTo(root)
+  def copyAll(
+      root: os.Path,
+      siteBase: SitePath,
+      filter: os.Path => Boolean = _ => true
+  ): Site[Content] = {
+    os.walk(root).filter(_.toIO.isFile()).filter(filter).foldLeft(this) {
+      case (site, file) =>
+        val relativePath = file.relativeTo(root)
 
-      site.addCopyOf(siteBase / relativePath, file)
+        site.addCopyOf(siteBase / relativePath, file)
     }
   }
 
@@ -148,13 +178,19 @@ case class Site[Content] private (pages: Vector[Entry], content: Iterable[(SiteP
 
 object Site {
 
-  def init[Content](c: Iterable[(SitePath, Content)]) = new Site[Content](Vector.empty, c, Logger.default)
+  def init[Content](c: Iterable[(SitePath, Content)]) =
+    new Site[Content](Vector.empty, c, Logger.default)
 
   def trim(content: String, len: Int = 50) =
     (if (content.length > len) content.take(len - 3) + "..."
      else content).replaceAll("\n", "\\\n")
 
-  def logEntry(path: os.RelPath, asset: SiteAsset, from: Option[String] = None, logger: Logger) = {
+  def logEntry(
+      path: os.RelPath,
+      asset: SiteAsset,
+      from: Option[String] = None,
+      logger: Logger
+  ) = {
     import logger._
 
     val arrow = asset match {
@@ -188,7 +224,12 @@ object Site {
     )
 
     val fromMsg = from.toList.flatMap { original =>
-      List(indentBreak, _red("^--processed-from-->"), " ", _bold(trim(original, 80)))
+      List(
+        indentBreak,
+        _red("^--processed-from-->"),
+        " ",
+        _bold(trim(original, 80))
+      )
     }
 
     log(msg ++ fromMsg ++ List("\n"))

@@ -4,7 +4,7 @@ package search
 import org.scalacheck.Gen
 import org.scalacheck.Prop._
 
-class SearchSuite extends munit.FunSuite with munit.ScalaCheckSuite {
+object SearchSuite extends verify.BasicTestSuite {
 
   val content = Vector(
     "/"            -> "lorem ipsum dolor amet lorem",
@@ -12,13 +12,14 @@ class SearchSuite extends munit.FunSuite with munit.ScalaCheckSuite {
     "/hello/world" -> "amet ipsum amet dolor"
   )
 
-  val idx = Indexer.default[(String, String)](content).processAll { case (path, text) =>
-    Document.section(
-      s"Document at $path",
-      path,
-      text
-    )
-  }
+  val idx =
+    Indexer.default[(String, String)](content).processAll { case (path, text) =>
+      Document.section(
+        s"Document at $path",
+        path,
+        text
+      )
+    }
 
   val tokenGen = Gen.oneOf(idx.termMapping.keys.map(_.value))
 
@@ -26,29 +27,36 @@ class SearchSuite extends munit.FunSuite with munit.ScalaCheckSuite {
 
   val search = new Search(idx)
 
-  def foundUrls(query: String) = search.string(query).entries.map(_._1.document.url).toSet
+  def foundUrls(query: String) =
+    search.string(query).entries.map(_._1.document.url).toSet
 
   def ranking(query: String, documentUrl: String) = {
-    search.string(query).entries.toMap.find(_._1.document.url == documentUrl).map(_._2).getOrElse(-10000.0)
+    search
+      .string(query)
+      .entries
+      .toMap
+      .find(_._1.document.url == documentUrl)
+      .map(_._2)
+      .getOrElse(-10000.0)
   }
 
   test("search by one word") {
-    assertEquals(
-      foundUrls("lorem"),
-      Set(
-        "/",
-        "/hello"
-      )
+    assert(
+      foundUrls("lorem") ==
+        Set(
+          "/",
+          "/hello"
+        )
     )
   }
 
   test("search by two words") {
-    assertEquals(
-      foundUrls("ipsum amet"),
-      Set(
-        "/",
-        "/hello/world"
-      )
+    assert(
+      foundUrls("ipsum amet") ==
+        Set(
+          "/",
+          "/hello/world"
+        )
     )
   }
 
@@ -58,11 +66,11 @@ class SearchSuite extends munit.FunSuite with munit.ScalaCheckSuite {
     )
   }
 
-  property("results are always in the correct order") {
+  test("results are always in the correct order") {
     forAll(queryGen) { query =>
       val results = search.string(query)
 
-      assertEquals(results.entries.sortBy(-1 * _._2), results.entries)
-    }
+      results.entries.sortBy(-1 * _._2) == results.entries
+    }.check()
   }
 }

@@ -7,7 +7,8 @@ import cats.effect.Blocker
 import cats.effect.Resource
 
 object MdocTests extends weaver.IOSuite with MdocTestHarness {
-  override def maxParallelism: Int = sys.env.get("CI").map(_ => 1).getOrElse(100)
+  override def maxParallelism: Int =
+    sys.env.get("CI").map(_ => 1).getOrElse(100)
 
   val HelloWorldPath = SiteRoot / "hello" / "world"
 
@@ -43,9 +44,10 @@ object MdocTests extends weaver.IOSuite with MdocTestHarness {
     |println("@HELLO@")
     |```""".stripMargin
 
-    res.process(content, variables = Map("HELLO" -> "0.0.1"), log = log) { result =>
-      val expected =
-        """
+    res.process(content, variables = Map("HELLO" -> "0.0.1"), log = log) {
+      result =>
+        val expected =
+          """
       |hello!
       |
       |```scala
@@ -53,7 +55,7 @@ object MdocTests extends weaver.IOSuite with MdocTestHarness {
       |// 0.0.1
       |```""".stripMargin
 
-      expect(result == expected)
+        expect(result == expected)
     }
   }
 
@@ -66,9 +68,10 @@ object MdocTests extends weaver.IOSuite with MdocTestHarness {
     |cats.effect.IO(println("tut")).unsafeRunSync()
     |```""".stripMargin
 
-    res.process(content, Set("org.typelevel::cats-effect:2.5.1"), log = log) { result =>
-      val expected =
-        """
+    res.process(content, Set("org.typelevel::cats-effect:2.5.1"), log = log) {
+      result =>
+        val expected =
+          """
       |hello!
       |
       |```scala
@@ -76,7 +79,7 @@ object MdocTests extends weaver.IOSuite with MdocTestHarness {
       |// tut
       |```""".stripMargin
 
-      expect(result == expected)
+        expect(result == expected)
     }
   }
 }
@@ -84,7 +87,8 @@ object MdocTests extends weaver.IOSuite with MdocTestHarness {
 trait MdocTestHarness { self: weaver.IOSuite =>
 
   override type Res = Processor
-  override def sharedResource: Resource[IO, Res] = Blocker[IO].map(new Processor(_))
+  override def sharedResource: Resource[IO, Res] =
+    Blocker[IO].map(new Processor(_))
   class Processor(
       blocker: Blocker
   ) {
@@ -96,8 +100,13 @@ trait MdocTestHarness { self: weaver.IOSuite =>
     )(
         result: String => Expectations
     ): IO[Expectations] = {
-      val logger = new Logger(s => log.info(s.replace("\n", "  ")).unsafeRunSync())
-      val config = MdocConfiguration.default.copy(extraDependencies = dependencies, variables = variables)
+      val logger = new Logger(s =>
+        log.info(s.replace("\n", "  ")).unsafeRunSync()
+      )
+      val config = MdocConfiguration.default.copy(
+        extraDependencies = dependencies,
+        variables = variables
+      )
       val mdoc =
         new Mdoc(logger, config)
 

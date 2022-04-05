@@ -18,15 +18,19 @@ package subatomic
 
 case class MdocResult[C](original: C, resultFile: os.Path)
 
-class MdocProcessor[C] private (pwd: os.Path, toMdocFile: PartialFunction[C, MdocFile])
-    extends Processor[C, MdocResult[C]] {
+class MdocProcessor[C] private (
+    pwd: os.Path,
+    toMdocFile: PartialFunction[C, MdocFile]
+) extends Processor[C, MdocResult[C]] {
 
   private type Key = MdocConfiguration
 
-  private val internalFiles    = scala.collection.mutable.Map.empty[Key, Map[C, MdocFile]]
+  private val internalFiles =
+    scala.collection.mutable.Map.empty[Key, Map[C, MdocFile]]
   private val internalTriggers = scala.collection.mutable.Map.empty[C, Key]
-  private val internalResults  = scala.collection.mutable.Map.empty[Key, Map[C, MdocResult[C]]]
-  private val internalMdocs    = scala.collection.mutable.Map.empty[Key, Mdoc]
+  private val internalResults =
+    scala.collection.mutable.Map.empty[Key, Map[C, MdocResult[C]]]
+  private val internalMdocs = scala.collection.mutable.Map.empty[Key, Mdoc]
 
   val toMdocFileTotal = toMdocFile.lift
 
@@ -37,7 +41,10 @@ class MdocProcessor[C] private (pwd: os.Path, toMdocFile: PartialFunction[C, Mdo
       val key = extractKey(mdocFile)
 
       internalTriggers.update(content, key)
-      internalFiles.update(key, internalFiles.getOrElse(key, Map.empty).updated(content, mdocFile))
+      internalFiles.update(
+        key,
+        internalFiles.getOrElse(key, Map.empty).updated(content, mdocFile)
+      )
       internalMdocs.update(key, new Mdoc(config = key))
     }
   }
@@ -50,7 +57,9 @@ class MdocProcessor[C] private (pwd: os.Path, toMdocFile: PartialFunction[C, Mdo
       val filesToProcess = internalFiles(triggerKey)
       val mdoc           = internalMdocs(triggerKey)
 
-      val result = mdoc.processAll(filesToProcess.map(_._2).map(_.path).toSeq, Some(pwd)).toMap
+      val result = mdoc
+        .processAll(filesToProcess.map(_._2).map(_.path).toSeq, Some(pwd))
+        .toMap
 
       val results = filesToProcess.map { case (content, mdocFile) =>
         val mdResult = result(mdocFile.path)

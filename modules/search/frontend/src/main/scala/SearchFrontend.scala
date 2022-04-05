@@ -42,12 +42,15 @@ class SearchFrontend private (idx: SearchIndex) {
       ip,
       span(
         cls := "searchResults",
-        display <-- $results.map(_.entries.nonEmpty).map(if (_) "block" else "none"),
+        display <-- $results.map(_.entries.nonEmpty)
+          .map(if (_) "block" else "none"),
         ul(
           children <-- $results.map { results =>
             results.entries.map {
               case (ResultsEntry(document, all @ (oneSection :: others)), _) =>
-                if (oneSection.title == document.title && oneSection.url == document.url)
+                if (
+                  oneSection.title == document.title && oneSection.url == document.url
+                )
                   p(
                     b(a(href := document.url, document.title)),
                     renderSections(others)

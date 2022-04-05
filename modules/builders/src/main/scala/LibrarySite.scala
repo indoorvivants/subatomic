@@ -34,9 +34,11 @@ case class LibrarySite(
     copyright: Option[String] = None,
     githubUrl: Option[String] = None,
     tagline: Option[String] = None,
-    customTemplate: (LibrarySite, Linker) => Template = (s, l) => new Default(s, l),
+    customTemplate: (LibrarySite, Linker) => Template = (s, l) =>
+      new Default(s, l),
     links: Vector[(String, String)] = Vector.empty,
-    override val highlighting: SyntaxHighlighting = SyntaxHighlighting.PrismJS.default,
+    override val highlighting: SyntaxHighlighting =
+      SyntaxHighlighting.PrismJS.default,
     override val trackers: Seq[Tracker] = Seq.empty,
     search: Boolean = true
 ) extends subatomic.builders.Builder
@@ -93,54 +95,62 @@ object LibrarySite {
     { piece =>
       @inline def mark(docs: Vector[Doc]) =
         docs.map {
-          case `piece` => NavLink(linker.find(piece), piece.title, selected = true)
-          case other   => NavLink(linker.find(other), other.title, selected = false)
+          case `piece` =>
+            NavLink(linker.find(piece), piece.title, selected = true)
+          case other =>
+            NavLink(linker.find(other), other.title, selected = false)
         }
 
-      val topLevel  = content.filter(doc => doc.depth.isEmpty || doc.inNavBar)
-      val sameLevel = if (piece.depth.isEmpty) None else Some(content.filter(_.depth == piece.depth))
+      val topLevel = content.filter(doc => doc.depth.isEmpty || doc.inNavBar)
+      val sameLevel =
+        if (piece.depth.isEmpty) None
+        else Some(content.filter(_.depth == piece.depth))
 
-      Navigation(mark(topLevel), sameLevel.filter(_.size > 1).map(_.filter(!_.inNavBar)).map(mark))
+      Navigation(
+        mark(topLevel),
+        sameLevel.filter(_.size > 1).map(_.filter(!_.inNavBar)).map(mark)
+      )
     }
 
   }
 
   def discoverContent(siteConfig: LibrarySite) = {
     Discover
-      .someMarkdown(siteConfig.contentRoot) { case MarkdownDocument(path, filename, attributes) =>
-        val id = attributes.optionalOne("id").getOrElse(filename)
+      .someMarkdown(siteConfig.contentRoot) {
+        case MarkdownDocument(path, filename, attributes) =>
+          val id = attributes.optionalOne("id").getOrElse(filename)
 
-        val inNavBar = attributes
-          .optionalOne("topnav")
-          .map(_.toBoolean)
-          .getOrElse(false)
+          val inNavBar = attributes
+            .optionalOne("topnav")
+            .map(_.toBoolean)
+            .getOrElse(false)
 
-        val title = attributes.requiredOne("title")
+          val title = attributes.requiredOne("title")
 
-        val mdocConfig = MdocConfiguration.fromAttrs(attributes)
+          val mdocConfig = MdocConfiguration.fromAttrs(attributes)
 
-        val isIndex = filename == "index"
+          val isIndex = filename == "index"
 
-        val relp = (path / os.up).relativeTo(
-          siteConfig.contentRoot
-        )
+          val relp = (path / os.up).relativeTo(
+            siteConfig.contentRoot
+          )
 
-        val sitePath =
-          if (!isIndex)
-            SiteRoot / relp / id / "index.html"
-          else
-            SiteRoot / relp / "index.html"
+          val sitePath =
+            if (!isIndex)
+              SiteRoot / relp / id / "index.html"
+            else
+              SiteRoot / relp / "index.html"
 
-        val document = Doc(
-          title,
-          path,
-          inNavBar,
-          index = isIndex,
-          mdocConfig = mdocConfig,
-          depth = relp.segments
-        )
+          val document = Doc(
+            title,
+            path,
+            inNavBar,
+            index = isIndex,
+            mdocConfig = mdocConfig,
+            depth = relp.segments
+          )
 
-        sitePath -> document
+          sitePath -> document
       }
       .toVector
       .sortBy(_._1 == SiteRoot / "index.html")
@@ -174,7 +184,9 @@ object LibrarySite {
     val mdocProcessor =
       if (!buildConfig.disableMdoc)
         MdocProcessor.create[Doc]() {
-          case Doc(_, path, _, _, Some(config), _) if config.scalajsConfig.isEmpty => MdocFile(path, config)
+          case Doc(_, path, _, _, Some(config), _)
+              if config.scalajsConfig.isEmpty =>
+            MdocFile(path, config)
         }
       else {
         Processor.simple[Doc, MdocResult[Doc]](doc => MdocResult(doc, doc.path))
@@ -184,7 +196,9 @@ object LibrarySite {
       if (!buildConfig.disableMdoc)
         MdocJSProcessor
           .create[Doc]() {
-            case Doc(_, path, _, _, Some(config), _) if config.scalajsConfig.nonEmpty => MdocFile(path, config)
+            case Doc(_, path, _, _, Some(config), _)
+                if config.scalajsConfig.nonEmpty =>
+              MdocFile(path, config)
           }
           .map { result =>
             result.original -> Option(result)
@@ -213,17 +227,24 @@ object LibrarySite {
         )
       }
 
-    val mdocJSPageRenderer: Processor[Doc, Map[SitePath => SitePath, SiteAsset]] = mdocJSProcessor
+    val mdocJSPageRenderer
+        : Processor[Doc, Map[SitePath => SitePath, SiteAsset]] = mdocJSProcessor
       .map { res =>
         res match {
 
           case (doc, Some(mdocResult)) =>
             Map(
               (identity[SitePath] _) ->
-                renderMarkdownPage(doc.title, mdocResult.markdownFile, navigation(doc)),
+                renderMarkdownPage(
+                  doc.title,
+                  mdocResult.markdownFile,
+                  navigation(doc)
+                ),
               ((sp: SitePath) => sp.up / mdocResult.jsSnippetsFile.last) ->
                 CopyOf(mdocResult.jsSnippetsFile),
-              ((sp: SitePath) => sp.up / mdocResult.jsInitialisationFile.last) ->
+              (
+                  (sp: SitePath) => sp.up / mdocResult.jsInitialisationFile.last
+              ) ->
                 CopyOf(
                   mdocResult.jsInitialisationFile
                 )
@@ -231,7 +252,11 @@ object LibrarySite {
 
           case (doc, None) =>
             Map(
-              (identity[SitePath] _) -> renderMarkdownPage(doc.title, doc.path, navigation(doc))
+              (identity[SitePath] _) -> renderMarkdownPage(
+                doc.title,
+                doc.path,
+                navigation(doc)
+              )
             )
         }
       }
@@ -240,7 +265,8 @@ object LibrarySite {
       .init(content)
       .populate { case (site, content) =>
         content match {
-          case (sitePath, doc: Doc) if doc.mdocConfig.nonEmpty && !doc.scalajsEnabled =>
+          case (sitePath, doc: Doc)
+              if doc.mdocConfig.nonEmpty && !doc.scalajsEnabled =>
             site.addProcessed(sitePath, mdocPageRenderer, doc)
 
           case (sitePath, doc: Doc) if doc.scalajsEnabled =>
@@ -251,7 +277,10 @@ object LibrarySite {
               doc
             )
           case (sitePath, doc: Doc) =>
-            site.add(sitePath, renderMarkdownPage(doc.title, doc.path, navigation(doc)))
+            site.add(
+              sitePath,
+              renderMarkdownPage(doc.title, doc.path, navigation(doc))
+            )
         }
       }
 
@@ -262,13 +291,20 @@ object LibrarySite {
 
     val steps = List[Site[Doc] => Site[Doc]](
       builderSteps
-        .addSearchIndex[Doc](linker, { case doc => BuilderSteps.SearchableDocument(doc.title, doc.path) }, content),
-      builderSteps.addAllAssets[Doc](siteConfig.assetsRoot, siteConfig.assetsFilter),
+        .addSearchIndex[Doc](
+          linker,
+          { case doc => BuilderSteps.SearchableDocument(doc.title, doc.path) },
+          content
+        ),
+      builderSteps
+        .addAllAssets[Doc](siteConfig.assetsRoot, siteConfig.assetsFilter),
       addTemplateCSS,
       extra
     )
 
-    val process = steps.foldLeft(identity[Site[Doc]] _) { case (step, next) => step andThen next }
+    val process = steps.foldLeft(identity[Site[Doc]] _) { case (step, next) =>
+      step andThen next
+    }
 
     process(baseSite).buildAt(buildConfig.destination, buildConfig.overwrite)
   }
@@ -283,11 +319,16 @@ object LibrarySite {
 
     val idx =
       builderSteps
-        .buildSearchIndex[Doc](linker, { case doc => BuilderSteps.SearchableDocument(doc.title, doc.path) })(content)
+        .buildSearchIndex[Doc](
+          linker,
+          { case doc => BuilderSteps.SearchableDocument(doc.title, doc.path) }
+        )(content)
 
     searchConfig.mode match {
-      case cli.Interactive => subatomic.search.Search.cli(idx, searchConfig.debug)
-      case cli.Query(q)    => subatomic.search.Search.query(idx, q, searchConfig.debug)
+      case cli.Interactive =>
+        subatomic.search.Search.cli(idx, searchConfig.debug)
+      case cli.Query(q) =>
+        subatomic.search.Search.query(idx, q, searchConfig.debug)
     }
   }
 }
@@ -312,7 +353,10 @@ trait Template {
   private def searchScripts = {
     val paths =
       if (site.search)
-        List(ScriptPath(SiteRoot / "assets" / "search.js"), ScriptPath(SiteRoot / "assets" / "search-index.js"))
+        List(
+          ScriptPath(SiteRoot / "assets" / "search.js"),
+          ScriptPath(SiteRoot / "assets" / "search-index.js")
+        )
       else Nil
 
     BuilderTemplate.managedScriptsBlock(linker, paths)

@@ -27,7 +27,7 @@ object SearchCLI {
     val _ = args match {
       case "index" :: folder :: indexfile :: _ => buildIndex(folder, indexfile)
       case "search" :: indexFile :: query :: _ => runSearch(indexFile, query)
-      case _                                   => throw new RuntimeException("command must be index or search")
+      case _ => throw new RuntimeException("command must be index or search")
     }
 
   }
@@ -42,7 +42,8 @@ object SearchCLI {
   }
 
   private def indexPath(path: os.Path): SearchIndex = {
-    val iter = os.walk(path).iterator.filter(_.toIO.isFile()).map(p => p -> os.read(p))
+    val iter =
+      os.walk(path).iterator.filter(_.toIO.isFile()).map(p => p -> os.read(p))
 
     val indexer = Indexer.default[(os.Path, String)](iter.toVector)
 

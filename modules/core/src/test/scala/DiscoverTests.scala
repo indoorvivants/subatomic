@@ -33,12 +33,21 @@ object DiscoverTests extends SimpleMutableIOSuite {
     val tmpDir = os.temp.dir()
 
     def contents(attributes: (String, String)*) = {
-      (("---" :: attributes.toList.map { case (k, v) => k + ":" + v }) ++ List("---", "hello!")).mkString("\n")
+      (("---" :: attributes.toList.map { case (k, v) => k + ":" + v }) ++ List(
+        "---",
+        "hello!"
+      )).mkString("\n")
     }
 
     os.write.over(tmpDir / "1.md", contents("test" -> "1", "hello" -> "bla"))
-    os.write.over(tmpDir / "2.md", contents("test" -> "2", "hello" -> "bla-bla"))
-    os.write.over(tmpDir / "3.md", contents("test" -> "1", "hello" -> "bla-bla", "opt" -> "yay"))
+    os.write.over(
+      tmpDir / "2.md",
+      contents("test" -> "2", "hello" -> "bla-bla")
+    )
+    os.write.over(
+      tmpDir / "3.md",
+      contents("test" -> "1", "hello" -> "bla-bla", "opt" -> "yay")
+    )
 
     case class MyContent(
         test: String,
@@ -48,13 +57,14 @@ object DiscoverTests extends SimpleMutableIOSuite {
     )
 
     val results = Discover
-      .someMarkdown(tmpDir) { case MarkdownDocument(path, filename, attributes) =>
-        SiteRoot / s"$filename.html" -> MyContent(
-          attributes.requiredOne("test"),
-          attributes.requiredOne("hello"),
-          attributes.optionalOne("opt"),
-          path
-        )
+      .someMarkdown(tmpDir) {
+        case MarkdownDocument(path, filename, attributes) =>
+          SiteRoot / s"$filename.html" -> MyContent(
+            attributes.requiredOne("test"),
+            attributes.requiredOne("hello"),
+            attributes.optionalOne("opt"),
+            path
+          )
       }
       .toSet
 
@@ -62,7 +72,12 @@ object DiscoverTests extends SimpleMutableIOSuite {
       results == Set(
         SiteRoot / "1.html" -> MyContent("1", "bla", None, tmpDir / "1.md"),
         SiteRoot / "2.html" -> MyContent("2", "bla-bla", None, tmpDir / "2.md"),
-        SiteRoot / "3.html" -> MyContent("1", "bla-bla", Some("yay"), tmpDir / "3.md")
+        SiteRoot / "3.html" -> MyContent(
+          "1",
+          "bla-bla",
+          Some("yay"),
+          tmpDir / "3.md"
+        )
       )
     )
   }

@@ -29,7 +29,9 @@ object Tracker {
   ) extends Tracker {
     override def scripts: Seq[Text.TypedTag[String]] = {
       import scalatags.Text.all._
-      val ref = script(src := s"https://www.googletagmanager.com/gtag/js?id=$measurementId")
+      val ref = script(
+        src := s"https://www.googletagmanager.com/gtag/js?id=$measurementId"
+      )
       val init = script(
         raw(
           s""" window.dataLayer = window.dataLayer || [];

@@ -43,6 +43,27 @@ class Linker(content: Vector[(SitePath, _)], base: SitePath) {
         )
       )
   }
+  def findRelativePath(piece: Any): SitePath = {
+    content
+      .find(_._2 == piece)
+      .map(found => found._1)
+      .getOrElse(
+        throw new IllegalArgumentException(
+          s"Could not resolve $piece content in the site"
+        )
+      )
+  }
+
+  def findAbsolutePath(piece: Any): SitePath = {
+    content
+      .find(_._2 == piece)
+      .map(found => found._1.prepend(base))
+      .getOrElse(
+        throw new IllegalArgumentException(
+          s"Could not resolve $piece content in the site"
+        )
+      )
+  }
 
   def root = base.toString()
 }

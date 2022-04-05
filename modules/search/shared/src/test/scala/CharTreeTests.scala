@@ -4,7 +4,7 @@ package search
 import org.scalacheck.Gen
 import org.scalacheck.Prop._
 
-class CharTreeTests extends munit.FunSuite with munit.ScalaCheckSuite {
+object CharTreeTests extends verify.BasicTestSuite {
 
   val MostCommonEnglishBigrams =
     ("th,en,ng,he,ed,of,in,to,al,er,it,de,an,ou,se," +
@@ -32,7 +32,8 @@ class CharTreeTests extends munit.FunSuite with munit.ScalaCheckSuite {
 
   val seed = scala.util.Random.nextLong()
 
-  property("CharTree build and retrieval") {
+  test("CharTree build and retrieval") {
+
     forAll(gen) { case ((chartree, dataset)) =>
       val resolutions = dataset.map { case (tn, tidx) =>
         (tidx, chartree.find(tn))
@@ -42,7 +43,7 @@ class CharTreeTests extends munit.FunSuite with munit.ScalaCheckSuite {
         result.contains(expected)
       }
 
-      assert(notFound.isEmpty)
-    }
+      notFound.isEmpty
+    }.check()
   }
 }

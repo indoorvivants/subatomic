@@ -23,15 +23,19 @@ case class MdocJSResult[C](
     jsInitialisationFile: os.Path
 )
 
-class MdocJSProcessor[C] private (pwd: os.Path, toMdocFile: PartialFunction[C, MdocFile])
-    extends Processor[C, MdocJSResult[C]] {
+class MdocJSProcessor[C] private (
+    pwd: os.Path,
+    toMdocFile: PartialFunction[C, MdocFile]
+) extends Processor[C, MdocJSResult[C]] {
 
   private type Key = MdocConfiguration
 
-  private val internalFiles    = scala.collection.mutable.Map.empty[Key, Map[C, MdocFile]]
+  private val internalFiles =
+    scala.collection.mutable.Map.empty[Key, Map[C, MdocFile]]
   private val internalTriggers = scala.collection.mutable.Map.empty[C, Key]
-  private val internalResults  = scala.collection.mutable.Map.empty[Key, Map[C, MdocJSResult[C]]]
-  private val internalMdocs    = scala.collection.mutable.Map.empty[Key, MdocJS]
+  private val internalResults =
+    scala.collection.mutable.Map.empty[Key, Map[C, MdocJSResult[C]]]
+  private val internalMdocs = scala.collection.mutable.Map.empty[Key, MdocJS]
 
   val toMdocFileTotal = toMdocFile.lift
 
@@ -42,7 +46,10 @@ class MdocJSProcessor[C] private (pwd: os.Path, toMdocFile: PartialFunction[C, M
       val key = extractKey(mdocFile)
 
       internalTriggers.update(content, key)
-      internalFiles.update(key, internalFiles.getOrElse(key, Map.empty).updated(content, mdocFile))
+      internalFiles.update(
+        key,
+        internalFiles.getOrElse(key, Map.empty).updated(content, mdocFile)
+      )
       internalMdocs.update(key, new MdocJS(key))
     }
   }
@@ -55,12 +62,18 @@ class MdocJSProcessor[C] private (pwd: os.Path, toMdocFile: PartialFunction[C, M
       val filesToProcess = internalFiles(triggerKey)
       val mdoc           = internalMdocs(triggerKey)
 
-      val result = mdoc.processAll(pwd, filesToProcess.map(_._2).map(_.path).toSeq).toMap
+      val result =
+        mdoc.processAll(pwd, filesToProcess.map(_._2).map(_.path).toSeq).toMap
 
       val results = filesToProcess.map { case (content, mdocFile) =>
         val mdjsResult = result(mdocFile.path)
 
-        content -> MdocJSResult(content, mdjsResult.mdFile, mdjsResult.mdjsFile, mdjsResult.mdocFile)
+        content -> MdocJSResult(
+          content,
+          mdjsResult.mdFile,
+          mdjsResult.mdjsFile,
+          mdjsResult.mdocFile
+        )
 
       }
 

@@ -8,13 +8,13 @@ object CliTest extends weaver.SimpleIOSuite {
   private def runBuild(args: String*) =
     cli.command.parse("build" +: args).flatMap {
       case bld: BuildConfig => Right(bld)
-      case other            => Left(s"Expected build config, got $other instead")
+      case other => Left(s"Expected build config, got $other instead")
     }
 
   private def runSearch(args: String*) =
     cli.command.parse("search" +: args).flatMap {
       case bld: SearchConfig => Right(bld)
-      case other             => Left(s"Expected build config, got $other instead")
+      case other => Left(s"Expected build config, got $other instead")
     }
 
   pureTest("CLI supports --disable-mdoc flag") {

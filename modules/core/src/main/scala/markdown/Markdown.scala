@@ -96,17 +96,25 @@ class Markdown(extensions: List[Extension]) {
     case object Skip                              extends Collector[Nothing]
   }
 
-  def recursiveCollect[A](parsed: Document)(f: PartialFunction[Node, Collector[A]]): Vector[A] = {
+  def recursiveCollect[A](
+      parsed: Document
+  )(f: PartialFunction[Node, Collector[A]]): Vector[A] = {
     @tailrec
-    def go(node: Node, acc: ArrayBuffer[A], rem: ArrayBuffer[Node]): ArrayBuffer[A] = {
+    def go(
+        node: Node,
+        acc: ArrayBuffer[A],
+        rem: ArrayBuffer[Node]
+    ): ArrayBuffer[A] = {
 
       val result = f.lift(node)
 
       result.foreach {
-        case Collector.Recurse(Some(otherNode)) => rem.prependAll(otherNode.getChildren().asScala)
-        case Collector.Recurse(None)            => rem.prependAll(node.getChildren().asScala)
-        case Collector.Collect(values)          => acc.appendAll(values)
-        case Collector.Skip                     => ()
+        case Collector.Recurse(Some(otherNode)) =>
+          rem.prependAll(otherNode.getChildren().asScala)
+        case Collector.Recurse(None) =>
+          rem.prependAll(node.getChildren().asScala)
+        case Collector.Collect(values) => acc.appendAll(values)
+        case Collector.Skip            => ()
       }
 
       if (rem.isEmpty) acc
@@ -117,11 +125,17 @@ class Markdown(extensions: List[Extension]) {
 
   }
 
-  def recursiveCollect[A](content: String)(f: PartialFunction[Node, Collector[A]]): Vector[A] =
+  def recursiveCollect[A](content: String)(
+      f: PartialFunction[Node, Collector[A]]
+  ): Vector[A] =
     recursiveCollect(parser.parse(content))(f)
   import Markdown.Section
 
-  def extractMarkdownSections(documentTitle: String, baseUrl: String, p: os.Path): Vector[Section] = {
+  def extractMarkdownSections(
+      documentTitle: String,
+      baseUrl: String,
+      p: os.Path
+  ): Vector[Section] = {
     case class Header(title: String, level: Int, anchorId: String)
     type Result = Either[
       Header,
@@ -136,7 +150,17 @@ class Markdown(extensions: List[Extension]) {
 
     val sect = recursiveCollect[Result](document) {
       case head: Heading =>
-        Collector.Collect(Seq(Left(Header(head.getText().toStringOrNull(), head.getLevel(), head.getAnchorRefId()))))
+        Collector.Collect(
+          Seq(
+            Left(
+              Header(
+                head.getText().toStringOrNull(),
+                head.getLevel(),
+                head.getAnchorRefId()
+              )
+            )
+          )
+        )
       case t: TextContainer =>
         Collector.Collect(Seq(Right(t.getChars().toStringOrNull())))
       case _: FencedCodeBlock | _: YamlFrontMatterNode => Collector.Skip
@@ -158,13 +182,19 @@ class Markdown(extensions: List[Extension]) {
         collectedText.append(content + "\n")
     }
 
-    if (collectedText.nonEmpty) sections.append(currentSection(collectedText.result()))
+    if (collectedText.nonEmpty)
+      sections.append(currentSection(collectedText.result()))
 
     sections.toVector
   }
 }
 
 object Markdown {
-  case class Section(title: String, level: Int, url: Option[String], text: String)
+  case class Section(
+      title: String,
+      level: Int,
+      url: Option[String],
+      text: String
+  )
   def apply(extensions: Extension*) = new Markdown(extensions.toList)
 }

@@ -54,7 +54,9 @@ object SiteTests extends weaver.IOSuite {
     val destination = os.temp.dir()
     site.buildAt(destination) // should succeed
 
-    IO(expect(Try(site.buildAt(destination, overwrite = true)).isSuccess)) // second time it fails
+    IO(
+      expect(Try(site.buildAt(destination, overwrite = true)).isSuccess)
+    ) // second time it fails
   }
 
   test("copyAll - recursively copying assets") { (res, log) =>
@@ -81,7 +83,8 @@ object SiteTests extends weaver.IOSuite {
     val tmpDir = os.temp.dir()
     os.write(tmpDir / "CNAME", "domain!")
 
-    val site = baseSite(log).addCopyOf(SiteRoot / "test" / "CNAME", tmpDir / "CNAME")
+    val site =
+      baseSite(log).addCopyOf(SiteRoot / "test" / "CNAME", tmpDir / "CNAME")
 
     res.check(site) { result =>
       expect(
@@ -93,9 +96,12 @@ object SiteTests extends weaver.IOSuite {
   test("adrdProcessed - delays evaluation") { (res, log) =>
     var evaluations = 0
 
-    val processor = Processor.simple[String, SiteAsset](stuff => { evaluations += 1; Page(stuff) })
+    val processor = Processor.simple[String, SiteAsset](stuff => {
+      evaluations += 1; Page(stuff)
+    })
 
-    val site = baseSite(log).addProcessed(SiteRoot / "test", processor, "what's up")
+    val site =
+      baseSite(log).addProcessed(SiteRoot / "test", processor, "what's up")
 
     res.check(site) { result =>
       expect(evaluations == 1) and expect(read(result / "test") == "what's up")
@@ -106,7 +112,8 @@ object SiteTests extends weaver.IOSuite {
     val lifecycle = ListBuffer.empty[(String, String)]
 
     val processor = new Processor[String, SiteAsset] {
-      override def register(content: String): Unit = lifecycle.append("register" -> content)
+      override def register(content: String): Unit =
+        lifecycle.append("register" -> content)
 
       override def retrieve(content: String): SiteAsset = {
         synchronized { lifecycle.append("retrieve" -> content) }
@@ -125,10 +132,11 @@ object SiteTests extends weaver.IOSuite {
           "register" -> "content-1",
           "register" -> "content-2"
         )
-      ) and expect.all( // retrieval is run in parallel, we can't rely on the order
-        lifecycle.drop(2).contains("retrieve" -> "content-1"),
-        lifecycle.drop(2).contains("retrieve" -> "content-2")
-      )
+      ) and expect
+        .all( // retrieval is run in parallel, we can't rely on the order
+          lifecycle.drop(2).contains("retrieve" -> "content-1"),
+          lifecycle.drop(2).contains("retrieve" -> "content-2")
+        )
 
       val checkContent = expect.all(
         read(result / "test") == "processed: content-1",
@@ -140,10 +148,14 @@ object SiteTests extends weaver.IOSuite {
   }
 
   private def baseSite(log: WeaverLog[IO]) =
-    Site.init(content).changeLogger(s => log.info(s.replace("\n", "  ")).unsafeRunSync())
+    Site
+      .init(content)
+      .changeLogger(s => log.info(s.replace("\n", "  ")).unsafeRunSync())
 
   class Check(blocker: Blocker) {
-    def check[C](site: Site[C])(f: os.Path => Expectations): IO[Expectations] = {
+    def check[C](
+        site: Site[C]
+    )(f: os.Path => Expectations): IO[Expectations] = {
       blocker.blockOn(IO {
         val destination = os.temp.dir()
 

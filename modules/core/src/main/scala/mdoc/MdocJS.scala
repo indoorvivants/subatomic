@@ -46,7 +46,9 @@ private[subatomic] case class Classpath(deps: List[Classpath.Item]) {
   def render(config: MdocConfiguration): String = {
     val fetched = fetchCp(deps.collect { case Classpath.Dep(d) => d }, config)
 
-    val pths = deps.collect { case Classpath.Path(p) => p.toIO.getAbsolutePath() }
+    val pths = deps.collect { case Classpath.Path(p) =>
+      p.toIO.getAbsolutePath()
+    }
 
     (fetched ++ pths).mkString(":")
   }
@@ -69,7 +71,8 @@ class MdocJS(
     logger: Logger = Logger.default
 ) {
 
-  val scalajsConfiguration = config.scalajsConfig.getOrElse(ScalaJSConfig.default)
+  val scalajsConfiguration =
+    config.scalajsConfig.getOrElse(ScalaJSConfig.default)
 
   val logging = logger
 
@@ -127,11 +130,14 @@ class MdocJS(
   def optsFolder(deps: Iterable[String]) = {
     val tempDir = os.temp.dir()
 
-    val depsCp = if (deps.nonEmpty) Classpath.dependencies(deps.toSeq: _*) else Classpath.empty
+    val depsCp =
+      if (deps.nonEmpty) Classpath.dependencies(deps.toSeq: _*)
+      else Classpath.empty
 
     val fileContent =
       List(
-        "js-classpath=" + (jsLibraryClasspath ++ depsCp ++ extraScala3CP).render(config),
+        "js-classpath=" + (jsLibraryClasspath ++ depsCp ++ extraScala3CP)
+          .render(config),
         "js-scalac-options=" + compilerPlug
       ).mkString("\n")
 
@@ -197,7 +203,11 @@ class MdocJS(
     mapping.toSeq.map { case (source, target) =>
       val tgDir = target / os.up
 
-      source -> ScalaJSResult(target, tgDir / (source.last + ".js"), tgDir / "mdoc.js")
+      source -> ScalaJSResult(
+        target,
+        tgDir / (source.last + ".js"),
+        tgDir / "mdoc.js"
+      )
     }
 
   }
