@@ -18,6 +18,7 @@ package subatomic
 package builders.blog
 
 import java.time.LocalDate
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 import subatomic.Discover.MarkdownDocument
@@ -153,6 +154,11 @@ object Blog {
           Item.Link(absolute.toString())
         )
         .copy(description = p.description.map(Item.Description.apply))
+        .copy(publicationDate =
+          Some(
+            p.date.atStartOfDay().atZone(ZoneId.of("UTC")).toOffsetDateTime()
+          )
+        )
     }
 
     val channel = Channel
