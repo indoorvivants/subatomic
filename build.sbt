@@ -9,10 +9,10 @@ val Ver = new {
   val scalatags             = "0.11.1"
   val scalacss              = "1.0.0"
   val scalacssFor2_12       = "0.7.0"
-  val decline               = "2.1.0"
-  val laminar               = "0.13.1"
+  val decline               = "2.3.0"
+  val laminar               = "0.14.2"
   val upickle               = "1.5.0"
-  val fansi                 = "0.2.14"
+  val fansi                 = "0.4.0"
   val weaver                = "0.6.9"
   val verify                = "1.0.0"
   val geny                  = "0.6.10"
@@ -382,7 +382,7 @@ lazy val munitTestSettings = Seq(
   libraryDependencies += "com.eed3si9n.verify" %%% "verify" % Ver.verify % Test,
   resolvers +=
     "Sonatype S01 OSS Snapshots" at "https://s01.oss.sonatype.org/content/repositories/snapshots",
-  libraryDependencies += "org.scalacheck" %%% "scalacheck" % "1.16-0ac8005-SNAPSHOT" % Test,
+  libraryDependencies += "org.scalacheck" %%% "scalacheck" % "1.16.0" % Test,
   testFrameworks += new TestFramework("verify.runner.Framework")
 )
 
