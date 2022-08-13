@@ -16,7 +16,6 @@ object IndexerSuite extends verify.BasicTestSuite {
             path,
             sections
           ) => // Document.section(s"Document at $path", path, text)
-
         Document(
           s"Document at $path",
           path,
