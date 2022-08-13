@@ -1,6 +1,6 @@
 import java.io.FileReader
 val Ver = new {
-  val flexmark              = "0.62.2"
+  val flexmark              = "0.64.0"
   val coursier              = "2.1.0-M5"
   val osLib                 = "0.7.8"
   val osLib_old             = "0.7.2"
