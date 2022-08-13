@@ -25,9 +25,8 @@ def createSite(
   // creating a full site map
   val raw = Content(contentRoot)
 
-  val content = raw.map {
-    case (rawLocation, content) =>
-      rawLocation.prepend(siteRoot) -> content
+  val content = raw.map { case (rawLocation, content) =>
+    rawLocation.prepend(siteRoot) -> content
   }
 
   // helper to resolve links to their correct
@@ -145,11 +144,11 @@ class Template(linker: Linker) {
       head(
         scalatags.Text.tags2.title(title),
         link(
-          rel := "stylesheet",
+          rel  := "stylesheet",
           href := linker.rooted(_ / "assets" / "highlight-theme.css")
         ),
         link(
-          rel := "stylesheet",
+          rel  := "stylesheet",
           href := linker.rooted(_ / "assets" / "bootstrap.css")
         ),
         script(src := linker.rooted(_ / "assets" / "highlight.js")),
