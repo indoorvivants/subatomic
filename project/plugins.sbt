@@ -8,7 +8,7 @@
 
 addSbtPlugin("com.github.cb372"  % "sbt-explicit-dependencies" % "0.2.16")
 addSbtPlugin("org.scalameta"     % "sbt-scalafmt"              % "2.4.6")
-addSbtPlugin("com.geirsson"      % "sbt-ci-release"            % "1.5.7")
+addSbtPlugin("com.github.sbt"    % "sbt-ci-release"            % "1.5.10")
 addSbtPlugin("ch.epfl.scala"     % "sbt-scalafix"              % "0.10.1")
 addSbtPlugin("de.heikoseeberger" % "sbt-header"                % "5.6.5")
 addSbtPlugin("com.eed3si9n"      % "sbt-projectmatrix"         % "0.9.0")
