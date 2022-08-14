@@ -15,7 +15,7 @@ val Ver = new {
   val fansi                 = "0.4.0"
   val weaver                = "0.6.15"
   val verify                = "1.0.0"
-  val geny                  = "0.6.10"
+  val geny                  = "0.6.11"
   val scalaXml              = "2.1.0"
 
   val Scala = new {
