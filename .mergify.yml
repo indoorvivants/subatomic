@@ -5,7 +5,15 @@ pull_request_rules:
       - or:
         - body~=labels:.*semver-patch.*
         - body~=labels:.*semver-spec-patch.*
-      - status-success=build
+      - check-success=CI 8 2_12 (jvm)
+      - check-success=CI 8 2_12 (js)
+      - check-success=CI 8 2_12 (native)
+      - check-success=CI 8 2_13 (jvm)
+      - check-success=CI 8 2_13 (js)
+      - check-success=CI 8 2_13 (native)
+      - check-success=CI 8 3_1 (jvm)
+      - check-success=CI 8 3_1 (js)
+      - check-success=CI 8 3_1 (native)
     actions:
       merge:
         method: merge
