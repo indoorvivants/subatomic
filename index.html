@@ -1,7 +1,7 @@
 <html><head><title>Subatomic: Home</title><link rel="stylesheet" href="//unpkg.com/prismjs@1.26.0/themes/prism-okaidia.min.css" /><script src="/assets/script.js"></script><link rel="stylesheet" href="/assets/template.css" /><script src="/assets/search.js"></script><script src="/assets/search-index.js"></script><link rel="stylesheet" href="/assets/subatomic-search.css" /><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /></head><body><div class="container"><header class="main-header"><div class="site-title"><h1><a href="/">Subatomic</a></h1><small>Watch this space, but please don't use it yet</small></div><div id="searchContainer" class="searchContainer"></div><div class="site-links"><a href="https://github.com/indoorvivants/subatomic"><img src="https://cdn.svgporn.com/logos/github-icon.svg" class="gh-logo" /></a></div></header><div><a class="nav-btn nav-selected" href="/index.html">Home</a><a class="nav-btn" href="/scalajs/index.html">Scala.js support </a><a class="nav-btn" href="/search/index.html">Search </a><a class="nav-btn" href="/builders/index.html">Builders</a><a class="nav-btn" href="/internals/index.html">Internals</a></div><hr /><div><h1><a href="#installation" id="installation">Installation</a></h1>
 <h2><a href="#sbt" id="sbt">SBT</a></h2>
 <p><strong>project/plugins.sbt</strong></p>
-<pre><code class="language-scala">addSbtPlugin(&quot;com.indoorvivants&quot; % &quot;subatomic-plugin&quot; % &quot;0.0.7+64-9f762d56-SNAPSHOT&quot;)
+<pre><code class="language-scala">addSbtPlugin(&quot;com.indoorvivants&quot; % &quot;subatomic-plugin&quot; % &quot;0.0.7+66-3cc3a10c-SNAPSHOT&quot;)
 </code></pre>
 <p><strong>build.sbt</strong></p>
 <pre><code class="language-scala">lazy val docs = 
@@ -14,7 +14,7 @@
 <p>Only reason to use SBT plugin is to handle classpath propagation from your build (see <a href="/internals/classpath">internals</a> for explanation).</p>
 <p>If you don't want that and want to control your mdoc dependencies
 from within the documents, you could just use the builders API directly from Ammonite:</p>
-<pre><code class="language-scala">import $ivy.`com.indoorvivants::subatomic-builders:0.0.7+64-9f762d56-SNAPSHOT`
+<pre><code class="language-scala">import $ivy.`com.indoorvivants::subatomic-builders:0.0.7+66-3cc3a10c-SNAPSHOT`
 
 import subatomic.builders.librarysite._
 import subatomic.builders._
