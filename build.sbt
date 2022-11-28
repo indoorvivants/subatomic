@@ -1,15 +1,15 @@
 import java.io.FileReader
 val Ver = new {
   val flexmark              = "0.62.2"
-  val coursier              = "2.1.0-M7"
+  val coursier              = "2.1.0-RC2"
   val osLib                 = "0.8.1"
   val osLib_old             = "0.7.8"
   val scalaUri              = "4.0.2"
-  val scalaCollectionCompat = "2.8.1"
+  val scalaCollectionCompat = "2.9.0"
   val scalatags             = "0.11.1"
   val scalacss              = "1.0.0"
   val scalacssFor2_12       = "0.7.0"
-  val decline               = "2.3.0"
+  val decline               = "2.3.1"
   val laminar               = "0.14.2"
   val upickle               = "2.0.0"
   val fansi                 = "0.4.0"
