@@ -47,6 +47,13 @@ jobs:
       - name: Check site build
         run: sbt buildSite buildBlog
         if: matrix.scalaPlatform == 'jvm' && matrix.scalaVersion == '2_13'
+        
+  mergify-build-checkpoint:
+    runs-on: ubuntu-latest
+    needs: [build]
+    steps:
+      - name: I only exist to please Mergify :(
+        run: echo "It's a sad existence but necessary"
 
   release:
     name: Release
