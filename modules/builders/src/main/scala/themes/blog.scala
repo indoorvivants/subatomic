@@ -59,12 +59,12 @@ object default extends StyleSheet.Standalone {
       width(100.%%),
       justifyContent.center,
       flexWrap.nowrap,
-      alignContent.center,
+      alignContent.center
     ),
     whenOnNarrowScreen - (
       flexDirection.rowReverse,
       display.flex,
-      maxWidth(1600.px),
+      maxWidth(1600.px)
     ),
     whenOnMobile - (maxWidth(100.%%), flexDirection.columnReverse, display.flex)
   )
@@ -106,8 +106,8 @@ object default extends StyleSheet.Standalone {
     color(articleTextColor),
     whenOnWideScreen - (
       flexGrow(0),
-      flexShrink(0),
-    ),
+      flexShrink(0)
+    )
   )
 
   "div.searchContainer a" - (
@@ -133,7 +133,7 @@ object default extends StyleSheet.Standalone {
 
   "div.blog-card-title a" - (
     fontSize(2.5.rem),
-    fontWeight.bold,
+    fontWeight.bold
   )
 
   "p.blog-card-text" - (
@@ -147,7 +147,7 @@ object default extends StyleSheet.Standalone {
     padding(20.px),
     whenOnWideScreen - (
       flexGrow(4),
-      maxWidth(1000.px),
+      maxWidth(1000.px)
     ),
     whenOnMobile - (maxWidth(100.%%), padding(10.px)),
     whenOnNarrowScreen - (flexGrow(4), maxWidth(1000.px))
@@ -163,7 +163,7 @@ object default extends StyleSheet.Standalone {
   )
 
   "a.heading-link" - (
-    textDecorationLine.none,
+    textDecorationLine.none
   )
 
   def asString: String = this.renderA[String]
