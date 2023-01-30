@@ -24,6 +24,6 @@ addSbtPlugin("org.scala-js"      % "sbt-scalajs"               % "1.13.0")
 
 addSbtPlugin("org.scala-native"  % "sbt-scala-native"          % "0.4.10")
 
-addSbtPlugin("com.github.sbt"    % "sbt-native-packager"       % "1.9.11")
+addSbtPlugin("com.github.sbt"    % "sbt-native-packager"       % "1.9.13")
 
 addSbtPlugin("com.indoorvivants" % "sbt-commandmatrix"         % "0.0.5")

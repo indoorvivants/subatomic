@@ -64,7 +64,7 @@ object default extends StyleSheet.Standalone {
     &.visited - extra,
     &.hover - extra,
     &.active - extra,
-    &.focus - extra,
+    &.focus - extra
   )
 
   "header h1" - (
