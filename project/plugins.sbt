@@ -1,6 +1,6 @@
 {
   if (!sys.env.contains("DEV"))
-    Seq(addSbtPlugin("io.github.davidgregory084" % "sbt-tpolecat" % "0.1.22"))
+    Seq(addSbtPlugin("io.github.davidgregory084" % "sbt-tpolecat" % "0.4.2"))
   else Seq.empty
 }
 
