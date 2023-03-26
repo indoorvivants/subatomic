@@ -19,125 +19,125 @@ package buildrs
 package librarysite
 package themes
 
-import scalacss.DevDefaults._
+// import scalacss.DevDefaults._
 
-object default extends StyleSheet.Standalone {
-  import dsl._
+// object default extends StyleSheet.Standalone {
+//   import dsl._
 
-  "body" - (
-    fontSize(19.px),
-    color(black),
-    backgroundColor(c"#463F3A"),
-    fontFamily.attr := "-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif,Apple Color Emoji,Segoe UI Emoji,Segoe UI Symbol"
-  )
+//   "body" - (
+//     fontSize(19.px),
+//     color(black),
+//     backgroundColor(c"#463F3A"),
+//     fontFamily.attr := "-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif,Apple Color Emoji,Segoe UI Emoji,Segoe UI Symbol"
+//   )
 
-  "div.container" - (
-    backgroundColor(rgb(254, 255, 248)),
-    borderRadius(5.px),
-    padding(30.px),
-    width(80.%%),
-    margin(30.px),
-    media.screen.minWidth(1600.px) - (
-      width(50.%%),
-      marginLeft(25.%%)
-    )
-  )
+//   "div.container" - (
+//     backgroundColor(rgb(254, 255, 248)),
+//     borderRadius(5.px),
+//     padding(30.px),
+//     width(80.%%),
+//     margin(30.px),
+//     media.screen.minWidth(1600.px) - (
+//       width(50.%%),
+//       marginLeft(25.%%)
+//     )
+//   )
 
-  "footer" - (
-    width(80.%%),
-    textAlign.center,
-    marginLeft(30.px),
-    padding(10.px),
-    fontWeight.bold,
-    color(c"#f4f3ee")
-  )
+//   "footer" - (
+//     width(80.%%),
+//     textAlign.center,
+//     marginLeft(30.px),
+//     padding(10.px),
+//     fontWeight.bold,
+//     color(c"#f4f3ee")
+//   )
 
-  def extra =
-    styleS(
-      color.rgb(29, 49, 49),
-      textDecorationLine.none.important,
-      outline.none
-    )
+//   def extra =
+//     styleS(
+//       color.rgb(29, 49, 49),
+//       textDecorationLine.none.important,
+//       outline.none
+//     )
 
-  "a" - (
-    color.rgb(2, 47, 47),
-    &.visited - extra,
-    &.hover - extra,
-    &.active - extra,
-    &.focus - extra
-  )
+//   "a" - (
+//     color.rgb(2, 47, 47),
+//     &.visited - extra,
+//     &.hover - extra,
+//     &.active - extra,
+//     &.focus - extra
+//   )
 
-  "header h1" - (
-    margin(0.px)
-  )
+//   "header h1" - (
+//     margin(0.px)
+//   )
 
-  "img.gh-logo" - (
-    width(30.px),
-    marginLeft(20.px)
-  )
+//   "img.gh-logo" - (
+//     width(30.px),
+//     marginLeft(20.px)
+//   )
 
-  "div.log img" - (
-    width(75.px)
-  )
+//   "div.log img" - (
+//     width(75.px)
+//   )
 
-  "header.main-header" - (
-    display.flex,
-    width(100.%%),
-    flexDirection.row,
-    flexWrap.nowrap,
-    marginBottom(10.px)
-  )
+//   "header.main-header" - (
+//     display.flex,
+//     width(100.%%),
+//     flexDirection.row,
+//     flexWrap.nowrap,
+//     marginBottom(10.px)
+//   )
 
-  "a.nav-btn" - (
-    padding(10.px),
-    marginRight(5.px),
-    borderRadius(3.px),
-    display.inlineBlock,
-    textDecorationLine.underline,
-    fontSize(20.px)
-  )
+//   "a.nav-btn" - (
+//     padding(10.px),
+//     marginRight(5.px),
+//     borderRadius(3.px),
+//     display.inlineBlock,
+//     textDecorationLine.underline,
+//     fontSize(20.px)
+//   )
 
-  "a.nav-selected" - (
-    borderLeft(0.px),
-    backgroundColor.darkslategray,
-    color.whitesmoke
-  )
+//   "a.nav-selected" - (
+//     borderLeft(0.px),
+//     backgroundColor.darkslategray,
+//     color.whitesmoke
+//   )
 
-  "a.subnav-btn" - (
-    padding(5.px),
-    marginRight(5.px),
-    borderRadius(3.px),
-    display.inlineBlock,
-    textDecorationLine.underline,
-    fontSize(17.px)
-  )
+//   "a.subnav-btn" - (
+//     padding(5.px),
+//     marginRight(5.px),
+//     borderRadius(3.px),
+//     display.inlineBlock,
+//     textDecorationLine.underline,
+//     fontSize(17.px)
+//   )
 
-  "a.subnav-selected" - (
-    borderLeft(0.px),
-    backgroundColor.darkslategrey,
-    color.whitesmoke
-  )
+//   "a.subnav-selected" - (
+//     borderLeft(0.px),
+//     backgroundColor.darkslategrey,
+//     color.whitesmoke
+//   )
 
-  "div.site-title" - (
-    alignSelf.flexStart,
-    flexGrow(2)
-  )
+//   "div.site-title" - (
+//     alignSelf.flexStart,
+//     flexGrow(2)
+//   )
 
-  "div.site-links" - (
-    alignSelf.flexEnd
-  )
+//   "div.site-links" - (
+//     alignSelf.flexEnd
+//   )
 
-  "div.terminal" - (
-    overflow.scroll,
-    color.white,
-    backgroundColor.black
-  )
+//   "div.terminal" - (
+//     overflow.scroll,
+//     color.white,
+//     backgroundColor.black
+//   )
 
-  "div.terminal pre" - (
-    backgroundColor.black,
-    color.white,
-    padding(20.px)
-  )
+//   "div.terminal pre" - (
+//     backgroundColor.black,
+//     color.white,
+//     padding(20.px)
+//   )
 
-  def asString: String = this.renderA[String]
-}
+//   def asString: String = this.renderA[String]
+// }

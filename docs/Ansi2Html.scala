@@ -65,7 +65,7 @@ object Ansi2Html extends Function1[String, String] {
 
     val sb = new StringBuilder
 
-    colored.getChars.zip(colored.getColors).map { case (character, color) =>
+    colored.getChars.zip(colored.getColors).foreach { case (character, color) =>
       if (current != color) {
         categories.foreach { cat =>
           sb.append(

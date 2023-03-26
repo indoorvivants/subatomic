@@ -187,7 +187,7 @@ private[subatomic] class TF_IDF(
 
             if (!documentRegistered.contains(termIdx)) {
               increaseGlobalTermFrequency(termIdx, TermFrequency(1))
-              documentRegistered.add(termIdx)
+              documentRegistered.add(termIdx): Unit
             }
 
             val currentStats = getTermDocumentOccurennce(termIdx, docIdx)

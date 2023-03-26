@@ -15,156 +15,116 @@
  */
 
 package subatomic
-package buildrs
+package builders
 package blog
 package themes
 
-import scalacss.DevDefaults._
+import builders.themes._
 
-object default extends StyleSheet.Standalone {
-  import dsl._
+trait Theme {
+  val c = WithClassname.apply(_)
+  import WithClassname.none
 
-  val whenOnWideScreen   = media.screen.minWidth(1600.px)
-  val whenOnNarrowScreen = media.screen.minWidth(1024.px).maxWidth(1600.px)
-  val whenOnMobile       = media.screen.maxWidth(1023.px)
+  var Body: WithClassname      = none
+  var Container: WithClassname = none
+  var Main: WithClassname      = none
+  object Aside {
+    var Container = none
+    object Section {
+      var Container = none
+      var Title     = none
+      var Content   = none
+    }
 
-  def sidebarColor = c"#131c21"
-  // def sidebarColor           = c"#000"
-  def bodyColor              = articleColor
-  def articleColor           = c"#FDFCFB"
-  def articleTextColor       = c"#000"
-  def blogTagBackgroundColor = c"#d6d6d6"
-  def articleLinkColor       = c"#22333b"
-  def sidebarLinkColor       = c"#eae0d5"
-  def sidebarTextColor       = c"#c6ac8f"
+    var NavLink      = none
+    var NavCurrent   = none
+    var NavContainer = none
 
-  "html, body" - (
-    fontFamily.attr := "sans-serif",
-    fontSize(19.px),
-    padding(0.px),
-    margin(0.px),
-    height(100.%%),
-    minHeight(100.%%),
-    backgroundColor(bodyColor)
+    object StaticLinks {
+      var Container: WithClassname = none
+      var Link: WithClassname      = none
+    }
+  }
+  var Tag = none
+
+  object TagCloud {
+    var Container = none
+    var Tag       = none
+  }
+  object PostCard {
+    var Container: WithClassname   = none
+    var Body: WithClassname        = none
+    var Title: WithClassname       = none
+    var Date: WithClassname        = none
+    var Description: WithClassname = none
+  }
+  object Logo {
+    var Container: WithClassname = none
+    var Title: WithClassname     = none
+    var Subtitle: WithClassname  = none
+  }
+
+  object Post {
+    var Container: WithClassname   = none
+    var Description: WithClassname = none
+    var Title: WithClassname       = none
+  }
+
+  object TagPage {
+    var Header: WithClassname = none
+  }
+
+  val Markdown: MarkdownTheme = MarkdownTheme.none
+
+}
+
+object default extends Theme {
+  PostCard.Container = c("p-6")
+  Body = c("h-full min-h-screen")
+  Container = c("flex h-full min-h-screen")
+  PostCard.Title = c("font-bold text-2xl")
+  PostCard.Date = c("m-2 text-sm italic")
+  Tag = c(
+    "text-sm border-slate-700 hover:bg-slate-900 hover:border-slate-900 hover:text-white border-2 " +
+      " border-l-[6px] p-1 m-1 inline-block hover:no-underline"
+  )
+  TagCloud.Container = c("flex gap-1 flex-wrap")
+  TagCloud.Tag = c("text-lg no-underline hover:underline text-slate-400")
+
+  Aside.Container = c(
+    "bg-slate-900 text-white pr-6 pl-4 py-4 border-r-8 border-slate-700 grow-0 flex flex-col gap-4 lg:min-w-[300px] lg:max-w-[300px] shrink-0"
+  )
+  Aside.NavContainer = c("flex flex-col gap-2 text-sm")
+  Aside.NavLink = c("no-underline hover:underline")
+  Aside.NavCurrent = c("text-amber-200")
+
+  Aside.StaticLinks.Container = c("ml-2 flex flex-col gap-1 ")
+  Aside.StaticLinks.Link = c(
+    "text-sm border-b-2 border-slate-700 hover:underline hover:border-0"
   )
 
-  "div.wrapper" - (
-    height.auto,
-    minHeight(100.%%),
-    margin(0.px),
-    display.block,
-    whenOnWideScreen - (
-      flexDirection.row,
-      display.flex,
-      width(100.%%),
-      justifyContent.center,
-      flexWrap.nowrap,
-      alignContent.center
-    ),
-    whenOnNarrowScreen - (
-      flexDirection.rowReverse,
-      display.flex,
-      maxWidth(1600.px)
-    ),
-    whenOnMobile - (maxWidth(100.%%), flexDirection.columnReverse, display.flex)
+  Aside.Section.Content = c("ml-4")
+  Aside.Section.Title = c("font-bold")
+
+  Logo.Container = c(
+    "rounded-lg bg-white text-2xl p-4 text-black block w-full"
   )
+  Logo.Title = c("font-bold text-center block")
+  Logo.Subtitle = c("italic text-center text-sm block")
 
-  "span.blog-tag" - (
-    margin(3.px),
-    backgroundColor(blogTagBackgroundColor),
-    padding(2.px),
-    color.black,
-    borderWidth(1.px, 1.px, 1.px, 5.px),
-    borderColor.black,
-    borderStyle.solid,
-    display.inlineBlock,
-    paddingLeft(5.px)
-  )
+  TagPage.Header = c("p-4 text-xl")
 
-  "span.blog-tag a, span.blog-tag a:hover" - (color.black, textDecorationLine.none)
+  Post.Container = c("p-4 flex flex-col space-y-3")
+  Post.Description = c("text-base underline")
+  Post.Title = c("text-2xl m-2 font-bold")
 
-  "img" - maxWidth(100.%%)
+  Markdown.Paragraph = c("leading-relaxed")
+  Markdown.Link = c("underline hover:no-underline")
+  Markdown.UnorderedList.Container = c("list-disc ml-6 block")
+  Markdown.OrderedList.Container = c("list-decimal ml-6 block")
+  Markdown.Headings.H1 = c("text-2xl font-bold")
+  Markdown.Headings.H2 = c("text-xl font-bold")
+  Markdown.Headings.H3 = c("text-lg font-bold")
+  Markdown.Quote = c("p-4 text-slate-700 border-l-4")
 
-  "aside.sidebar a" - color(sidebarLinkColor)
-
-  "aside.sidebar a:hover" - color(sidebarLinkColor)
-
-  "article.content-wrapper" - (width(35.em), padding(30.px))
-
-  "article.content-wrapper a" - (
-    color(articleLinkColor),
-    textDecorationLine.underline
-  )
-  "article.content-wrapper a:hover" - (
-    color(articleLinkColor),
-    textDecorationLine.none
-  )
-
-  "article.content-wrapper" - (
-    backgroundColor(articleColor),
-    height.auto,
-    color(articleTextColor),
-    whenOnWideScreen - (
-      flexGrow(0),
-      flexShrink(0)
-    )
-  )
-
-  "div.searchContainer a" - (
-    color.darkslategrey
-  )
-
-  "aside.sidebar" - (
-    backgroundColor(sidebarColor),
-    color(sidebarTextColor),
-    padding(10.px),
-    height.auto,
-    whenOnWideScreen - (
-      flexShrink(0),
-      flexGrow(0),
-      width(300.px),
-      maxWidth(300.px)
-    ),
-    whenOnNarrowScreen - (
-      maxWidth(300.px),
-      width(300.px)
-    )
-  )
-
-  "div.blog-card-title a" - (
-    fontSize(2.5.rem),
-    fontWeight.bold
-  )
-
-  "p.blog-card-text" - (
-    marginTop(0.px),
-    fontSize(1.5.rem)
-  )
-
-  "article.content-wrapper" - (
-    fontSize(19.px),
-    lineHeight(1.4),
-    padding(20.px),
-    whenOnWideScreen - (
-      flexGrow(4),
-      maxWidth(1000.px)
-    ),
-    whenOnMobile - (maxWidth(100.%%), padding(10.px)),
-    whenOnNarrowScreen - (flexGrow(4), maxWidth(1000.px))
-  )
-
-  "blockquote" - (
-    fontSize(120.%%),
-    fontStyle.italic,
-    borderLeftColor.darkgrey,
-    borderLeftWidth(5.px),
-    borderLeftStyle.solid,
-    paddingLeft(1.em)
-  )
-
-  "a.heading-link" - (
-    textDecorationLine.none
-  )
-
-  def asString: String = this.renderA[String]
 }

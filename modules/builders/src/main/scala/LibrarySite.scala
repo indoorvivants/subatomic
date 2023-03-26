@@ -20,7 +20,6 @@ package builders.librarysite
 import subatomic.Discover.MarkdownDocument
 import subatomic.builders._
 import subatomic.builders.librarysite.LibrarySite.Navigation
-import subatomic.buildrs.librarysite.themes.default
 
 import com.vladsch.flexmark.ext.anchorlink.AnchorLinkExtension
 import com.vladsch.flexmark.ext.yaml.front.matter.YamlFrontMatterExtension
@@ -284,8 +283,8 @@ object LibrarySite {
         }
       }
 
-    val addTemplateCSS: Site[Doc] => Site[Doc] = site =>
-      site.add(SiteRoot / "assets" / "template.css", Page(default.asString))
+    // val addTemplateCSS: Site[Doc] => Site[Doc] = site =>
+    //   site.add(SiteRoot / "assets" / "template.css", Page(default.asString))
 
     val builderSteps = new BuilderSteps(markdown)
 
@@ -298,7 +297,7 @@ object LibrarySite {
         ),
       builderSteps
         .addAllAssets[Doc](siteConfig.assetsRoot, siteConfig.assetsFilter),
-      addTemplateCSS,
+      // addTemplateCSS,
       extra
     )
 

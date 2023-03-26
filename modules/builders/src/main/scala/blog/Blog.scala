@@ -17,13 +17,15 @@
 package subatomic
 package builders.blog
 
+import java.nio.file.Paths
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 import subatomic.Discover.MarkdownDocument
 import subatomic.builders._
-import subatomic.buildrs.blog.themes.default
+import subatomic.builders.blog.themes.Theme
+import subatomic.builders.blog.themes.default
 
 import com.vladsch.flexmark.ext.anchorlink.AnchorLinkExtension
 import com.vladsch.flexmark.ext.autolink.AutolinkExtension
@@ -45,7 +47,7 @@ case class Blog(
     tagline: Option[String] = None,
     copyright: Option[String] = None,
     githubUrl: Option[String] = None,
-    customTemplate: Option[Template] = None,
+    customHtmlPage: Option[HtmlPage] = None,
     links: Vector[(String, String)] = Vector.empty,
     override val highlighting: SyntaxHighlighting =
       SyntaxHighlighting.PrismJS.default,
@@ -261,19 +263,23 @@ object Blog {
       buildConfig: cli.BuildConfig,
       extra: Site[Doc] => Site[Doc]
   ): Unit = {
-    val content = discoverContent(siteConfig)
+    val dir =
+      Paths.get(dev.dirs.BaseDirectories.get().cacheDir).resolve("subatomic")
+    val tailwind = TailwindCSS.bootstrap(TailwindCSS.Config.default, dir)
+    val content  = discoverContent(siteConfig)
 
     val linker = new Linker(content, siteConfig.base)
 
     val navigation = createNavigation(linker, content.map(_._2))
 
-    val template = siteConfig.customTemplate.getOrElse(
-      Default(
-        siteConfig,
-        linker,
-        content.map(_._2).collect { case t: TagPage =>
+    val template = siteConfig.customHtmlPage.getOrElse(
+      DefaultHtmlPage(
+        site = siteConfig,
+        linker = linker,
+        tagPages = content.map(_._2).collect { case t: TagPage =>
           t
-        }
+        },
+        theme = default
       )
     )
 
@@ -432,8 +438,8 @@ object Blog {
       )
     }
 
-    val addTemplateCSS: Site[Doc] => Site[Doc] = site =>
-      site.add(SiteRoot / "assets" / "template.css", Page(default.asString))
+    // val addTemplateCSS: Site[Doc] => Site[Doc] = site =>
+    //   site.add(SiteRoot / "assets" / "template.css", Page(default.asString))
 
     val addRSSPage: Site[Doc] => Site[Doc] = site =>
       siteConfig.rssConfig match {
@@ -448,6 +454,27 @@ object Blog {
       }
 
     val builderSteps = new BuilderSteps(markdown)
+    val tailwindStep: Site[Doc] => Site[Doc] = site => {
+
+      site.addDelayedAsset(
+        SiteRoot / "assets" / "tailwind.css",
+        { () =>
+          val allHtml = os.walk(buildConfig.destination).filter(_.ext == "html")
+          val out     = tailwind.process(allHtml, template.theme.Markdown)
+          CopyOf(out)
+        },
+        "<generated and minified tailwind CSS"
+      )
+
+      // val html = site.pages.collect {
+      //   case Delayed(path, processor, original) if path.segments.lastOption.exists(_.endsWith(".html")) =>
+
+      //   case Ready(path, content) =>
+      // }
+      // // println(site.pages)
+      // // println(tailwind)
+      // site
+    }
 
     val steps = List[Site[Doc] => Site[Doc]](
       builderSteps.addSearchIndex[Doc](
@@ -459,9 +486,10 @@ object Blog {
       ),
       builderSteps
         .addAllAssets[Doc](siteConfig.assetsRoot, siteConfig.assetsFilter),
-      addTemplateCSS,
+      // addTemplateCSS,
       addRSSPage,
-      extra
+      extra,
+      tailwindStep
     )
 
     val process = steps.foldLeft(identity[Site[Doc]] _) { case (step, next) =>
@@ -504,8 +532,9 @@ case class NavLink(
     selected: Boolean
 )
 
-case class Default(
+case class DefaultHtmlPage(
     site: Blog,
     linker: Linker,
-    tagPages: Seq[TagPage]
-) extends Template
+    tagPages: Seq[TagPage],
+    theme: Theme
+) extends HtmlPage

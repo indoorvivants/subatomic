@@ -16,6 +16,8 @@
 
 package subatomic
 
+import scala.annotation.nowarn
+
 import coursier.Fetch
 import coursier.core.Dependency
 import coursier.parse.DependencyParser
@@ -193,12 +195,13 @@ class MdocJS(
         fetchCp(dependencies)
       ) ++ argmap
 
-    os.proc(command)
+    os
+      .proc(command)
       .call(
         _pwd,
         stderr = ProcessOutput.Readlines(logger.at("ERR")._println),
         stdout = ProcessOutput.Readlines(logger.at("OUT")._println)
-      )
+      ): @nowarn
 
     mapping.toSeq.map { case (source, target) =>
       val tgDir = target / os.up
