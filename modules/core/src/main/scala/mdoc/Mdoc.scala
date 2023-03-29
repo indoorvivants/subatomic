@@ -23,93 +23,12 @@ import subatomic.internal.BuildInfo
 import coursier._
 import coursier.parse.DependencyParser
 import os.ProcessOutput
+import coursier.core.MinimizedExclusions
 
 case class MdocFile(
     path: os.Path,
     config: MdocConfiguration
 )
-
-case class ScalaJSConfig(
-    version: String,
-    domVersion: String
-)
-
-object ScalaJSConfig {
-  def default = ScalaJSConfig(version = "1.7.1", "1.0.0")
-
-  def fromAttrs(attrs: Discover.YamlAttributes): Option[ScalaJSConfig] = {
-    val enabled = attrs.optionalOne("mdoc-js").map(_.toBoolean).getOrElse(false)
-    val version = attrs
-      .optionalOne("mdoc-js-scalajs")
-      .map(_.trim)
-      .getOrElse(default.version)
-    val domVersion = attrs
-      .optionalOne("mdoc-js-dom-version")
-      .map(_.trim)
-      .getOrElse(default.domVersion)
-
-    if (enabled) Some(ScalaJSConfig(version, domVersion)) else None
-  }
-}
-
-case class MdocConfiguration(
-    scalaBinaryVersion: String,
-    scalaVersion: String,
-    mdocVersion: String,
-    inheritClasspath: Boolean,
-    inheritVariables: Boolean,
-    variables: Map[String, String],
-    group: String,
-    extraDependencies: Set[String],
-    scalajsConfig: Option[ScalaJSConfig]
-)
-
-object MdocConfiguration {
-  def default =
-    MdocConfiguration(
-      scalaBinaryVersion = BuildInfo.scalaBinaryVersion,
-      scalaVersion = BuildInfo.scalaVersion,
-      mdocVersion = "2.2.24",
-      inheritClasspath = true,
-      inheritVariables = true,
-      variables = Map.empty,
-      group = "default",
-      extraDependencies = Set.empty,
-      scalajsConfig = None
-    )
-
-  def fromAttrs(attrs: Discover.YamlAttributes): Option[MdocConfiguration] = {
-    val defaultConfig = default
-    val enabled       = attrs.optionalOne("mdoc").getOrElse("false").toBoolean
-    val dependencies = attrs
-      .optionalOne("mdoc-dependencies")
-      .map(_.split(",").toList.map(_.trim).toSet)
-      .getOrElse(default.extraDependencies)
-
-    val scalaVersion = attrs
-      .optionalOne("mdoc-scala")
-      .map(_.trim)
-      .getOrElse(defaultConfig.scalaBinaryVersion)
-    val group =
-      attrs.optionalOne("mdoc-group").map(_.trim).getOrElse(defaultConfig.group)
-    val version = attrs
-      .optionalOne("mdoc-version")
-      .map(_.trim)
-      .getOrElse(defaultConfig.mdocVersion)
-
-    val scalajs = ScalaJSConfig.fromAttrs(attrs: Discover.YamlAttributes)
-
-    val config = defaultConfig.copy(
-      scalaBinaryVersion = scalaVersion,
-      group = group,
-      mdocVersion = version,
-      extraDependencies = dependencies,
-      scalajsConfig = scalajs
-    )
-
-    if (enabled) Some(config) else None
-  }
-}
 
 class Mdoc(
     logger: Logger = Logger.default,
@@ -247,25 +166,47 @@ class Mdoc(
 
   private val mdocDep = {
     if (config.scalaBinaryVersion == "3")
-      DependencyParser
-        .dependency(
-          s"org.scalameta:mdoc_3:${config.mdocVersion}",
-          config.scalaBinaryVersion
+      simpleDep("org.scalameta", "mdoc_3", config.mdocVersion)
+        .withMinimizedExclusions(
+          MinimizedExclusions(
+            Set(
+              Organization("org.scala-lang") -> ModuleName("scala3-library_3"),
+              Organization("org.scala-lang") -> ModuleName("scala3-compiler_3"),
+              Organization("org.scala-lang") -> ModuleName("tasty-core_3")
+            )
+          )
         )
-        .getOrElse(throw new Exception("oh noes"))
     else
-      DependencyParser
-        .dependency(
-          s"org.scalameta::mdoc:${config.mdocVersion}",
-          config.scalaBinaryVersion
-        )
-        .getOrElse(throw new Exception("Unspeakable has happened"))
+      simpleDep(
+        "org.scalameta",
+        s"mdoc_${config.scalaBinaryVersion}",
+        config.mdocVersion
+      )
   }
+
+  private val scala3Deps =
+    if (config.scalaBinaryVersion == "3")
+      Seq(
+        simpleDep("org.scala-lang", "scala3-library_3", config.scalaVersion),
+        simpleDep("org.scala-lang", "scala3-compiler_3", config.scalaVersion),
+        simpleDep("org.scala-lang", "tasty-core_3", config.scalaVersion)
+      )
+    else Seq.empty
+
+  private def simpleDep(org: String, artifact: String, version: String) =
+    Dependency(
+      Module(
+        Organization(org),
+        ModuleName(artifact)
+      ),
+      version
+    )
 
   private lazy val mainCp = {
 
     (Fetch()
       .addDependencies(mdocDep)
+      .addDependencies(scala3Deps: _*)
       .run()
       .map(_.getAbsolutePath()))
       .mkString(":")
