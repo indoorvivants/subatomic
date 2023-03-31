@@ -108,10 +108,6 @@ class BuilderSteps(markdown: Markdown) {
       site
         .addCopyOf(SiteRoot / "assets" / "search-index.js", tmpFile)
         .addCopyOf(SiteRoot / "assets" / "search.js", tmpFileJS)
-        .addPage(
-          SiteRoot / "assets" / "subatomic-search.css",
-          BuilderTemplate.searchCSS
-        )
 
   }
 
