@@ -42,7 +42,8 @@ class TailwindCSS(val binary: Path) {
       "-i",
       cssFile.toString,
       "--content",
-      files.mkString(",")
+      files.mkString(","),
+      "--minify"
     )
 
     os.proc(args).call().out.text()
