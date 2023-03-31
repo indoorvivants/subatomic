@@ -31,6 +31,7 @@ trait Theme {
     object Section {
       var Container = none
       var Title     = none
+      var TitleLink = none
       var Content   = none
     }
 
@@ -72,6 +73,10 @@ trait Theme {
     var Header: WithClassname = none
   }
 
+  object ArchivePage {
+    var Header: WithClassname = none
+  }
+
   var Markdown: MarkdownTheme = MarkdownTheme.none
   var Search: SearchTheme     = SearchTheme.none
 
@@ -106,6 +111,7 @@ trait DefaultTheme extends Theme {
 
   Aside.Section.Content = c("ml-4")
   Aside.Section.Title = c("font-bold")
+  Aside.Section.TitleLink = c("font-bold underline hover:no-underline")
 
   Logo.Container = c(
     "rounded-lg bg-white text-2xl p-4 text-black block w-full"
@@ -114,6 +120,7 @@ trait DefaultTheme extends Theme {
   Logo.Subtitle = c("italic text-center text-sm block")
 
   TagPage.Header = c("p-4 text-xl")
+  ArchivePage.Header = c("p-4 text-xl")
 
   Post.Container = c("p-4 flex flex-col space-y-3")
   Post.Description = c("text-base underline")

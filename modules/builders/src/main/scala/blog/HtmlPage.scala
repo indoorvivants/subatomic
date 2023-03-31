@@ -140,7 +140,10 @@ trait HtmlPage {
 
   def archiveLink = {
     section(
-      h4(a(href := linker.unsafe(_ / "archive.html"), "Archive"))
+      h4(
+        whoosh(_.Aside.Section.TitleLink),
+        a(href := linker.unsafe(_ / "archive.html"), "Archive")
+      )
     )
   }
 
@@ -342,7 +345,7 @@ trait HtmlPage {
       None,
       None,
       div(
-        h3("Archive"),
+        h3(whoosh(_.ArchivePage.Header), "Archive"),
         div(cls := "card-columns", blogs.sorted.reverse.map(blogCard).toVector)
       )
     )
