@@ -16,8 +16,8 @@
 
 package subatomic.builders.librarysite
 
-import subatomic.builders._
 import subatomic._
+import subatomic.builders._
 
 trait HtmlPage {
   def site: LibrarySite

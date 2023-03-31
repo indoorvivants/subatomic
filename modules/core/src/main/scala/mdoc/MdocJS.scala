@@ -16,14 +16,15 @@
 
 package subatomic
 
+import java.io.FileWriter
+import java.util.Properties
+
 import scala.annotation.nowarn
 
 import coursier.Fetch
 import coursier.core.Dependency
 import coursier.parse.DependencyParser
 import os.ProcessOutput
-import java.util.Properties
-import java.io.FileWriter
 
 case class ScalaJSResult(
     mdFile: os.Path,

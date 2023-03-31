@@ -17,15 +17,14 @@
 package subatomic.builders
 package librarysite
 
+import java.nio.file.Paths
+
 import subatomic.Discover.MarkdownDocument
+import subatomic._
 import subatomic.builders._
 
 import com.vladsch.flexmark.ext.anchorlink.AnchorLinkExtension
 import com.vladsch.flexmark.ext.yaml.front.matter.YamlFrontMatterExtension
-import java.nio.file.Paths
-
-import subatomic._
-import scala.annotation.tailrec
 
 case class LibrarySite(
     contentRoot: os.Path,

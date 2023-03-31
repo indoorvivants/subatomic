@@ -1,6 +1,8 @@
 package subatomic
 package search
 
+import scala.annotation.nowarn
+
 /** Anton:
   *
   * This is just the initial implementation, copied from
@@ -175,7 +177,7 @@ object PorterStemmer {
 
       // step 1a
       var vals = List(("sses", "ss"), ("ies", "i"), ("ss", "ss"), ("s", ""))
-      processSubList(vals, _ >= 0): Unit
+      processSubList(vals, _ >= 0): @nowarn
 
       // step 1b
       if (!(replacer("eed", "ee", _ > 0))) {
@@ -233,7 +235,7 @@ object PorterStemmer {
         ("logi", "log")
       )
 
-      processSubList(vals, _ > 0): Unit
+      processSubList(vals, _ > 0): @nowarn
 
     }
 
@@ -324,8 +326,8 @@ object PorterStemmer {
 
     step1()
     step2()
-    step3(): Unit
-    step4(): Unit
+    step3(): @nowarn
+    step4()
     step5a()
     step5b()
 

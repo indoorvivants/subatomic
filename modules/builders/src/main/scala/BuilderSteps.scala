@@ -124,6 +124,7 @@ class BuilderSteps(markdown: Markdown) {
         case Define(name, es) =>
           es match {
             case CSS(value) =>
+              applications += s"$query.$name { $value }"
             case TailwindApply(classes) =>
               applications += s"$query.$name { @apply $classes}"
           }
@@ -166,6 +167,7 @@ class BuilderSteps(markdown: Markdown) {
         case Define(name, es) =>
           es match {
             case CSS(value) =>
+              applications += s".markdown $query.$name { $value }"
             case TailwindApply(classes) =>
               applications += s".markdown $query.$name { @apply $classes}"
           }

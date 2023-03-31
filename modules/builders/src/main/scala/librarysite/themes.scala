@@ -18,8 +18,8 @@ package subatomic.builders
 package librarysite
 
 trait Theme {
-  val c = WithClassname.apply(_)
-  import WithClassname.{none, define}
+  protected val c = WithClassname.apply(_)
+  import WithClassname.{none}
 
   var Body: WithClassname      = none
   var Container: WithClassname = none
@@ -36,7 +36,7 @@ trait Theme {
   }
 
   object Navigation {
-    var Container: Int => WithClassname       = _ => none
+    var Container: Int => WithClassname       = (_) => none
     var Link: (Int, Boolean) => WithClassname = (_, _) => none
   }
 
@@ -46,7 +46,6 @@ trait Theme {
 }
 
 trait DefaultTheme extends Theme {
-  import WithClassname.{none, define}
   Body = c("bg-gradient-to-r from-emerald-800 to-sky-700 mt-4 w-full")
   val mainSizing = "m-2 mb-4 md:m-auto md:w-11/12 lg:w-7xl"
   Container = c(
@@ -73,7 +72,7 @@ trait DefaultTheme extends Theme {
 
   }
 
-  Navigation.Link = { (depth, selected) =>
+  Navigation.Link = { (_, selected) =>
     if (selected) c("font-bold") else c("")
   }
 

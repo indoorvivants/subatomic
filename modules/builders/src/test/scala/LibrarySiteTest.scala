@@ -18,7 +18,7 @@ object LibrarySiteTest extends SimpleIOSuite with BuildersHelpers {
 
     val conf = LibrarySite(contentRoot = basic.root, name = "hello")
 
-    val content = LibrarySite.discoverContent(conf).toMap
+    val content = LibrarySite.discoverContent(conf)._1.toMap
 
     expect.all(
       content.exists(_._2.title == "base"),
@@ -26,12 +26,15 @@ object LibrarySiteTest extends SimpleIOSuite with BuildersHelpers {
       content.exists(_._2.title == "check"),
       content
         .get(SiteRoot / "base" / "index.html")
+        .collect { case d: LibrarySite.Doc.Text => d }
         .exists(_.path == basic.files(SiteRoot / "base.md")),
       content
         .get(SiteRoot / "test" / "index.html")
+        .collect { case d: LibrarySite.Doc.Text => d }
         .exists(_.path == basic.files(SiteRoot / "test.md")),
       content
         .get(SiteRoot / "check" / "test" / "index.html")
+        .collect { case d: LibrarySite.Doc.Text => d }
         .exists(_.path == basic.files(SiteRoot / "check" / "test.md"))
     )
   }
@@ -57,14 +60,16 @@ object LibrarySiteTest extends SimpleIOSuite with BuildersHelpers {
 
     val conf = LibrarySite(contentRoot = basic.root, name = "hello")
 
-    val content = LibrarySite.discoverContent(conf).toMap
+    val content = LibrarySite.discoverContent(conf)._1.toMap
 
     expect.all(
       content
         .get(SiteRoot / "base" / "index.html")
+        .collect { case d: LibrarySite.Doc.Text => d }
         .exists(_.mdocConfig.isEmpty),
       content
         .get(SiteRoot / "mdoc" / "index.html")
+        .collect { case d: LibrarySite.Doc.Text => d }
         .exists(
           _.mdocConfig.exists(_.extraDependencies.contains(testDependency))
         )

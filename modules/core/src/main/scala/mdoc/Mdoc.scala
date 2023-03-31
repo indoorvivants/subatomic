@@ -19,9 +19,9 @@ package subatomic
 import java.util.Properties
 
 import coursier._
+import coursier.core.MinimizedExclusions
 import coursier.parse.DependencyParser
 import os.ProcessOutput
-import coursier.core.MinimizedExclusions
 
 case class MdocFile(
     path: os.Path,

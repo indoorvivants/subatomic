@@ -16,13 +16,13 @@
 
 package subatomic
 
+import scala.annotation.nowarn
+
 import coursier.Fetch
-import coursier.parse.DependencyParser
 import coursier.core.MinimizedExclusions
-import coursier.core.Organization
 import coursier.core.ModuleName
-import subatomic.Classpath.Dep
-import subatomic.Classpath.Path
+import coursier.core.Organization
+import coursier.parse.DependencyParser
 
 private[subatomic] case class Classpath(deps: List[Classpath.Item]) {
   def `+`(other: Classpath.Item) = copy(other :: deps)
@@ -64,8 +64,10 @@ private[subatomic] case class Classpath(deps: List[Classpath.Item]) {
 
   def toStringPretty(name: String) = {
     val sb                    = new StringBuilder
-    def line(s: String): Unit = sb.append(s + "\n")
+    def line(s: String): Unit = { sb.append(s + "\n") }
     line(s"Classpath ($name):")
+
+    import Classpath._
 
     deps.foreach {
 

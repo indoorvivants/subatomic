@@ -19,13 +19,9 @@ package subatomic.builders
 import java.nio.file.Files
 import java.nio.file.Path
 
-import scala.annotation.nowarn
-
 import com.indoorvivants.detective.Platform
 import com.indoorvivants.detective.Platform.Arch._
 import com.indoorvivants.detective.Platform.OS._
-import subatomic.builders.ExtraStyles.CSS
-import subatomic.builders.ExtraStyles.TailwindApply
 
 class TailwindCSS(val binary: Path) {
   def process(files: Seq[os.Path], extraCSS: String) = {
