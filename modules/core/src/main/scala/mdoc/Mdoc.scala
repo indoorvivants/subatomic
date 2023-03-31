@@ -18,8 +18,6 @@ package subatomic
 
 import java.util.Properties
 
-import subatomic.internal.BuildInfo
-
 import coursier._
 import coursier.parse.DependencyParser
 import os.ProcessOutput

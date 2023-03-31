@@ -32,7 +32,6 @@ object WithClassname {
   def apply(value: String): WithClassname           = new Impl(Some(value))
   def none: WithClassname                           = new Impl(None)
   def define(name: String, es: ExtraStyles): Define = new Define(name, es)
-  
 
 }
 

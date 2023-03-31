@@ -429,7 +429,7 @@ inThisBuild(
         url("https://blog.indoorvivants.com")
       )
     ),
-    version := (if (!sys.env.contains("CI")) "dev" else version.value),
+    version := (if (!sys.env.contains("CI")) "dev" else version.value)
   )
 )
 

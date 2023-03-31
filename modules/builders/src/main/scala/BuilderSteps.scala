@@ -44,11 +44,12 @@ class BuilderSteps(markdown: Markdown) {
       SiteRoot / "assets" / "tailwind.css",
       { () =>
         val allHtml     = os.walk(destination).filter(_.ext == "html")
-        val allJs     = os.walk(destination).filter(_.ext == "js")
+        val allJs       = os.walk(destination).filter(_.ext == "js")
         val markdownCSS = renderMarkdownBase(markdownTheme)
-        val searchCSS   = renderSearchTheme(searchTheme, ".subatomic-search-container")
+        val searchCSS =
+          renderSearchTheme(searchTheme, ".subatomic-search-container")
         Page(tailwind.process(allHtml ++ allJs, s"$markdownCSS\n$searchCSS"))
-        
+
       },
       "<generated and minified tailwind CSS"
     )
@@ -143,8 +144,14 @@ class BuilderSteps(markdown: Markdown) {
     add(s"$selector .subatomic-search-result-container", base.Result)
     add(s"$selector .subatomic-search-result-container", base.Result)
     add(s"$selector .subatomic-search-result-document-url", base.DocumentUrl)
-    add(s"$selector .subatomic-search-result-document-title", base.DocumentTitle)
-    add(s"$selector .subatomic-search-sections-container", base.SectionsContainer)
+    add(
+      s"$selector .subatomic-search-result-document-title",
+      base.DocumentTitle
+    )
+    add(
+      s"$selector .subatomic-search-sections-container",
+      base.SectionsContainer
+    )
     add(s"$selector .subatomic-search-section-url", base.SectionUrl)
 
     applications.result().mkString("\n")

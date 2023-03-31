@@ -73,14 +73,16 @@ trait Theme {
   }
 
   var Markdown: MarkdownTheme = MarkdownTheme.none
-  var Search: SearchTheme = SearchTheme.none
+  var Search: SearchTheme     = SearchTheme.none
 
 }
 
 trait DefaultTheme extends Theme {
   PostCard.Container = c("p-6")
   Body = c("h-full min-h-screen")
-  Container = c("flex flex-col-reverse sm:flex-col-reverse md:flex-row lg:flex-row h-full min-h-screen lg:max-w-6xl m-auto")
+  Container = c(
+    "flex flex-col-reverse sm:flex-col-reverse md:flex-row lg:flex-row h-full min-h-screen lg:max-w-6xl m-auto"
+  )
   PostCard.Title = c("font-bold text-2xl")
   PostCard.Date = c("m-2 text-sm italic")
   Tag = c(

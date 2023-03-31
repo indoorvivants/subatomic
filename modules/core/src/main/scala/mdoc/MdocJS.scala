@@ -143,10 +143,8 @@ class MdocJS(
 
     val jsClasspath =
       (scalajsLibraryClasspath ++ dependenciesClasspath ++ scala3JSLibraryClasspath)
-    println(jsClasspath.toStringPretty("js-classpath"))
 
     val jsLinkerClasspath = (scalajsLinkerClasspath ++ workerCP)
-    println(jsLinkerClasspath.toStringPretty("js-linker-classpath"))
 
     props
       .put(
@@ -160,21 +158,9 @@ class MdocJS(
     )
     props.put("js-scalac-options", compilerPlug)
 
-    // val fileContent =
-    //   List(
-    //     "js-classpath=" + (scalajsLibraryClasspath ++ dependenciesClasspath ++ scala3JSLibraryClasspath)
-    //       .render(config),
-    //     "js-linker-classpath=" + scalajsLinkerClasspath.render(config),
-    //     "js-scalac-options=" + compilerPlug
-    //   ).mkString("\n")
-
-    // os.write.over(tempDir / "mdoc.properties", fileContent)
-
     val w = new FileWriter((tempDir / "mdoc.properties").toIO)
 
     props.store(w, "")
-
-    // ((tempDir / "mdoc.properties").toIO.formatted)
 
     tempDir
   }
@@ -218,8 +204,6 @@ class MdocJS(
 
     val launchClasspath =
       (mdocJSClasspath.cp ++ scala3CP ++ opts.cp)
-
-    println(launchClasspath.toStringPretty("mdoc java"))
 
     val command =
       Seq(

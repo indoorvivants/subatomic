@@ -82,14 +82,7 @@ object PorterStemmer {
     // removing the suffix 's', does a vowel exist?'
     def vowelInStem(s: String): Boolean = {
 
-      for (i <- 0 to b.length - 1 - s.length) {
-        if (!cons(i)) {
-          return true
-        }
-      }
-
-      return false;
-
+      (0 to b.length - 1 - s.length).exists(i => !cons(i))
     }
 
     /* doublec(j) is true <=> j,(j-1) contain a double consonant. */
