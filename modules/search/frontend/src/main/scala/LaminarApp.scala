@@ -27,10 +27,6 @@ abstract class LaminarApp(elementId: String) {
   def app: nodes.ReactiveElement.Base
 
   def main(args: Array[String]): Unit = {
-    discard[Subscription] {
-      documentEvents.onDomContentLoaded.foreach { _ =>
-        discard[RootNode](render(root, app))
-      }(unsafeWindowOwner)
-    }
+    renderOnDomContentLoaded(root, app)
   }
 }
