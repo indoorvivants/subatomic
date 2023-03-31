@@ -45,7 +45,6 @@ class SearchFrontend private (idx: SearchIndex) {
       ul(
         queryVar.signal.map(_.isEmpty) --> SearchFrontend.HideResults,
         display <-- SearchFrontend.HideResults.signal
-          .debugSpy(println)
           .map(if (_) "none" else "block"),
         cls := "subatomic-search-results",
         children <-- results.map { results =>
@@ -110,7 +109,6 @@ object SearchFrontend extends LaminarApp("searchContainer") {
 
   @js.annotation.JSExport
   def sayHello(): Unit = {
-    println("howdy")
     HideResults.set(true)
   }
 
