@@ -429,8 +429,7 @@ inThisBuild(
         url("https://blog.indoorvivants.com")
       )
     ),
-    version := sys.env
-      .getOrElse("VERSION_OVERRIDE", version.value)
+    version := (if (!sys.env.contains("CI")) "dev" else version.value),
   )
 )
 
@@ -464,8 +463,8 @@ ThisBuild / commands += Command.command("ci") { st =>
     "headerCheck" :: st
 }
 
-addCommandAlias("buildSite", "docs/runMain subatomic.docs.Docs build")
-addCommandAlias("buildBlog", "docs/runMain subatomic.docs.DevBlog build")
+addCommandAlias("buildSite", "docs3/runMain subatomic.docs.Docs build")
+addCommandAlias("buildBlog", "docs3/runMain subatomic.docs.DevBlog build")
 
 import commandmatrix._
 
