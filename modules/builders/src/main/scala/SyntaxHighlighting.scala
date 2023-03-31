@@ -20,7 +20,7 @@ sealed trait SyntaxHighlighting extends Product with Serializable
 
 object SyntaxHighlighting {
   case class HighlightJS(
-      version: String = "10.5.0",
+      version: String = "11.7.0",
       languages: List[String] = List("scala"),
       theme: String = "default"
   ) extends SyntaxHighlighting {

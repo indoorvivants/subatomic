@@ -116,7 +116,7 @@ object SiteTests extends weaver.IOSuite {
         lifecycle.append("register" -> content)
 
       override def retrieve(content: String): SiteAsset = {
-        synchronized { lifecycle.append("retrieve" -> content) }
+        synchronized { lifecycle.append("retrieve" -> content): Unit }
         Page(s"processed: $content")
       }
     }

@@ -73,16 +73,17 @@ class Search(index: SearchIndex, debug: Boolean = false) {
 
             val TERM_SCORE = TF * IDF
 
-            tdo.sectionOccurences.map { case (sectionIdx, frequencyInSection) =>
-              val key = (documentId, sectionIdx)
-              debugPrint(
-                s"Updating ($documentId, $sectionIdx) for $termId with ${frequencyInSection.value * TERM_SCORE}"
-              )
-              sectionRef.update(
-                key,
-                frequencyInSection.value * TERM_SCORE + sectionRef
-                  .getOrElseUpdate(key, 0.0)
-              )
+            tdo.sectionOccurences.foreach {
+              case (sectionIdx, frequencyInSection) =>
+                val key = (documentId, sectionIdx)
+                debugPrint(
+                  s"Updating ($documentId, $sectionIdx) for $termId with ${frequencyInSection.value * TERM_SCORE}"
+                )
+                sectionRef.update(
+                  key,
+                  frequencyInSection.value * TERM_SCORE + sectionRef
+                    .getOrElseUpdate(key, 0.0)
+                )
             }
 
             (documentId, TERM_SCORE)

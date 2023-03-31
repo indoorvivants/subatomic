@@ -15,18 +15,26 @@
  */
 
 package subatomic
-package search
 
-import com.raquo.laminar.api.L._
-import com.raquo.laminar.nodes
-import org.scalajs.dom
+case class ScalaJSConfig(
+    version: String,
+    domVersion: String
+)
 
-abstract class LaminarApp(elementId: String) {
-  def root = dom.document.getElementById(elementId)
+object ScalaJSConfig {
+  def default = ScalaJSConfig(version = "1.13.0", "2.4.0")
 
-  def app: nodes.ReactiveElement.Base
+  def fromAttrs(attrs: Discover.YamlAttributes): Option[ScalaJSConfig] = {
+    val enabled = attrs.optionalOne("mdoc-js").map(_.toBoolean).getOrElse(false)
+    val version = attrs
+      .optionalOne("mdoc-js-scalajs")
+      .map(_.trim)
+      .getOrElse(default.version)
+    val domVersion = attrs
+      .optionalOne("mdoc-js-dom-version")
+      .map(_.trim)
+      .getOrElse(default.domVersion)
 
-  def main(args: Array[String]): Unit = {
-    renderOnDomContentLoaded(root, app)
+    if (enabled) Some(ScalaJSConfig(version, domVersion)) else None
   }
 }

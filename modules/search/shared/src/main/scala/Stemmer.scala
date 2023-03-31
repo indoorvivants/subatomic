@@ -1,6 +1,8 @@
 package subatomic
 package search
 
+import scala.annotation.nowarn
+
 /** Anton:
   *
   * This is just the initial implementation, copied from
@@ -82,14 +84,7 @@ object PorterStemmer {
     // removing the suffix 's', does a vowel exist?'
     def vowelInStem(s: String): Boolean = {
 
-      for (i <- 0 to b.length - 1 - s.length) {
-        if (!cons(i)) {
-          return true
-        }
-      }
-
-      return false;
-
+      (0 to b.length - 1 - s.length).exists(i => !cons(i))
     }
 
     /* doublec(j) is true <=> j,(j-1) contain a double consonant. */
@@ -182,7 +177,7 @@ object PorterStemmer {
 
       // step 1a
       var vals = List(("sses", "ss"), ("ies", "i"), ("ss", "ss"), ("s", ""))
-      processSubList(vals, _ >= 0)
+      processSubList(vals, _ >= 0): @nowarn
 
       // step 1b
       if (!(replacer("eed", "ee", _ > 0))) {
@@ -214,7 +209,7 @@ object PorterStemmer {
       val _ = (vowelInStem("y") && replacer("y", "i", _ >= 0))
     }
 
-    def step2() = {
+    def step2(): Unit = {
 
       val vals = List(
         ("ational", "ate"),
@@ -240,7 +235,7 @@ object PorterStemmer {
         ("logi", "log")
       )
 
-      processSubList(vals, _ > 0)
+      processSubList(vals, _ > 0): @nowarn
 
     }
 
@@ -331,7 +326,7 @@ object PorterStemmer {
 
     step1()
     step2()
-    step3()
+    step3(): @nowarn
     step4()
     step5a()
     step5b()

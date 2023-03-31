@@ -29,59 +29,75 @@ class SearchFrontend private (idx: SearchIndex) {
   def query(s: String) = search.string(s)
 
   val node = {
-    val ip = input(placeholder := "Search...")
-    val $stream = ip
-      .events(onInput)
-      .mapTo(ip.ref.value.trim())
-      .startWith("")
+    val queryVar = Var("")
+    val ip = input(
+      value <-- queryVar.signal,
+      cls         := "subatomic-search-input",
+      placeholder := "Search...",
+      onInput.mapToValue.map(_.trim) --> queryVar
+    )
 
-    val $results = $stream.map(query)
+    val results = queryVar.signal.map(query)
 
     div(
-      cls := "searchWrapper",
+      cls := "subatomic-search-container",
       ip,
-      span(
-        cls := "searchResults",
-        display <-- $results.map(_.entries.nonEmpty)
-          .map(if (_) "block" else "none"),
-        ul(
-          children <-- $results.map { results =>
-            results.entries.map {
-              case (ResultsEntry(document, all @ (oneSection :: others)), _) =>
-                if (
-                  oneSection.title == document.title && oneSection.url == document.url
+      ul(
+        queryVar.signal.map(_.isEmpty) --> SearchFrontend.HideResults,
+        display <-- SearchFrontend.HideResults.signal
+          .debugSpy(println)
+          .map(if (_) "none" else "block"),
+        cls := "subatomic-search-results",
+        children <-- results.map { results =>
+          results.entries.map { case (ResultsEntry(document, sections), _) =>
+            sections.find(o =>
+              o.title == document.title && o.url == document.url
+            ) match {
+              case None =>
+                div(
+                  cls := "subatomic-search-result-container",
+                  onClick.stopPropagation --> { _ => },
+                  span(
+                    cls := "subatomic-search-result-document-title",
+                    document.title
+                  ),
+                  renderSections(sections)
                 )
-                  p(
-                    b(a(href := document.url, document.title)),
-                    renderSections(others)
-                  )
-                else {
-                  p(
-                    b(document.title),
-                    renderSections(all)
-                  )
-                }
-              case _ => i("no results")
+
+              case Some(oneSection) =>
+                div(
+                  cls := "subatomic-search-result-container",
+                  onClick.stopPropagation --> { _ => },
+                  a(
+                    cls  := "subatomic-search-result-document-url",
+                    href := document.url,
+                    document.title
+                  ),
+                  renderSections(sections.filterNot(_ == oneSection))
+                )
             }
           }
-        )
+        }
       )
     )
   }
 
   def renderSections(sections: List[SectionEntry]) = {
     ul(
+      cls := "subatomic-search-sections-container",
       sections.map { section =>
         li(
-          span(
-            a(href := section.url, section.title)
+          a(
+            cls  := "subatomic-search-section-url",
+            href := section.url,
+            section.title
           )
         )
       }
     )
   }
 }
-
+@js.annotation.JSExportTopLevel("SubatomicSearchFrontend")
 object SearchFrontend extends LaminarApp("searchContainer") {
   def load(s: String) = new SearchFrontend(read[SearchIndex](s))
 
@@ -91,4 +107,12 @@ object SearchFrontend extends LaminarApp("searchContainer") {
 
     div(frontend.node)
   }
+
+  @js.annotation.JSExport
+  def sayHello(): Unit = {
+    println("howdy")
+    HideResults.set(true)
+  }
+
+  val HideResults = Var(false)
 }

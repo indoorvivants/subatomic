@@ -2,26 +2,25 @@ import java.io.FileReader
 val Ver = new {
   val flexmark              = "0.62.2"
   val coursier              = "2.1.0"
-  val osLib                 = "0.8.1"
-  val osLib_old             = "0.7.8"
+  val osLib                 = "0.9.1"
   val scalaUri              = "4.0.2"
   val scalaCollectionCompat = "2.9.0"
-  val scalatags             = "0.11.1"
-  val scalacss              = "1.0.0"
-  val scalacssFor2_12       = "0.7.0"
+  val scalatags             = "0.12.0"
   val decline               = "2.3.1"
-  val laminar               = "0.14.2"
-  val upickle               = "2.0.0"
+  val laminar               = "15.0.1"
+  val upickle               = "3.0.0"
   val fansi                 = "0.4.0"
   val weaver                = "0.6.15"
   val verify                = "1.0.0"
-  val geny                  = "0.7.1"
+  val geny                  = "1.0.0"
   val scalaXml              = "2.1.0"
+  val detective             = "0.0.2"
+  val dirs                  = "26"
 
   val Scala = new {
     val `2_12` = "2.12.15"
-    val `2_13` = "2.13.8"
-    val `3`    = "3.1.1"
+    val `2_13` = "2.13.10"
+    val `3`    = "3.2.2"
 
     val only_2    = Seq(`2_12`, `2_13`)
     val only_2_13 = Seq(`2_13`)
@@ -90,9 +89,7 @@ lazy val core = projectMatrix
 
     },
     libraryDependencies ++= Seq(
-      "com.lihaoyi" %% "os-lib" % {
-        if (scalaVersion.value.startsWith("2")) Ver.osLib_old else Ver.osLib
-      },
+      "com.lihaoyi" %% "os-lib" % Ver.osLib,
       "org.scala-lang.modules" %% "scala-collection-compat" % Ver.scalaCollectionCompat,
       "io.lemonlabs" %% "scala-uri" % Ver.scalaUri
     )
@@ -114,16 +111,13 @@ lazy val builders =
     .in(file("modules/builders"))
     .dependsOn(core, searchIndex, searchFrontendPack, searchRetrieve)
     .settings(
-      name := "subatomic-builders",
-      libraryDependencies += {
-        if (scalaBinaryVersion.value != "2.12")
-          "com.github.japgolly.scalacss" %% "core" % Ver.scalacss
-        else
-          "com.github.japgolly.scalacss" %% "core" % Ver.scalacssFor2_12
-      },
+      name                                  := "subatomic-builders",
       libraryDependencies += "com.monovore" %% "decline"   % Ver.decline,
       libraryDependencies += "com.lihaoyi"  %% "geny"      % Ver.geny,
-      libraryDependencies += "com.lihaoyi"  %% "scalatags" % Ver.scalatags
+      libraryDependencies += "com.lihaoyi"  %% "scalatags" % Ver.scalatags,
+      libraryDependencies += "com.indoorvivants.detective" %% "platform" % Ver.detective,
+      libraryDependencies += "dev.dirs"     % "directories" % Ver.dirs,
+      libraryDependencies += "com.lihaoyi" %% "requests"    % "0.8.0"
     )
     .someVariations(
       Ver.Scala.all.toList,
@@ -435,8 +429,7 @@ inThisBuild(
         url("https://blog.indoorvivants.com")
       )
     ),
-    version := sys.env
-      .getOrElse("VERSION_OVERRIDE", version.value)
+    version := (if (!sys.env.contains("CI")) "dev" else version.value)
   )
 )
 
@@ -470,8 +463,8 @@ ThisBuild / commands += Command.command("ci") { st =>
     "headerCheck" :: st
 }
 
-addCommandAlias("buildSite", "docs/runMain subatomic.docs.Docs build")
-addCommandAlias("buildBlog", "docs/runMain subatomic.docs.DevBlog build")
+addCommandAlias("buildSite", "docs3/runMain subatomic.docs.Docs build")
+addCommandAlias("buildBlog", "docs3/runMain subatomic.docs.DevBlog build")
 
 import commandmatrix._
 

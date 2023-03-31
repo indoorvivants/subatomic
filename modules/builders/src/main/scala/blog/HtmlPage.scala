@@ -22,28 +22,31 @@ import java.time.format.DateTimeFormatter
 import subatomic.Linker
 import subatomic.SiteRoot
 import subatomic.builders._
+import subatomic.builders.blog.themes.Theme
 
-trait Template {
+trait HtmlPage {
 
   def site: Blog
   def linker: Linker
   def tagPages: Seq[TagPage]
+  def theme: Theme
 
   import scalatags.Text.all._
   import scalatags.Text.TypedTag
 
   def Nav(navigation: Vector[NavLink]) = {
-    div(
+    ul(
+      whoosh(_.Aside.NavContainer),
       navigation.map {
         case NavLink(_, title, selected) if selected =>
-          p(strong(title))
+          li(span(whoosh(_.Aside.NavCurrent), title))
         case NavLink(url, title, _) =>
-          p(a(href := url, title))
+          li(a(whoosh(_.Aside.NavLink), href := url, title))
       }
     )
   }
 
-  def rawHtml(rawHtml: String) = div(raw(rawHtml))
+  def rawHtml(rawHtml: String) = raw(rawHtml)
 
   import SyntaxHighlighting._
 
@@ -83,12 +86,6 @@ trait Template {
     BuilderTemplate.managedStylesBlock(linker, paths)
   }
 
-  private def templateStyles = {
-    val paths = List(StylesheetPath(SiteRoot / "assets" / "template.css"))
-
-    BuilderTemplate.managedStylesBlock(linker, paths)
-  }
-
   def basePage(
       navigation: Option[Vector[NavLink]],
       headings: Option[Vector[Heading]],
@@ -106,10 +103,13 @@ trait Template {
         scalatags.Text.tags2.title(site.name + pageTitle),
         highlightingHeader(site.highlighting),
         BuilderTemplate.managedStylesBlock(linker, site.managedStyles),
+        BuilderTemplate.managedStylesBlock(
+          linker,
+          List(StylesheetPath(SiteRoot / "assets" / "tailwind.css"))
+        ),
         BuilderTemplate.managedScriptsBlock(linker, site.managedScripts),
         searchScripts,
         searchStyles,
-        templateStyles,
         meta(charset := "UTF-8"),
         meta(
           name            := "viewport",
@@ -117,20 +117,20 @@ trait Template {
         )
       ),
       body(
+        whoosh(_.Body),
         div(
-          cls := "wrapper",
+          whoosh(_.Container),
           aside(
-            cls := "sidebar",
+            whoosh(_.Aside.Container),
             blogTitleSection,
-            about,
             staticNav,
             searchSection,
             tagCloud,
-            archiveLink,
             navigationSection(navigation),
+            archiveLink,
             headingsSection(headings)
           ),
-          article(cls := "content-wrapper", content)
+          tag("main")(content)
         ),
         highlightingBody(site.highlighting),
         site.trackers.flatMap(_.scripts)
@@ -140,17 +140,26 @@ trait Template {
 
   def archiveLink = {
     section(
-      h4(a(href := linker.unsafe(_ / "archive.html"), "Archive"))
+      h4(
+        whoosh(_.Aside.Section.TitleLink),
+        a(href := linker.unsafe(_ / "archive.html"), "Archive")
+      )
     )
   }
+
+  private def whoosh(t: Theme => WithClassname) =
+    t(theme).className.map(cls := _)
 
   private def navigationSection(navigation: Option[Vector[NavLink]]) =
     navigation match {
       case Some(value) =>
         section(
-          cls := "site-navigation-posts",
-          h4("posts"),
-          Nav(value)
+          whoosh(_.Aside.Section.Container),
+          h4(whoosh(_.Aside.Section.Title), "posts"),
+          nav(
+            whoosh(_.Aside.Section.Content),
+            Nav(value)
+          )
         )
       case None => span()
     }
@@ -159,13 +168,14 @@ trait Template {
     headings match {
       case None => span()
       case Some(value) =>
-        div(
+        section(
+          whoosh(_.Aside.Section.Container),
           style := "position: sticky; position: -webkit-sticky; top: 0",
-          h4("contents"),
+          h4(whoosh(_.Aside.Section.Title), "contents"),
           value.filter(_.level <= 3).map { hd =>
             span(
               raw("&nbsp;&nbsp;" * (hd.level - 1)),
-              a(href := hd.url, cls := "heading-link", small(hd.title)),
+              a(href := hd.url, small(hd.title)),
               br
             )
           }
@@ -173,9 +183,10 @@ trait Template {
     }
 
   private def blogTitleSection =
-    section(
-      cls := "site-title",
-      h2(a(href := linker.root, site.name))
+    div(
+      whoosh(_.Logo.Container),
+      a(whoosh(_.Logo.Title), href := linker.root, site.name),
+      about
     )
 
   private def searchSection =
@@ -197,7 +208,13 @@ trait Template {
       title: String,
       tags: Seq[String],
       content: String
-  ): String = post(navigation, headings, title, tags, rawHtml(content))
+  ): String = post(
+    navigation,
+    headings,
+    title,
+    tags,
+    article(whoosh(_.Post.Container), cls := "markdown", rawHtml(content))
+  )
 
   def post(
       navigation: Vector[NavLink],
@@ -207,15 +224,21 @@ trait Template {
       content: TypedTag[_]
   ) = {
     val tagline = tags.toList.map { tag =>
-      span(
-        cls := "blog-tag",
-        a(href := linker.unsafe(_ / "tags" / s"$tag.html"), small(tag))
+      a(
+        whoosh(_.Tag),
+        href := linker.unsafe(_ / "tags" / s"$tag.html"),
+        tag
       )
     }
     "<!DOCTYPE html>" + page(
       navigation,
       Some(headings),
-      div(h2(cls := "blog-post-title", title), p(tagline), hr, content)
+      div(
+        h2(whoosh(_.Post.Title), title),
+        p(whoosh(_.Post.Description), tagline),
+        hr,
+        content
+      )
     ).render
   }
 
@@ -228,8 +251,12 @@ trait Template {
       navigation,
       None,
       div(
-        h3(span("Posts tagged with ", span(cls := "blog-tag", tag))),
-        div(cls := "card-columns", blogs.map(blogCard).toVector)
+        h3(
+          whoosh(_.TagPage.Header),
+          "Posts tagged with ",
+          span(whoosh(_.Tag), tag)
+        ),
+        div(blogs.map(blogCard).toVector)
       )
     )
   }
@@ -246,11 +273,17 @@ trait Template {
 
   def tagCloud = {
     section(
-      cls := "site-tag-cloud",
-      h4("tags"),
+      whoosh(_.Aside.Section.Container),
+      h4(whoosh(_.Aside.Section.Title), "tags"),
       nav(
+        whoosh(_.Aside.Section.Content),
+        whoosh(_.TagCloud.Container),
         tagPages.toList.map { tagPage =>
-          span(a(href := linker.find(tagPage), small(tagPage.tag)), " ")
+          a(
+            whoosh(_.TagCloud.Tag),
+            href := linker.find(tagPage),
+            small(tagPage.tag)
+          )
         }
       )
     )
@@ -259,17 +292,22 @@ trait Template {
   def blogCard(
       blogPost: Post
   ) = {
-    div(
-      cls := "blog-card",
+    section(
+      whoosh(_.PostCard.Container),
       div(
-        cls := "blog-card-body",
+        whoosh(_.PostCard.Body),
         div(
-          cls := "blog-card-title",
-          a(href := linker.find(blogPost), blogPost.title),
-          " ",
-          small(i(blogPost.date.format(DateTimeFormatter.ISO_LOCAL_DATE)))
+          a(
+            whoosh(_.PostCard.Title),
+            href := linker.find(blogPost),
+            blogPost.title
+          ),
+          span(
+            whoosh(_.PostCard.Date),
+            blogPost.date.format(DateTimeFormatter.ISO_LOCAL_DATE)
+          )
         ),
-        p(cls := "blog-card-text", blogPost.description)
+        p(whoosh(_.PostCard.Description), blogPost.description)
       )
     )
   }
@@ -307,7 +345,7 @@ trait Template {
       None,
       None,
       div(
-        h3("Archive"),
+        h3(whoosh(_.ArchivePage.Header), "Archive"),
         div(cls := "card-columns", blogs.sorted.reverse.map(blogCard).toVector)
       )
     )
@@ -319,18 +357,16 @@ trait Template {
   val article = tag("article")
 
   def about =
-    section(
-      cls := "site-tagline",
-      p(site.tagline)
-    )
+    p(whoosh(_.Logo.Subtitle), site.tagline)
 
   def staticNav =
     section(
-      cls := "site-links",
       ul(
+        whoosh(_.Aside.StaticLinks.Container),
         site.links.map { case (title, url) =>
           li(
             a(
+              whoosh(_.Aside.StaticLinks.Link),
               href := url,
               title
             )

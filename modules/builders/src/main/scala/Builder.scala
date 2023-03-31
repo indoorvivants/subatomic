@@ -68,37 +68,6 @@ object BuilderTemplate {
     scripts.map { sp =>
       script(src := linker.unsafe(_ => sp.path))
     }
-
-  def searchCSS = """
-  |
-  |div.searchContainer {
-  |  flex-grow: 2;
-  |}
-  |
-  |div.searchContainer div.searchWrapper {
-  |  position: relative
-  |}
-  |
-  |div.searchContainer input {
-  |  max-width:300px;
-  |  padding:10px;
-  |  font-size: 18px;
-  |}
-  |
-  |div.searchContainer span.searchResults {
-  |  background-color: white;
-  |  border:2px solid darkslategrey;
-  |  border-radius: 2px; 
-  |  max-width: 600px;
-  |  position: absolute;
-  |  top: 100%;  
-  |  z-index: 100;  
-  |  left: 0px;  
-  |  right: auto
-  |}
-  |
-  """.stripMargin.trim
-
 }
 
 case class ScriptPath(path: SitePath)     extends AnyVal

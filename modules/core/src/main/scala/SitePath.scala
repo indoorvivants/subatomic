@@ -32,6 +32,8 @@ case class SitePath(segments: Seq[String]) {
       throw new IllegalStateException("Cannot go up on an empty path")
     else new SitePath(segments.take(segments.size - 1))
 
+  def upSafe = if (segments.isEmpty) None else Some(up)
+
   def prepend(p: os.RelPath) = new SitePath(p.segments ++ segments)
 
   def prepend(p: SitePath) = new SitePath(p.segments ++ segments)

@@ -13,8 +13,6 @@ we want the site builder to take care of us:
 2. We want to be able to pass the version from the build into markdown
 documents, so that our installation instructions don't get outdated
 
-## Mdoc and classpath
-
 Subatomic manually invokes [Mdoc](https://scalameta.org/mdoc/) as a separate Java process, so to make it aware of the classpath of the
 project we're building, we need to configure the build properly.
 
