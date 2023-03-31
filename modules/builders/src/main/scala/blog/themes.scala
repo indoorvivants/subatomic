@@ -81,7 +81,7 @@ trait DefaultTheme extends Theme {
   PostCard.Container = c("p-6")
   Body = c("h-full min-h-screen")
   Container = c(
-    "flex flex-col-reverse sm:flex-col-reverse md:flex-row lg:flex-row h-full min-h-screen lg:max-w-6xl m-auto"
+    "flex flex-col-reverse sm:flex-col-reverse md:flex-row lg:flex-row min-h-screen lg:max-w-6xl m-auto"
   )
   PostCard.Title = c("font-bold text-2xl")
   PostCard.Date = c("m-2 text-sm italic")
