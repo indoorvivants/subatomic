@@ -47,14 +47,14 @@ trait Theme {
 
 trait DefaultTheme extends Theme {
   Body = c("bg-gradient-to-r from-emerald-800 to-sky-700 mt-4 w-full")
-  val mainSizing = "m-2 mb-4 md:m-auto md:w-11/12 lg:w-7xl"
+  val mainSizing = "m-2 mb-4 md:m-auto md:w-11/12 lg:max-w-7xl"
   Container = c(
     s"rounded-xl bg-white $mainSizing p-4 flex flex-col-reverse md:flex-row gap-6"
   )
   Aside = c(
     "lg:w-64 shrink-1 lg:shrink-0 grow-0 md:border-r-2 max-w-[300px] border-slate-200 pr-2"
   )
-  Main = c("grow-4")
+  Main = c("grow-4 lg:max-w-6xl")
   Header.Title = c(s"block text-6xl text-white")
   Header.Subtitle = c("text-white")
   Header.Container = c(
