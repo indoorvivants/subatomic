@@ -33,6 +33,27 @@ class BuilderSteps(markdown: Markdown) {
       }
     }
 
+  def tailwindStep[Doc](
+      destination: os.Path,
+      tailwind: TailwindCSS,
+      markdownTheme: MarkdownTheme,
+      searchTheme: SearchTheme
+  ): Site[Doc] => Site[Doc] = site => {
+
+    site.addDelayedAsset(
+      SiteRoot / "assets" / "tailwind.css",
+      { () =>
+        val allHtml     = os.walk(destination).filter(_.ext == "html")
+        val allJs     = os.walk(destination).filter(_.ext == "js")
+        val markdownCSS = renderMarkdownBase(markdownTheme)
+        val searchCSS   = renderSearchTheme(searchTheme, ".subatomic-search-container")
+        Page(tailwind.process(allHtml ++ allJs, s"$markdownCSS\n$searchCSS"))
+        
+      },
+      "<generated and minified tailwind CSS"
+    )
+  }
+
   def buildSearchIndex[Doc](
       linker: Linker,
       d: PartialFunction[Doc, SearchableDocument]
@@ -91,6 +112,82 @@ class BuilderSteps(markdown: Markdown) {
           BuilderTemplate.searchCSS
         )
 
+  }
+
+  private def renderSearchTheme(base: SearchTheme, selector: String) = {
+
+    val applications = Vector.newBuilder[String]
+    def add(query: String, cls: WithClassname): Unit = {
+      import ExtraStyles._
+      cls match {
+        case Define(name, es) =>
+          es match {
+            case CSS(value) =>
+            case TailwindApply(classes) =>
+              applications += s"$query.$name { @apply $classes}"
+          }
+
+        case Stylesheet(definitions) =>
+          definitions.foreach(add(query, _))
+
+        case _ =>
+          cls.className.filter(_.trim.nonEmpty).foreach { cls =>
+            applications += s"$query { @apply $cls}"
+          }
+      }
+    }
+
+    add(s"$selector", base.Container)
+    add(s"$selector input.subatomic-search-input", base.Input)
+    add(s"$selector .subatomic-search-results", base.ResultsContainer)
+    add(s"$selector .subatomic-search-result-container", base.Result)
+    add(s"$selector .subatomic-search-result-container", base.Result)
+    add(s"$selector .subatomic-search-result-document-url", base.DocumentUrl)
+    add(s"$selector .subatomic-search-result-document-title", base.DocumentTitle)
+    add(s"$selector .subatomic-search-sections-container", base.SectionsContainer)
+    add(s"$selector .subatomic-search-section-url", base.SectionUrl)
+
+    applications.result().mkString("\n")
+  }
+
+  private def renderMarkdownBase(base: MarkdownTheme) = {
+    val applications = Vector.newBuilder[String]
+
+    def add(query: String, cls: WithClassname) = {
+      import ExtraStyles._
+      cls match {
+        case Define(name, es) =>
+          es match {
+            case CSS(value) =>
+            case TailwindApply(classes) =>
+              applications += s".markdown $query.$name { @apply $classes}"
+          }
+
+        case _ =>
+          cls.className.filter(_.trim.nonEmpty).foreach { cls =>
+            applications += s".markdown $query { @apply $cls}"
+          }
+      }
+    }
+
+    add("p", base.Paragraph)
+    add("p > a", base.Link)
+    add("li > a", base.Link)
+    add("blockquote > a", base.Link)
+    add("ul", base.UnorderedList.Container)
+    add("ul > li", base.UnorderedList.Item)
+    add("ol", base.OrderedList.Container)
+    add("h1", base.Headings.H1)
+    add("h2", base.Headings.H2)
+    add("h3", base.Headings.H3)
+    add("h4", base.Headings.H4)
+    add("blockquote", base.Quote)
+    add("pre", base.Preformatted)
+    add("p > code", base.InlineCode)
+    add("li > code", base.InlineCode)
+    add("pre > code", base.Code)
+
+    applications.result().mkString("\n")
   }
 
 }

@@ -454,27 +454,6 @@ object Blog {
       }
 
     val builderSteps = new BuilderSteps(markdown)
-    val tailwindStep: Site[Doc] => Site[Doc] = site => {
-
-      site.addDelayedAsset(
-        SiteRoot / "assets" / "tailwind.css",
-        { () =>
-          val allHtml = os.walk(buildConfig.destination).filter(_.ext == "html")
-          val out     = tailwind.process(allHtml, template.theme.Markdown)
-          CopyOf(out)
-        },
-        "<generated and minified tailwind CSS"
-      )
-
-      // val html = site.pages.collect {
-      //   case Delayed(path, processor, original) if path.segments.lastOption.exists(_.endsWith(".html")) =>
-
-      //   case Ready(path, content) =>
-      // }
-      // // println(site.pages)
-      // // println(tailwind)
-      // site
-    }
 
     val steps = List[Site[Doc] => Site[Doc]](
       builderSteps.addSearchIndex[Doc](
@@ -486,10 +465,14 @@ object Blog {
       ),
       builderSteps
         .addAllAssets[Doc](siteConfig.assetsRoot, siteConfig.assetsFilter),
-      // addTemplateCSS,
       addRSSPage,
       extra,
-      tailwindStep
+      builderSteps.tailwindStep(
+        buildConfig.destination,
+        tailwind,
+        template.theme.Markdown,
+        template.theme.Search
+      )
     )
 
     val process = steps.foldLeft(identity[Site[Doc]] _) { case (step, next) =>

@@ -19,8 +19,6 @@ package builders
 package blog
 package themes
 
-import builders.themes._
-
 trait Theme {
   val c = WithClassname.apply(_)
   import WithClassname.none
@@ -74,14 +72,15 @@ trait Theme {
     var Header: WithClassname = none
   }
 
-  val Markdown: MarkdownTheme = MarkdownTheme.none
+  var Markdown: MarkdownTheme = MarkdownTheme.none
+  var Search: SearchTheme = SearchTheme.none
 
 }
 
-object default extends Theme {
+trait DefaultTheme extends Theme {
   PostCard.Container = c("p-6")
   Body = c("h-full min-h-screen")
-  Container = c("flex h-full min-h-screen")
+  Container = c("flex flex-col-reverse sm:flex-col-reverse md:flex-row lg:flex-row h-full min-h-screen lg:max-w-6xl m-auto")
   PostCard.Title = c("font-bold text-2xl")
   PostCard.Date = c("m-2 text-sm italic")
   Tag = c(
@@ -92,7 +91,7 @@ object default extends Theme {
   TagCloud.Tag = c("text-lg no-underline hover:underline text-slate-400")
 
   Aside.Container = c(
-    "bg-slate-900 text-white pr-6 pl-4 py-4 border-r-8 border-slate-700 grow-0 flex flex-col gap-4 lg:min-w-[300px] lg:max-w-[300px] shrink-0"
+    "bg-slate-900 text-white pr-6 pl-4 py-4 border-r-8 border-slate-700 grow-0 flex flex-col gap-4 md:w-[300px] shrink-0"
   )
   Aside.NavContainer = c("flex flex-col gap-2 text-sm")
   Aside.NavLink = c("no-underline hover:underline")
@@ -118,13 +117,8 @@ object default extends Theme {
   Post.Description = c("text-base underline")
   Post.Title = c("text-2xl m-2 font-bold")
 
-  Markdown.Paragraph = c("leading-relaxed")
-  Markdown.Link = c("underline hover:no-underline")
-  Markdown.UnorderedList.Container = c("list-disc ml-6 block")
-  Markdown.OrderedList.Container = c("list-decimal ml-6 block")
-  Markdown.Headings.H1 = c("text-2xl font-bold")
-  Markdown.Headings.H2 = c("text-xl font-bold")
-  Markdown.Headings.H3 = c("text-lg font-bold")
-  Markdown.Quote = c("p-4 text-slate-700 border-l-4")
-
+  Markdown = MarkdownTheme.default
+  Search = SearchTheme.default
 }
+
+object default extends DefaultTheme

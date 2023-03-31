@@ -21,37 +21,36 @@ import java.nio.file.Path
 
 import scala.annotation.nowarn
 
-import subatomic.builders.themes.MarkdownTheme
-import subatomic.builders.themes.WithClassname
-
 import com.indoorvivants.detective.Platform
 import com.indoorvivants.detective.Platform.Arch._
 import com.indoorvivants.detective.Platform.OS._
+import subatomic.builders.ExtraStyles.CSS
+import subatomic.builders.ExtraStyles.TailwindApply
 
 class TailwindCSS(val binary: Path) {
-  def process(files: Seq[os.Path], markdownBase: MarkdownTheme): os.Path = {
+  def process(files: Seq[os.Path], extraCSS: String) = {
     val inputCSS = s"""
     |@tailwind base;
     |@tailwind components;
     |@tailwind utilities;
-    |${TailwindCSS.renderMarkdownBase(markdownBase)}
+    |@layer components {\n$extraCSS\n}
     """.trim.stripMargin
-    println(inputCSS)
-    val tempCss = os.temp(inputCSS)
-    val outCss  = os.temp("")
+
+    val cssFile = os.temp(
+      contents = inputCSS,
+      prefix = "subatomic-tailwindcss-input-",
+      deleteOnExit = true
+    )
     val args = Seq(
       binary.toString,
       "-i",
-      tempCss.toString,
-      "-o",
-      outCss.toString,
+      cssFile.toString,
       "--content",
       files.mkString(",")
     )
 
-    os.proc(args).call(): @nowarn
+    os.proc(args).call().out.text()
 
-    outCss
   }
 }
 
@@ -59,29 +58,6 @@ object TailwindCSS {
   case class Config(version: String)
   object Config {
     val default: Config = Config(version = "3.2.7")
-  }
-
-  def renderMarkdownBase(base: MarkdownTheme) = {
-    val applications = Vector.newBuilder[String]
-
-    def add(query: String, cls: WithClassname) = {
-      cls.className.filter(_.trim.nonEmpty).foreach { cls =>
-        applications += s".markdown $query { @apply $cls}"
-      }
-    }
-
-    add("p", base.Paragraph)
-    add("a", base.Link)
-    add("ul", base.UnorderedList.Container)
-    add("ul > li", base.UnorderedList.Item)
-    add("ol", base.OrderedList.Container)
-    add("h1", base.Headings.H1)
-    add("h2", base.Headings.H2)
-    add("h3", base.Headings.H3)
-    add("h4", base.Headings.H4)
-    add("blockquote", base.Quote)
-
-    "@layer components {\n" + applications.result().mkString("\n") + "\n}"
   }
 
   def bootstrap(config: Config, cacheDir: Path) = {

@@ -23,7 +23,6 @@ import subatomic.Linker
 import subatomic.SiteRoot
 import subatomic.builders._
 import subatomic.builders.blog.themes.Theme
-import subatomic.builders.themes._
 
 trait HtmlPage {
 
