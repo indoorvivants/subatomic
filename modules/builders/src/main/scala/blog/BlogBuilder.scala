@@ -47,7 +47,7 @@ case class Blog(
     tagline: Option[String] = None,
     copyright: Option[String] = None,
     githubUrl: Option[String] = None,
-    customHtmlPage: Option[HtmlPage] = None,
+    theme: Theme = default,
     links: Vector[(String, String)] = Vector.empty,
     override val highlighting: SyntaxHighlighting =
       SyntaxHighlighting.PrismJS.default,
@@ -272,16 +272,15 @@ object Blog {
 
     val navigation = createNavigation(linker, content.map(_._2))
 
-    val template = siteConfig.customHtmlPage.getOrElse(
+    val template =
       DefaultHtmlPage(
         site = siteConfig,
         linker = linker,
         tagPages = content.map(_._2).collect { case t: TagPage =>
           t
         },
-        theme = default
+        theme = siteConfig.theme
       )
-    )
 
     val markdown = markdownParser(siteConfig)
 

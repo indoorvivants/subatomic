@@ -35,8 +35,7 @@ case class LibrarySite(
     copyright: Option[String] = None,
     githubUrl: Option[String] = None,
     tagline: Option[String] = None,
-    customTemplate: (LibrarySite, Linker) => HtmlPage = (s, l) =>
-      new DefaultPage(s, l, default),
+    theme: Theme = default,
     links: Vector[(String, String)] = Vector.empty,
     override val highlighting: SyntaxHighlighting =
       SyntaxHighlighting.PrismJS.default,
@@ -97,69 +96,6 @@ object LibrarySite {
       }
     }
   }
-  // sealed trait Navigation extends Product with Serializable
-  // object Navigation {
-  //   case class Link(to: )
-  // }
-
-  // case class Item(to: Doc, sectionOnly: Boolean, children: List[Item])
-  // object Item {
-  //   def isLessThan(a: List[String], b: List[String]): Boolean =
-  //     ((a, b): @unchecked) match {
-  //       case (hA :: _, hB :: _) => (hA < hB) || isLessThan(a.tail, b.tail)
-  //       case (Nil, Nil)         => false
-  //     }
-  //   implicit val ord: Ordering[List[String]] = Ordering.fromLessThan { (a, b) =>
-  //     if (a.length == b.length) { isLessThan(a, b) }
-  //     else a.length < b.length
-  //   // (a, b) match {
-  //   //   case (hA :: _, hB ::
-  //   // }
-  //   }
-  //   def create(content: Vector[Doc], linker: Linker): Doc => Item = {
-  //     val sorted = content.sortBy(_.depth.toList)
-  //     sorted.foreach(println)
-  //     println(linker)
-
-  //     { piece =>
-  //       println(piece)
-  //       ???
-  //     }
-  //   }
-  // }
-
-  // case class Navigation(
-  //     topLevel: Vector[NavLink],
-  //     sameLevel: Option[Vector[NavLink]]
-  // )
-
-  // def createNavigation(
-  //     linker: Linker,
-  //     content: Vector[Doc]
-  // ): Doc => Navigation = _ => Navigation(Vector.empty, None)
-  // ): Doc => Navigation = {
-
-  //   { piece =>
-  //     @inline def mark(docs: Vector[Doc]) =
-  //       docs.map {
-  //         case `piece` =>
-  //           NavLink(linker.find(piece), piece.title, selected = true)
-  //         case other =>
-  //           NavLink(linker.find(other), other.title, selected = false)
-  //       }
-
-  //     val topLevel = content.filter(doc => doc.depth.isEmpty || doc.inNavBar)
-  //     val sameLevel =
-  //       if (piece.depth.isEmpty) None
-  //       else Some(content.filter(_.depth == piece.depth))
-
-  //     Navigation(
-  //       mark(topLevel),
-  //       sameLevel.filter(_.size > 1).map(_.filter(!_.inNavBar)).map(mark)
-  //     )
-  //   }
-
-  // }
 
   case class NavTree(
       level: Vector[(Doc, NavTree, Boolean)],
@@ -296,7 +232,7 @@ object LibrarySite {
 
     val linker = new Linker(content, siteConfig.base)
 
-    val template = siteConfig.customTemplate(siteConfig, linker)
+    val template = new DefaultPage(siteConfig, linker, siteConfig.theme)
 
     val mdocProcessor =
       if (!buildConfig.disableMdoc)
