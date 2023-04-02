@@ -115,32 +115,7 @@ trait HtmlPage {
           tag("article")(
             whoosh(_.Main),
             cls := "markdown",
-            toc.map { toc =>
-              div(
-                whoosh(_.Markdown.TableOfContents.Container), {
-                  def render(toc: TOC): Option[TypedTag[String]] = {
-                    if (toc.level.nonEmpty)
-                      Some(
-                        ul(
-                          whoosh(_.Markdown.TableOfContents.List),
-                          toc.level.map { case (h, nest) =>
-                            li(
-                              a(
-                                whoosh(_.Markdown.TableOfContents.Link),
-                                href := s"#${h.anchorId}",
-                                h.title
-                              ),
-                              render(nest)
-                            )
-                          }
-                        )
-                      )
-                    else None
-                  }
-                  render(toc)
-                }
-              )
-            },
+            toc.map(Html.renderTOC(_, theme.Markdown)),
             content
           )
         ),

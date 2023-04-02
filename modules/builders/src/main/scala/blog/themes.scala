@@ -122,7 +122,7 @@ trait DefaultTheme extends Theme {
   TagPage.Header = c("p-4 text-xl")
   ArchivePage.Header = c("p-4 text-xl")
 
-  Post.Container = c("p-4 flex flex-col space-y-3")
+  Post.Container = c("p-4")
   Post.Description = c("text-base underline")
   Post.Title = c("text-2xl m-2 font-bold")
 

@@ -50,7 +50,7 @@ case class Blog(
     theme: Theme = default,
     links: Vector[(String, String)] = Vector.empty,
     override val highlighting: SyntaxHighlighting =
-      SyntaxHighlighting.PrismJS.default,
+      SyntaxHighlighting.HighlightJS.default,
     override val assetsFilter: os.Path => Boolean = _ => true,
     override val trackers: Seq[Tracker] = Seq.empty,
     search: Boolean = true,
@@ -319,7 +319,8 @@ object Blog {
         links: Vector[NavLink],
         headings: Vector[Heading]
     ) = {
-      val headers = markdown.extractMarkdownHeadings(file)
+      val headers          = markdown.extractMarkdownHeadings(file)
+      val toc              = TOC.build(markdown.extractMarkdownHeadings(file))
       val renderedMarkdown = markdown.renderToString(file)
       val renderedHtml =
         template.post(
@@ -327,6 +328,7 @@ object Blog {
           headings,
           title,
           tags,
+          if (toc.length > 1) Some(toc) else None,
           renderedMarkdown
         )
 

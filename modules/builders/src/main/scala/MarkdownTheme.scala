@@ -60,7 +60,8 @@ object MarkdownTheme {
     val headingTheme =
       s"underline hover:no-underline"
     Paragraph = c("leading-relaxed text-lg my-4 break-words w-full")
-    Link = c("underline hover:no-underline text-sky-700")
+    val linkTheme = "underline hover:no-underline text-sky-700"
+    Link = c(linkTheme)
     Preformatted = c("whitespace-pre-wrap")
     Code = c("whitespace-pre-wrap")
     UnorderedList.Container = c("list-disc mx-4 block text-lg")
@@ -80,8 +81,8 @@ object MarkdownTheme {
     TableOfContents.Container = c(
       "float-right p-3 rounded-md border-2 border-sky-700 max-w-12 m-4"
     )
-    TableOfContents.List = c("list-none my-0 text-sm")
-    TableOfContents.Link = c("text-base")
+    TableOfContents.List = c("list-disc my-0 mx-2 text-sm")
+    TableOfContents.Link = c(s"${linkTheme} text-base")
   }
 
 }

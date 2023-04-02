@@ -207,13 +207,20 @@ trait HtmlPage {
       headings: Vector[Heading],
       title: String,
       tags: Seq[String],
+      toc: Option[TOC],
       content: String
   ): String = post(
     navigation,
     headings,
     title,
     tags,
-    article(whoosh(_.Post.Container), cls := "markdown", rawHtml(content))
+    toc,
+    article(
+      whoosh(_.Post.Container),
+      cls := "markdown",
+      toc.map(Html.renderTOC(_, theme.Markdown)),
+      rawHtml(content)
+    )
   )
 
   def post(
@@ -221,6 +228,7 @@ trait HtmlPage {
       headings: Vector[Heading],
       title: String,
       tags: Seq[String],
+      toc: Option[TOC],
       content: TypedTag[_]
   ) = {
     val tagline = tags.toList.map { tag =>
@@ -236,7 +244,6 @@ trait HtmlPage {
       div(
         h2(whoosh(_.Post.Title), title),
         p(whoosh(_.Post.Description), tagline),
-        hr,
         content
       )
     ).render
