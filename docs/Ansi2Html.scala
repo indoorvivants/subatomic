@@ -103,8 +103,9 @@ object Ansi2Html extends Function1[String, String] {
 
 object Terminal {
   def show(s: String) = {
-    val header = "<div class='terminal'><pre><code class = 'nohighlight'>"
-    val footer = "</code></pre></div>"
+    val header =
+      "\n\n<div class='bg-black text-white p-4'><pre><code class = 'nohighlight'>"
+    val footer = "</code></pre></div>\n\n"
 
     header + Ansi2Html(
       s.replace("<", "&lt;").replace(">", "&gt;").trim

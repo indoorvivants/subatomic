@@ -22,7 +22,7 @@ object SyntaxHighlighting {
   case class HighlightJS(
       version: String = "11.7.0",
       languages: List[String] = List("scala"),
-      theme: String = "default"
+      theme: String = "tomorrow-night-blue"
   ) extends SyntaxHighlighting {
     private val urlBase =
       s"//cdn.jsdelivr.net/gh/highlightjs/cdn-release@$version/build"
