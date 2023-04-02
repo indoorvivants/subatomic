@@ -58,8 +58,13 @@ trait HtmlPage {
     BuilderTemplate.managedStylesBlock(linker, paths)
   }
 
-  def doc(title: String, content: String, links: LibrarySite.NavTree): String =
-    doc(title, RawHTML(content), links)
+  def doc(
+      title: String,
+      content: String,
+      toc: Option[TOC],
+      links: LibrarySite.NavTree
+  ): String =
+    doc(title, RawHTML(content), toc, links)
 
   import SyntaxHighlighting._
 
@@ -82,6 +87,7 @@ trait HtmlPage {
   def doc(
       title: String,
       content: TypedTag[_],
+      toc: Option[TOC],
       links: LibrarySite.NavTree
   ): String = {
     html(
@@ -106,7 +112,37 @@ trait HtmlPage {
         tag("main")(
           whoosh(_.Container),
           tag("aside")(whoosh(_.Aside), NavigationBar(links)),
-          tag("article")(whoosh(_.Main), cls := "markdown", content)
+          tag("article")(
+            whoosh(_.Main),
+            cls := "markdown",
+            toc.map { toc =>
+              div(
+                whoosh(_.Markdown.TableOfContents.Container), {
+                  def render(toc: TOC): Option[TypedTag[String]] = {
+                    if (toc.level.nonEmpty)
+                      Some(
+                        ul(
+                          whoosh(_.Markdown.TableOfContents.List),
+                          toc.level.map { case (h, nest) =>
+                            li(
+                              a(
+                                whoosh(_.Markdown.TableOfContents.Link),
+                                href := s"#${h.anchorId}",
+                                h.title
+                              ),
+                              render(nest)
+                            )
+                          }
+                        )
+                      )
+                    else None
+                  }
+                  render(toc)
+                }
+              )
+            },
+            content
+          )
         ),
         Footer,
         highlightingBody(site.highlighting),

@@ -34,6 +34,8 @@ import com.vladsch.flexmark.util.ast.TextContainer
 import com.vladsch.flexmark.util.data.MutableDataSet
 import com.vladsch.flexmark.util.misc.Extension
 
+import Markdown._
+
 class Markdown(extensions: List[Extension]) {
   private val opts = extensions match {
     case _ :: _ =>
@@ -131,12 +133,39 @@ class Markdown(extensions: List[Extension]) {
     recursiveCollect(parser.parse(content))(f)
   import Markdown.Section
 
+  def extractMarkdownHeadings(
+      p: os.Path
+  ): Vector[Header] = {
+
+    val document = read(p)
+
+    val generator = new HeaderIdGenerator.Factory().create()
+
+    generator.generateIds(document)
+
+    val sect = recursiveCollect[Header](document) {
+      case head: Heading =>
+        Collector.Collect(
+          Seq(
+            Header(
+              head.getText().toStringOrNull(),
+              head.getLevel(),
+              head.getAnchorRefId()
+            )
+          )
+        )
+      case _: FencedCodeBlock | _: YamlFrontMatterNode => Collector.Skip
+      case _: Node                                     => Collector.Recurse()
+    }
+
+    sect
+  }
+
   def extractMarkdownSections(
       documentTitle: String,
       baseUrl: String,
       p: os.Path
   ): Vector[Section] = {
-    case class Header(title: String, level: Int, anchorId: String)
     type Result = Either[
       Header,
       String
@@ -169,13 +198,12 @@ class Markdown(extensions: List[Extension]) {
 
     var currentSection: String => Section = Section(documentTitle, 1, None, _)
 
-    val sections = ArrayBuffer[Section]()
-
+    val sections      = Vector.newBuilder[Section]
     val collectedText = new StringBuilder
 
     sect.foreach {
       case Left(Header(title, lev, id)) =>
-        sections.append(currentSection(collectedText.result()))
+        sections += currentSection(collectedText.result())
         collectedText.clear()
         currentSection = Section(title, lev, Some(baseUrl + s"#$id"), _)
       case Right(content) =>
@@ -183,13 +211,14 @@ class Markdown(extensions: List[Extension]) {
     }
 
     if (collectedText.nonEmpty)
-      sections.append(currentSection(collectedText.result()))
+      sections += currentSection(collectedText.result())
 
-    sections.toVector
+    sections.result()
   }
 }
 
 object Markdown {
+  case class Header(title: String, level: Int, anchorId: String)
   case class Section(
       title: String,
       level: Int,

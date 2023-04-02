@@ -25,15 +25,13 @@ LibrarySite(
 4. Index is served as a `.js` file as well
 5. Everything comes together and now you have search.
 
-Search adds the following three paths to your site:
+Search adds the following paths to your site:
 
 ```text
 assets/search-index.js
     ^--copy-of--> /tmp/5284770261000098655.tmp
 assets/search.js
     ^--copy-of--> /tmp/2571604987094206986.tmp
-assets/subatomic-search.css
-    ^--content--> div.searchContainer {\n  flex-grow: 2;\n}\n\ndiv.se...
 ```
 
 # Algorithm

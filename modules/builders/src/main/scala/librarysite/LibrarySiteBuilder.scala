@@ -38,7 +38,7 @@ case class LibrarySite(
     theme: Theme = default,
     links: Vector[(String, String)] = Vector.empty,
     override val highlighting: SyntaxHighlighting =
-      SyntaxHighlighting.PrismJS.default,
+      SyntaxHighlighting.HighlightJS.default,
     override val trackers: Seq[Tracker] = Seq.empty,
     search: Boolean = true
 ) extends subatomic.builders.Builder
@@ -269,7 +269,13 @@ object LibrarySite {
         links: NavTree
     ) = {
       val renderedMarkdown = markdown.renderToString(file)
-      val renderedHtml     = template.doc(title, renderedMarkdown, links)
+      val toc              = TOC.build(markdown.extractMarkdownHeadings(file))
+      val renderedHtml = template.doc(
+        title,
+        renderedMarkdown,
+        if (toc.length > 1) Some(toc) else None,
+        links
+      )
 
       Page(renderedHtml)
     }

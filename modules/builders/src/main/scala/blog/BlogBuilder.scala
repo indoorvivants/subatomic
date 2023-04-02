@@ -319,6 +319,7 @@ object Blog {
         links: Vector[NavLink],
         headings: Vector[Heading]
     ) = {
+      val headers = markdown.extractMarkdownHeadings(file)
       val renderedMarkdown = markdown.renderToString(file)
       val renderedHtml =
         template.post(

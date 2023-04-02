@@ -41,6 +41,12 @@ trait MarkdownTheme {
     var H4 = none
     var H5 = none
   }
+
+  object TableOfContents {
+    var Container = none
+    var List      = none
+    var Link      = none
+  }
 }
 
 object MarkdownTheme {
@@ -57,18 +63,25 @@ object MarkdownTheme {
     Link = c("underline hover:no-underline text-sky-700")
     Preformatted = c("whitespace-pre-wrap")
     Code = c("whitespace-pre-wrap")
-    UnorderedList.Container = c("list-disc ml-8 block text-lg my-2")
+    UnorderedList.Container = c("list-disc mx-4 block text-lg")
     UnorderedList.Item = c("break-words")
-    OrderedList.Container = c("list-decimal ml-8 block text-lg my-2")
+    OrderedList.Container = c("list-decimal mx-4 block text-lg")
     OrderedList.Item = c("break-words")
     Headings.H1 = c(s"text-2xl font-bold my-2 $headingTheme")
     Headings.H2 = c(s"text-xl font-bold my-2 $headingTheme")
     Headings.H3 = c(s"text-lg font-bold my-2 $headingTheme")
+    Headings.H4 = c(s"text-base font-bold my-2 $headingTheme")
+    Headings.H5 = c(s"text-base font-bold my-2 $headingTheme")
     Quote = c("p-4 text-slate-700 border-l-4")
     InlineCode = c(
       "px-1 bg-slate-600 text-white rounded break-words"
     )
 
+    TableOfContents.Container = c(
+      "float-right p-3 rounded-md border-2 border-sky-700 max-w-12 m-4"
+    )
+    TableOfContents.List = c("list-none my-0 text-sm")
+    TableOfContents.Link = c("text-base")
   }
 
 }
