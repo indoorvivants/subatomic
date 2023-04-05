@@ -66,7 +66,7 @@ object BuilderTemplate {
 
   def managedScriptsBlock(linker: Linker, scripts: List[ScriptPath]) =
     scripts.map { sp =>
-      script(src := linker.unsafe(_ => sp.path))
+      script(src := linker.unsafe(_ => sp.path), defer)
     }
 }
 
