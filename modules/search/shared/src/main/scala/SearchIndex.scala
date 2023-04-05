@@ -129,7 +129,11 @@ object SearchIndex {
   }
 
   implicit val tdoR: ReadWriter[TermDocumentOccurence] =
-    macroRW
+    macroRW[(TermFrequency, Map[SectionIdx, TermFrequency])]
+      .bimap[TermDocumentOccurence](
+        tdo => (tdo.frequencyInDocument, tdo.sectionOccurences),
+        tpl => TermDocumentOccurence(tpl._1, tpl._2)
+      )
 
   implicit val secR: ReadWriter[SectionEntry] = macroRW
   implicit val doc: ReadWriter[DocumentEntry] = macroRW
