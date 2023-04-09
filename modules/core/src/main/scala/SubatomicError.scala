@@ -18,13 +18,15 @@ package subatomic
 
 class SubatomicError(msg: String)
     extends Exception(msg)
-    with scala.util.control.NoStackTrace {
+    with scala.util.control.NoStackTrace 
+    {
   final override def toString = SubatomicError.render(msg)
 }
 
 object SubatomicError {
 
   def apply(msg: String) = new SubatomicError(msg)
+  def raise(msg: String) = throw apply(msg)
   def render(msg: String) = {
 
     val maxLineLength = msg.linesIterator.map(_.length).max

@@ -48,11 +48,11 @@ object Discover extends App {
   )
 
   def readYaml(path: os.Path, md: Markdown): YamlAttributes = {
-    readYaml(os.read(path), md, path)
+    readYaml(md, path)
   }
 
-  def readYaml(content: String, md: Markdown, path: os.Path): YamlAttributes = {
-    val doc = md.read(content)
+  def readYaml(md: Markdown, path: os.Path): YamlAttributes = {
+    val doc = md.read(path)
 
     val visitor = new AbstractYamlFrontMatterVisitor()
 
@@ -67,10 +67,10 @@ object Discover extends App {
     YamlAttributes(data, path)
   }
 
-  def someMarkdown[C](root: os.Path, maxDepth: Int = Int.MaxValue)(
+  def someMarkdown[C](root: os.Path, markdown: Markdown, maxDepth: Int = Int.MaxValue)(
       f: PartialFunction[MarkdownDocument, C]
   ): Iterable[C] = {
-    val md = Markdown(YamlFrontMatterExtension.create())
+    val md = markdown
 
     val total = f.lift
 

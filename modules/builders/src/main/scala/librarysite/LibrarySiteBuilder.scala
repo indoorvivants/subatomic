@@ -116,10 +116,10 @@ object LibrarySite {
     }
   }
 
-  def discoverContent(siteConfig: LibrarySite) = {
+  def discoverContent(siteConfig: LibrarySite, markdown: Markdown) = {
     val sections = Vector.newBuilder[(SitePath, Doc)]
     val docs = Discover
-      .someMarkdown[(SitePath, Doc)](siteConfig.contentRoot) {
+      .someMarkdown[(SitePath, Doc)](siteConfig.contentRoot, markdown) {
         case MarkdownDocument(path, filename, attributes) =>
           val id = attributes.optionalOne("id").getOrElse(filename)
 
@@ -209,11 +209,18 @@ object LibrarySite {
     }
   }
 
-  def markdownParser(siteConfig: LibrarySite) = {
-    Markdown(
+  def markdownParser(
+      siteConfig: LibrarySite,
+      diagramResolver: Option[D2Extension.Diagram => SitePath] = None
+  ) = {
+    val base = List(
       RelativizeLinksExtension(siteConfig.base.toRelPath),
       YamlFrontMatterExtension.create(),
       AnchorLinkExtension.create()
+    ) ++ diagramResolver.map(D2Extension.create(_).create()).toList
+
+    Markdown(
+      parserExtensions = base
     )
   }
 
@@ -226,9 +233,33 @@ object LibrarySite {
       Paths.get(dev.dirs.BaseDirectories.get().cacheDir).resolve("subatomic")
 
     val tailwind = TailwindCSS.bootstrap(TailwindCSS.Config.default, dir)
-    val (content, navigation) = discoverContent(siteConfig)
+    val d2       = D2.bootstrap(D2.Config.default, os.Path(dir))
 
-    val markdown = markdownParser(siteConfig)
+    val (getDiagrams, diagramResolver) = BuilderSteps.d2Resolver
+
+    // val diagrams =
+    //   collection.mutable.Map.empty[String, (SitePath, D2Extension.Diagram)]
+
+    // val diagramResolver: D2Extension.Diagram => SitePath = { diag =>
+    //   val path = SiteRoot / "assets" / "d2-diagrams" / (diag.name + ".svg")
+    //   if (diagrams.contains(diag.name)) {
+    //     if (diag.code.trim.nonEmpty)
+    //       SubatomicError.raise(
+    //         s"Diagram ${diag.name} has already been defined - if you want to reference it," +
+    //           " use an empty code fence block"
+    //       )
+
+    //   } else {
+    //     diagrams.update(diag.name, path -> diag)
+    //   }
+
+    //   path
+    // }
+
+    val renderingMarkdown = markdownParser(siteConfig, Some(diagramResolver))
+
+    val (content, navigation) =
+      discoverContent(siteConfig, markdownParser(siteConfig, None))
 
     val linker = new Linker(content, siteConfig.base)
 
@@ -268,8 +299,9 @@ object LibrarySite {
         file: os.Path,
         links: NavTree
     ) = {
-      val renderedMarkdown = markdown.renderToString(file)
-      val toc              = TOC.build(markdown.extractMarkdownHeadings(file))
+      val document         = renderingMarkdown.read(file)
+      val renderedMarkdown = renderingMarkdown.renderToString(document)
+      val toc = TOC.build(renderingMarkdown.extractMarkdownHeadings(document))
       val renderedHtml = template.doc(
         title,
         renderedMarkdown,
@@ -348,7 +380,7 @@ object LibrarySite {
         }
       }
 
-    val builderSteps = new BuilderSteps(markdown)
+    val builderSteps = new BuilderSteps(markdownParser(siteConfig))
 
     val steps = List[Site[Doc] => Site[Doc]](
       builderSteps
@@ -368,7 +400,8 @@ object LibrarySite {
           tailwind,
           template.theme.Markdown,
           template.theme.Search
-        )
+        ),
+      builderSteps.d2Step(d2, getDiagrams())
     )
 
     val process = steps.foldLeft(identity[Site[Doc]] _) { case (step, next) =>
@@ -379,10 +412,10 @@ object LibrarySite {
   }
 
   def testSearch(siteConfig: LibrarySite, searchConfig: cli.SearchConfig) = {
-    val (content, _) = discoverContent(siteConfig)
+    val markdown     = markdownParser(siteConfig)
+    val (content, _) = discoverContent(siteConfig, markdown)
 
-    val linker   = new Linker(content, siteConfig.base)
-    val markdown = markdownParser(siteConfig)
+    val linker = new Linker(content, siteConfig.base)
 
     val builderSteps = new BuilderSteps(markdown)
 

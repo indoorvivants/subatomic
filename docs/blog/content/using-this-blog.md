@@ -76,3 +76,22 @@ Nunc et porttitor turpis, hendrerit molestie dolor. Mauris accumsan, magna quis 
 ## A title with "quotes"
 
 As apparently it's problematic
+
+### Diagrams
+
+what?
+
+```d2:sample-1
+dogs -> cats -> mice: chase
+replica 1 <-> replica 2
+a -> b: To err is human, to moo bovine {
+  source-arrowhead: 1
+  target-arrowhead: * {
+    shape: diamond
+  }
+}
+```
+
+
+### Diagrams 2
+
