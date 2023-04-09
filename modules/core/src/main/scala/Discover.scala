@@ -67,7 +67,11 @@ object Discover extends App {
     YamlAttributes(data, path)
   }
 
-  def someMarkdown[C](root: os.Path, markdown: Markdown, maxDepth: Int = Int.MaxValue)(
+  def someMarkdown[C](
+      root: os.Path,
+      markdown: Markdown,
+      maxDepth: Int = Int.MaxValue
+  )(
       f: PartialFunction[MarkdownDocument, C]
   ): Iterable[C] = {
     val md = markdown

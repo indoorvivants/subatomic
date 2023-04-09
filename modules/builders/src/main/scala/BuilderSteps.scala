@@ -218,7 +218,10 @@ object BuilderSteps {
       path: os.Path
   )
 
-  def d2Resolver: (() => Map[SitePath,D2Extension.Diagram], D2Extension.Diagram => SitePath) = {
+  def d2Resolver: (
+      () => Map[SitePath, D2Extension.Diagram],
+      D2Extension.Diagram => SitePath
+  ) = {
     val diagrams =
       collection.mutable.Map.empty[String, (SitePath, D2Extension.Diagram)]
 
