@@ -200,10 +200,9 @@ object Blog {
       diagramResolver: Option[D2Extension.Diagram => SitePath] = None
   ) =
     Markdown(
-      siteConfig.markdownExtensions.toList ++ diagramResolver
+      parserExtensions = siteConfig.markdownExtensions.toList ++ diagramResolver
         .map(D2Extension.create(_).create())
-        .toList,
-      siteConfig.markdownExtensions.toList
+        .toList
     )
 
   def discoverContent(
