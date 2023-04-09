@@ -33,6 +33,20 @@ class BuilderSteps(markdown: Markdown) {
       }
     }
 
+  def d2Step[Doc](
+      d2: D2,
+      diagrams: Map[SitePath, D2Extension.Diagram]
+  ): Site[Doc] => Site[Doc] = { site =>
+    site.addDelayedAssets(
+      () =>
+        diagrams.map { case (path, dg) =>
+          path -> Page(d2.diagram(dg.code))
+        },
+      "<D2 diagrams collected from markdown files>"
+    )
+
+  }
+
   def tailwindStep[Doc](
       destination: os.Path,
       tailwind: TailwindCSS,
@@ -203,4 +217,31 @@ object BuilderSteps {
       title: String,
       path: os.Path
   )
+
+  def d2Resolver: (
+      () => Map[SitePath, D2Extension.Diagram],
+      D2Extension.Diagram => SitePath
+  ) = {
+    val diagrams =
+      collection.mutable.Map.empty[String, (SitePath, D2Extension.Diagram)]
+
+    val diagramResolver: D2Extension.Diagram => SitePath = { diag =>
+      val path = SiteRoot / "assets" / "d2-diagrams" / (diag.name + ".svg")
+      if (diagrams.contains(diag.name)) {
+        if (diag.code.trim.nonEmpty)
+          SubatomicError.raise(
+            s"Diagram ${diag.name} has already been defined - if you want to reference it," +
+              " use an empty code fence block"
+          )
+
+      } else {
+        diagrams.update(diag.name, path -> diag)
+      }
+
+      path
+    }
+
+    (() => diagrams.values.toMap, diagramResolver)
+  }
+
 }

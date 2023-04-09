@@ -195,14 +195,22 @@ object Blog {
     }
   }
 
-  def markdownParser(siteConfig: Blog) =
+  def markdownParser(
+      siteConfig: Blog,
+      diagramResolver: Option[D2Extension.Diagram => SitePath] = None
+  ) =
     Markdown(
-      siteConfig.markdownExtensions: _*
+      parserExtensions = siteConfig.markdownExtensions.toList ++ diagramResolver
+        .map(D2Extension.create(_).create())
+        .toList
     )
 
-  def discoverContent(siteConfig: Blog): Vector[(SitePath, Doc)] = {
+  def discoverContent(
+      siteConfig: Blog,
+      markdown: Markdown
+  ): Vector[(SitePath, Doc)] = {
     val posts = Discover
-      .someMarkdown(siteConfig.contentRoot) {
+      .someMarkdown(siteConfig.contentRoot, markdown) {
         case MarkdownDocument(path, filename, attributes) =>
           // TODO: handle the error here correctly
           val date = LocalDate.parse(attributes.requiredOne("date"))
@@ -266,7 +274,11 @@ object Blog {
     val dir =
       Paths.get(dev.dirs.BaseDirectories.get().cacheDir).resolve("subatomic")
     val tailwind = TailwindCSS.bootstrap(TailwindCSS.Config.default, dir)
-    val content  = discoverContent(siteConfig)
+    val d2       = D2.bootstrap(D2.Config.default, os.Path(dir))
+    val (getDiagrams, diagramResolver) = BuilderSteps.d2Resolver
+    val renderingMarkdown = markdownParser(siteConfig, Some(diagramResolver))
+    // val markdown = markdownParser(siteConfig)
+    val content = discoverContent(siteConfig, markdownParser(siteConfig, None))
 
     val linker = new Linker(content, siteConfig.base)
 
@@ -281,8 +293,6 @@ object Blog {
         },
         theme = siteConfig.theme
       )
-
-    val markdown = markdownParser(siteConfig)
 
     val mdocProcessor =
       if (!buildConfig.disableMdoc)
@@ -319,9 +329,10 @@ object Blog {
         links: Vector[NavLink],
         headings: Vector[Heading]
     ) = {
-      val headers          = markdown.extractMarkdownHeadings(file)
-      val toc              = TOC.build(markdown.extractMarkdownHeadings(file))
-      val renderedMarkdown = markdown.renderToString(file)
+      val document         = renderingMarkdown.read(file)
+      val headers          = renderingMarkdown.extractMarkdownHeadings(document)
+      val toc              = TOC.build(headers)
+      val renderedMarkdown = renderingMarkdown.renderToString(document)
       val renderedHtml =
         template.post(
           links,
@@ -440,9 +451,6 @@ object Blog {
       )
     }
 
-    // val addTemplateCSS: Site[Doc] => Site[Doc] = site =>
-    //   site.add(SiteRoot / "assets" / "template.css", Page(default.asString))
-
     val addRSSPage: Site[Doc] => Site[Doc] = site =>
       siteConfig.rssConfig match {
         case None => site
@@ -455,7 +463,7 @@ object Blog {
           )
       }
 
-    val builderSteps = new BuilderSteps(markdown)
+    val builderSteps = new BuilderSteps(markdownParser(siteConfig))
 
     val steps = List[Site[Doc] => Site[Doc]](
       builderSteps.addSearchIndex[Doc](
@@ -474,7 +482,8 @@ object Blog {
         tailwind,
         template.theme.Markdown,
         template.theme.Search
-      )
+      ),
+      builderSteps.d2Step(d2, getDiagrams())
     )
 
     val process = steps.foldLeft(identity[Site[Doc]] _) { case (step, next) =>
@@ -488,10 +497,10 @@ object Blog {
   }
 
   def testSearch(siteConfig: Blog, searchConfig: cli.SearchConfig) = {
-    val content = discoverContent(siteConfig)
-
-    val linker   = new Linker(content, siteConfig.base)
     val markdown = markdownParser(siteConfig)
+    val content  = discoverContent(siteConfig, markdown)
+
+    val linker = new Linker(content, siteConfig.base)
 
     val builderSteps = new BuilderSteps(markdown)
 

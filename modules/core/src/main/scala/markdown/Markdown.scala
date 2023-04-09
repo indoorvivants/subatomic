@@ -31,59 +31,41 @@ import com.vladsch.flexmark.parser.Parser
 import com.vladsch.flexmark.util.ast.Document
 import com.vladsch.flexmark.util.ast.Node
 import com.vladsch.flexmark.util.ast.TextContainer
+import com.vladsch.flexmark.util.data.DataKey
 import com.vladsch.flexmark.util.data.MutableDataSet
 import com.vladsch.flexmark.util.misc.Extension
 
 import Markdown._
 
-class Markdown(extensions: List[Extension]) {
-  private val opts = extensions match {
+class Markdown(
+    parserExtensions: List[Extension]
+) {
+  private val parserOpts = parserExtensions match {
     case _ :: _ =>
       new MutableDataSet()
         .set[Collection[Extension]](
           Parser.EXTENSIONS,
-          extensions.asJava
+          parserExtensions.asJava
         )
     case Nil => new MutableDataSet()
   }
+  private val parser = Parser.builder(parserOpts).build()
 
-  private val parser = Parser.builder(opts).build()
-
-  private val renderer = HtmlRenderer.builder(opts).build()
-
-  def renderToString(markdownFile: os.Path): String = {
-    val document = parser.parse(os.read(markdownFile))
-
-    renderer.render(document)
-  }
-
-  def renderToString(content: String): String = {
-    val document = parser.parse(content)
-
-    renderer.render(document)
-  }
+  private val renderer = HtmlRenderer.builder(parserOpts).build()
 
   def renderToString(document: Document): String = {
     renderer.render(document)
   }
 
   def read(markdownFile: os.Path): Document = {
-    read(os.read(markdownFile))
+    val doc = read(os.read(markdownFile))
+    doc.set(PathKey, Some(markdownFile))
+    doc
   }
 
-  def read(content: String): Document = parser.parse(content)
-
-  def extractHeaders(content: String) = {
-    val parsed = parser.parse(content)
-
-    parsed.getChildren().asScala.toVector.collect {
-      case head: Heading =>
-        println(head.getLevel() -> head.getText().toStringOrNull())
-      case other => println(other)
-
-    }
+  def read(content: String): Document = {
+    parser.parse(content)
   }
-
   def collect[A](content: String)(f: PartialFunction[Node, A]): Vector[A] = {
     val parsed = parser.parse(content)
 
@@ -134,10 +116,8 @@ class Markdown(extensions: List[Extension]) {
   import Markdown.Section
 
   def extractMarkdownHeadings(
-      p: os.Path
+      document: Document
   ): Vector[Header] = {
-
-    val document = read(p)
 
     val generator = new HeaderIdGenerator.Factory().create()
 
@@ -218,6 +198,7 @@ class Markdown(extensions: List[Extension]) {
 }
 
 object Markdown {
+  object PathKey extends DataKey("subatomic-path", Option.empty[os.Path])
   case class Header(title: String, level: Int, anchorId: String)
   case class Section(
       title: String,
@@ -225,5 +206,7 @@ object Markdown {
       url: Option[String],
       text: String
   )
-  def apply(extensions: Extension*) = new Markdown(extensions.toList)
+  def apply(
+      parserExtensions: List[Extension] = Nil
+  ) = new Markdown(parserExtensions)
 }

@@ -25,6 +25,7 @@ class SubatomicError(msg: String)
 object SubatomicError {
 
   def apply(msg: String) = new SubatomicError(msg)
+  def raise(msg: String) = throw apply(msg)
   def render(msg: String) = {
 
     val maxLineLength = msg.linesIterator.map(_.length).max

@@ -18,7 +18,10 @@ object LibrarySiteTest extends SimpleIOSuite with BuildersHelpers {
 
     val conf = LibrarySite(contentRoot = basic.root, name = "hello")
 
-    val content = LibrarySite.discoverContent(conf)._1.toMap
+    val content = LibrarySite
+      .discoverContent(conf, LibrarySite.markdownParser(conf))
+      ._1
+      .toMap
 
     expect.all(
       content.exists(_._2.title == "base"),
@@ -60,7 +63,10 @@ object LibrarySiteTest extends SimpleIOSuite with BuildersHelpers {
 
     val conf = LibrarySite(contentRoot = basic.root, name = "hello")
 
-    val content = LibrarySite.discoverContent(conf)._1.toMap
+    val content = LibrarySite
+      .discoverContent(conf, LibrarySite.markdownParser(conf))
+      ._1
+      .toMap
 
     expect.all(
       content
