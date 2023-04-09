@@ -47,9 +47,9 @@ object RelativizeLinksExtensionTests extends weaver.FunSuite {
     def processedWith(
         l: Extension*
     )(htmlTest: String => Expectations) = {
-      val md = new Markdown(l.toList)
+      val md = Markdown(l.toList)
 
-      htmlTest(md.renderToString(s).trim)
+      htmlTest(md.renderToString(md.read(s)).trim)
     }
   }
 }

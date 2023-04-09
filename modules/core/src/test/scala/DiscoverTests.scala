@@ -57,7 +57,7 @@ object DiscoverTests extends SimpleMutableIOSuite {
     )
 
     val results = Discover
-      .someMarkdown(tmpDir) {
+      .someMarkdown(tmpDir, Markdown(List(YamlFrontMatterExtension.create()))) {
         case MarkdownDocument(path, filename, attributes) =>
           SiteRoot / s"$filename.html" -> MyContent(
             attributes.requiredOne("test"),
@@ -83,7 +83,8 @@ object DiscoverTests extends SimpleMutableIOSuite {
   }
 
   def check(content: String)(f: YamlAttributes => Expectations) = {
-    val md = Markdown(YamlFrontMatterExtension.create())
-    f(Discover.readYaml(content, md, os.pwd / "test-path.md"))
+    val md   = Markdown(List(YamlFrontMatterExtension.create()))
+    val path = os.temp(contents = content)
+    f(Discover.readYaml(md, path))
   }
 }

@@ -38,8 +38,7 @@ import Markdown._
 import com.vladsch.flexmark.util.data.DataKey
 
 class Markdown(
-    parserExtensions: List[Extension],
-    renderExtensions: List[Extension]
+    parserExtensions: List[Extension]
 ) {
   private val parserOpts = parserExtensions match {
     case _ :: _ =>
@@ -50,19 +49,9 @@ class Markdown(
         )
     case Nil => new MutableDataSet()
   }
-  private val renderOpts = renderExtensions match {
-    case _ :: _ =>
-      new MutableDataSet()
-        .set[Collection[Extension]](
-          Parser.EXTENSIONS,
-          renderExtensions.asJava
-        )
-    case Nil => new MutableDataSet()
-  }
-
   private val parser = Parser.builder(parserOpts).build()
 
-  private val renderer = HtmlRenderer.builder(renderOpts).build()
+  private val renderer = HtmlRenderer.builder(parserOpts).build()
 
   def renderToString(document: Document): String = {
     renderer.render(document)
@@ -218,7 +207,6 @@ object Markdown {
       text: String
   )
   def apply(
-      parserExtensions: List[Extension] = Nil,
-      renderExtensions: List[Extension] = Nil
-  ) = new Markdown(parserExtensions, renderExtensions)
+      parserExtensions: List[Extension] = Nil
+  ) = new Markdown(parserExtensions)
 }
