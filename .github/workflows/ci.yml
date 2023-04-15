@@ -31,6 +31,16 @@ jobs:
           distribution: 'temurin' 
           java-version: '${{ matrix.java }}'
 
+      - name: SBT remote cache
+        id: remote-cache
+        uses: actions/cache@v3
+        with:
+          path: ./.remote-cache
+          key: ${{ runner.os }}-remote-cache
+
+      - name: Pull cache 
+        run: $SBTN pullRemoteCache || echo 'remote cache not found'
+
       - name: Test 2.12
         run: $SBTN "test-2_12-$SCALA_PLATFORM;codeQuality-2_12-$SCALA_PLATFORM"
 
@@ -45,8 +55,12 @@ jobs:
         if: matrix.scalaPlatform == 'jvm'
 
       - name: Check site build
-        run: $SBTN buildSite buildBlog
+        run: $SBTN 'buildSite; buildBlog'
         if: matrix.scalaPlatform == 'jvm'
+
+      - name: Push cache 
+        run: $SBTN pushRemoteCache || echo 'Failed to push remote cache'
+        if: github.ref == 'refs/heads/master'
         
   mergify-build-checkpoint:
     runs-on: ubuntu-latest
