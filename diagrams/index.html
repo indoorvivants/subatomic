@@ -8,12 +8,29 @@ a -&gt; b: To err is human, to moo bovine {
     shape: diamond
   }
 }
+cats -- a
 ```
 </code></pre>
 <p>where <code>sample-1</code> is the name of the diagram (this field is required).</p>
 <p>The resulting diagram will be placed under <code>assets/d2-diagrams/sample-1.svg</code> and the entire code block will be replaced with
 with an image.</p>
 <img src="/assets/d2-diagrams/sample-1.svg" alt="" />
+<h2><a href="#passing-arguments-to-d2" id="passing-arguments-to-d2">Passing arguments to d2</a></h2>
+<p>You can pass any arguments to the CLI tool by adding them to the code fence, separated by <code>:</code>.</p>
+<p>For example, here's how you can select ELK rendering engine and change the theme:</p>
+<pre><code class="language-text">```d2:sample-2:--layout=elk:--theme=100
+dogs -&gt; cats -&gt; mice: chase
+replica 1 &lt;-&gt; replica 2
+a -&gt; b: To err is human, to moo bovine {
+  source-arrowhead: 1
+  target-arrowhead: * {
+    shape: diamond
+  }
+}
+cats -- a
+```
+</code></pre>
+<img src="/assets/d2-diagrams/sample-2.svg" alt="" />
 </div></article></main><footer class="text-center m-4 p-4 text-lg text-white font-bold m-auto w-full">© 2020-2023 Anton Sviridov</footer><script src="https://www.googletagmanager.com/gtag/js?id=G-9RNQGQHVLB"></script><script> window.dataLayer = window.dataLayer || [];
               function gtag(){window.dataLayer.push(arguments);}
               gtag('js', new Date());
