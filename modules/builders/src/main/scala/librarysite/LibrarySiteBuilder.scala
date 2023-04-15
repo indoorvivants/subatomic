@@ -237,25 +237,6 @@ object LibrarySite {
 
     val (getDiagrams, diagramResolver) = BuilderSteps.d2Resolver
 
-    // val diagrams =
-    //   collection.mutable.Map.empty[String, (SitePath, D2Extension.Diagram)]
-
-    // val diagramResolver: D2Extension.Diagram => SitePath = { diag =>
-    //   val path = SiteRoot / "assets" / "d2-diagrams" / (diag.name + ".svg")
-    //   if (diagrams.contains(diag.name)) {
-    //     if (diag.code.trim.nonEmpty)
-    //       SubatomicError.raise(
-    //         s"Diagram ${diag.name} has already been defined - if you want to reference it," +
-    //           " use an empty code fence block"
-    //       )
-
-    //   } else {
-    //     diagrams.update(diag.name, path -> diag)
-    //   }
-
-    //   path
-    // }
-
     val renderingMarkdown = markdownParser(siteConfig, Some(diagramResolver))
 
     val (content, navigation) =

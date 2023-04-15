@@ -40,7 +40,7 @@ class BuilderSteps(markdown: Markdown) {
     site.addDelayedAssets(
       () =>
         diagrams.map { case (path, dg) =>
-          path -> Page(d2.diagram(dg.code))
+          path -> Page(d2.diagram(dg.code, dg.args))
         },
       "<D2 diagrams collected from markdown files>"
     )
