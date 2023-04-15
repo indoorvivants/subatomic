@@ -49,7 +49,7 @@ class D2Extension(resolver: D2Extension.Diagram => SitePath) {
           val prev = node.getPrevious()
           val info = c.getInfo().toString().split(":").toList
           info match {
-            case "d2" :: name :: _ =>
+            case "d2" :: name :: rest =>
               val content = c
                 .getChars()
                 .toString()
@@ -59,8 +59,9 @@ class D2Extension(resolver: D2Extension.Diagram => SitePath) {
                 .dropRight(1)
                 .mkString(System.lineSeparator())
 
-              val diagram = D2Extension.Diagram(name = name, code = content)
-              val img     = new Image
+              val diagram =
+                D2Extension.Diagram(name = name, code = content, args = rest)
+              val img = new Image
               img.setUrlContent(BasedSequence.of(resolver(diagram).toString()))
               node.unlink()
               prev.insertAfter(img)
@@ -99,7 +100,7 @@ class D2Extension(resolver: D2Extension.Diagram => SitePath) {
 }
 
 object D2Extension {
-  case class Diagram(name: String, code: String)
+  case class Diagram(name: String, code: String, args: List[String])
 
   def create(resolver: Diagram => SitePath) = new D2Extension(resolver)
 

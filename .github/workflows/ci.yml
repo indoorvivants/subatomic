@@ -12,17 +12,17 @@ concurrency:
 
 jobs:
   build:
-    name: CI ${{ matrix.java }} ${{matrix.scalaVersion}} (${{matrix.scalaPlatform}})
+    name: CI ${{ matrix.java }} (${{matrix.scalaPlatform}})
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
         java: [8]
-        scalaVersion: ["2_12", "2_13", "3_2"]
         scalaPlatform: ["jvm", "js", "native"]
     runs-on: ${{ matrix.os }}
     env:
-      BUILD_KEY: ${{matrix.scalaVersion}}-${{matrix.scalaPlatform}}
+      SCALA_PLATFORM: '${{matrix.scalaPlatform}}'
+      SBTN: 'sbt --client'
     steps:
       - uses: actions/checkout@v2
       - uses: coursier/cache-action@v3      
@@ -31,22 +31,36 @@ jobs:
           distribution: 'temurin' 
           java-version: '${{ matrix.java }}'
 
-      - name: Setup Scala Native environment
-        run: |
-            sudo apt-get update
-            sudo apt install clang
-        if: matrix.scalaPlatform == 'native'
+      - name: SBT remote cache
+        id: remote-cache
+        uses: actions/cache@v3
+        with:
+          path: ./.remote-cache
+          key: ${{ runner.os }}-remote-cache
 
-      - name: Test
-        run: sbt test-$BUILD_KEY codeQuality-$BUILD_KEY
+      - name: Pull cache 
+        run: $SBTN pullRemoteCache || echo 'remote cache not found'
+
+      - name: Test 2.12
+        run: $SBTN "test-2_12-$SCALA_PLATFORM;codeQuality-2_12-$SCALA_PLATFORM"
+
+      - name: Test 2.13
+        run: $SBTN "test-2_13-$SCALA_PLATFORM;codeQuality-2_13-$SCALA_PLATFORM"
+
+      - name: Test 3
+        run: $SBTN "test-3_2-$SCALA_PLATFORM;codeQuality-3_2-$SCALA_PLATFORM"
 
       - name: SBT Plugin test
-        run: sbt pluginTests-$BUILD_KEY
-        if: matrix.scalaPlatform == 'jvm' && matrix.scalaVersion == '2_12'
+        run: $SBTN pluginTests-2_12-jvm
+        if: matrix.scalaPlatform == 'jvm'
 
       - name: Check site build
-        run: sbt buildSite buildBlog
-        if: matrix.scalaPlatform == 'jvm' && matrix.scalaVersion == '2_13'
+        run: $SBTN 'buildSite; buildBlog'
+        if: matrix.scalaPlatform == 'jvm'
+
+      - name: Push cache 
+        run: $SBTN pushRemoteCache || echo 'Failed to push remote cache'
+        if: github.ref == 'refs/heads/master'
         
   mergify-build-checkpoint:
     runs-on: ubuntu-latest

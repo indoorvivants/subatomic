@@ -21,8 +21,8 @@ import java.nio.file.Files
 import com.indoorvivants.detective.Platform
 
 class D2(binary: os.Path) {
-  def diagram(code: String): String = {
-    os.proc(binary, "-", "-")
+  def diagram(code: String, arguments: List[String] = Nil): String = {
+    os.proc(Seq(binary.toString()) ++ arguments ++ Seq("-", "-"))
       .call(
         stdin = os.ProcessInput.SourceInput(code)
       )

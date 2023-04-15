@@ -43,6 +43,7 @@ lazy val root = project
     ).flatten: _*
   )
   .settings(skipPublish)
+  .settings(noCache)
 
 import commandmatrix._
 
@@ -104,7 +105,7 @@ lazy val core = projectMatrix
   .settings(testSettings)
   .enablePlugins(BuildInfoPlugin)
   .settings(buildInfoSettings)
-  .configure()
+  .settings(cacheSettings)
 
 lazy val builders =
   projectMatrix
@@ -126,6 +127,7 @@ lazy val builders =
     .settings(testSettings)
     .enablePlugins(BuildInfoPlugin)
     .settings(buildInfoSettings)
+    .settings(cacheSettings)
 
 lazy val searchFrontendPack = projectMatrix
   .in(file("modules/search/pack"))
@@ -163,6 +165,7 @@ lazy val searchFrontendPack = projectMatrix
         }
       }.taskValue
   )
+  .settings(cacheSettings)
 
 lazy val searchFrontend =
   projectMatrix
@@ -179,6 +182,7 @@ lazy val searchFrontend =
     )(disableScalafixForScala3, scalajsOverrides)
     .settings(testSettings)
     .settings(buildInfoSettings)
+    .settings(cacheSettings)
 
 lazy val searchCli =
   projectMatrix
@@ -202,6 +206,7 @@ lazy val searchCli =
     )
     .settings(testSettings)
     .settings(buildInfoSettings)
+    .settings(cacheSettings)
 
 lazy val searchIndex =
   projectMatrix
@@ -217,6 +222,7 @@ lazy val searchIndex =
     )
     .settings(munitTestSettings)
     .settings(buildInfoSettings)
+    .settings(cacheSettings)
 
 lazy val searchRetrieve =
   projectMatrix
@@ -234,6 +240,7 @@ lazy val searchRetrieve =
     )
     .settings(munitTestSettings)
     .settings(buildInfoSettings)
+    .settings(cacheSettings)
 
 lazy val searchShared =
   projectMatrix
@@ -256,6 +263,7 @@ lazy val searchShared =
     .settings(
       headerSources / excludeFilter := HiddenFileFilter || "*Stemmer.scala"
     )
+    .settings(cacheSettings)
 
 lazy val docs = projectMatrix
   .in(file("docs"))
@@ -313,6 +321,7 @@ lazy val docs = projectMatrix
       Seq(out)
     } else Seq.empty
   })
+  .settings(noCache)
 
 lazy val plugin = projectMatrix
   .in(file("modules/sbt-plugin"))
@@ -357,6 +366,7 @@ lazy val plugin = projectMatrix
     }
   )
   .enablePlugins(ScriptedPlugin, SbtPlugin)
+  .settings(cacheSettings)
 
 def ifNot[A](cond: Boolean, s: Seq[A]) = if (cond) Seq.empty else s
 
@@ -382,6 +392,11 @@ lazy val munitTestSettings = Seq(
 
 lazy val skipPublish = Seq(
   publish / skip := true
+)
+
+lazy val noCache = Seq(
+  pullRemoteCache := (),
+  pushRemoteCache := ()
 )
 
 Global / onChangedBuildSource := ReloadOnSourceChanges
@@ -430,7 +445,7 @@ inThisBuild(
       )
     ),
     version := (if (!sys.env.contains("CI")) "dev" else version.value)
-  )
+  ) ++ noCache
 )
 
 val scalafixRules = Seq(
@@ -531,3 +546,33 @@ inThisBuild(
       )
   )
 )
+
+val cacheSettings = {
+  def artifactName(nm: String, axes: Seq[VirtualAxis]) = {
+    nm + axes
+      .sortBy[Int] {
+        case _: VirtualAxis.ScalaVersionAxis => 0
+        case _: VirtualAxis.PlatformAxis     => 1
+        case _: VirtualAxis.StrongAxis       => 2
+        case _: VirtualAxis.WeakAxis         => 3
+      }
+      .map(_.idSuffix)
+      .mkString("-", "-", "")
+  }
+
+  Seq(
+    ThisProject / Compile / packageCache / moduleName := artifactName(
+      moduleName.value,
+      virtualAxes.value
+    ),
+    pushRemoteCacheTo := Some(
+      MavenCache(
+        "local-cache",
+        (ThisBuild / baseDirectory).value / ".remote-cache"
+      )
+    )
+  )
+}
+
+pushRemoteCache := ()
+pullRemoteCache := ()
