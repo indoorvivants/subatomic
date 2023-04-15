@@ -31,15 +31,15 @@ jobs:
           distribution: 'temurin' 
           java-version: '${{ matrix.java }}'
 
-      # - name: SBT remote cache
-      #   id: remote-cache
-      #   uses: actions/cache@v3
-      #   with:
-      #     path: ./.remote-cache
-      #     key: ${{ runner.os }}-remote-cache
+      - name: SBT remote cache
+        id: remote-cache
+        uses: actions/cache@v3
+        with:
+          path: ./.remote-cache
+          key: ${{ runner.os }}-remote-cache
 
-      - name: Pull cache 
-        run: $SBTN pullRemoteCache || echo 'remote cache not found'
+      # - name: Pull cache 
+      #   run: $SBTN pullRemoteCache || echo 'remote cache not found'
 
       - name: Test 2.12
         run: $SBTN "test-2_12-$SCALA_PLATFORM;codeQuality-2_12-$SCALA_PLATFORM"
