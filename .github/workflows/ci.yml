@@ -21,7 +21,8 @@ jobs:
         scalaPlatform: ["jvm", "js", "native"]
     runs-on: ${{ matrix.os }}
     env:
-      SCALA_PLATFORM: ${{matrix.scalaPlatform}}
+      SCALA_PLATFORM: '${{matrix.scalaPlatform}}'
+      SBTN: 'sbt --client'
     steps:
       - uses: actions/checkout@v2
       - uses: coursier/cache-action@v3      
@@ -31,20 +32,20 @@ jobs:
           java-version: '${{ matrix.java }}'
 
       - name: Test 2.12
-        run: sbt --client test-2_12-$BUILD_KEY codeQuality-2_12-$SCALA_PLATFORM
+        run: $SBTN test-2_12-$SCALA_PLATFORM codeQuality-2_12-$SCALA_PLATFORM
 
       - name: Test 2.13
-        run: sbt --client test-2_13-$SCALA_PLATFORM codeQuality-2_13-$SCALA_PLATFORM
+        run: $SBTN test-2_13-$SCALA_PLATFORM codeQuality-2_13-$SCALA_PLATFORM
 
       - name: Test 3
-        run: sbt --client test-3_2-$SCALA_PLATFORM codeQuality-3_2-$SCALA_PLATFORM
+        run: $SBTN test-3_2-$SCALA_PLATFORM codeQuality-3_2-$SCALA_PLATFORM
 
       - name: SBT Plugin test
-        run: sbt pluginTests-2_12-jvm
+        run: $SBTN pluginTests-2_12-jvm
         if: matrix.scalaPlatform == 'jvm'
 
       - name: Check site build
-        run: sbt buildSite buildBlog
+        run: $SBTN buildSite buildBlog
         if: matrix.scalaPlatform == 'jvm'
         
   mergify-build-checkpoint:
