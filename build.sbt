@@ -561,7 +561,12 @@ val cacheSettings = {
   }
 
   Seq(
-    ThisProject / Compile / packageCache / moduleName := artifactName(
+    semanticdbIncludeInJar := true,
+    Compile / packageCache / moduleName := artifactName(
+      moduleName.value,
+      virtualAxes.value
+    ),
+    Test / packageCache / moduleName := artifactName(
       moduleName.value,
       virtualAxes.value
     ),
