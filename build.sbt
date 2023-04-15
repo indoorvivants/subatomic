@@ -490,16 +490,34 @@ inThisBuild(
         Seq("compile", "test", "publishLocal"),
         matrices = Seq(
           core,
-          searchShared,
-          searchIndex,
-          searchRetrieve,
           builders,
           searchCli,
           searchFrontend,
-          searchFrontendPack
+          searchFrontendPack,
+          searchIndex,
+          searchRetrieve,
+          searchShared
         ),
         dimensions = Seq(
           Dimension.scala("2.13", fullFor3 = false),
+          Dimension.platform()
+        ),
+        stubMissing = true
+      ),
+    commands ++=
+      CrossCommand.all(
+        Seq("pushRemoteCache", "pullRemoteCache"),
+        matrices = Seq(
+          core,
+          builders,
+          searchCli,
+          searchFrontend,
+          searchFrontendPack,
+          searchIndex,
+          searchRetrieve,
+          searchShared
+        ),
+        dimensions = Seq(
           Dimension.platform()
         ),
         stubMissing = true
