@@ -229,11 +229,8 @@ object LibrarySite {
       buildConfig: cli.BuildConfig,
       extra: Site[LibrarySite.Doc] => Site[LibrarySite.Doc]
   ) = {
-    val dir =
-      Paths.get(dev.dirs.BaseDirectories.get().cacheDir).resolve("subatomic")
-
-    val tailwind = TailwindCSS.bootstrap(TailwindCSS.Config.default, dir)
-    val d2       = D2.bootstrap(D2.Config.default, os.Path(dir))
+    val tailwind = TailwindCSS.bootstrap(TailwindCSS.Config.default)
+    val d2       = D2.bootstrap(D2.Config.default)
 
     val (getDiagrams, diagramResolver) = BuilderSteps.d2Resolver
 

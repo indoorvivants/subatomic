@@ -15,7 +15,7 @@ val Ver = new {
   val geny                  = "1.0.0"
   val scalaXml              = "2.1.0"
   val detective             = "0.0.2"
-  val dirs                  = "26"
+  val yank                  = "0.0.1"
 
   val Scala = new {
     val `2_12` = "2.12.15"
@@ -117,8 +117,8 @@ lazy val builders =
       libraryDependencies += "com.lihaoyi"  %% "geny"      % Ver.geny,
       libraryDependencies += "com.lihaoyi"  %% "scalatags" % Ver.scalatags,
       libraryDependencies += "com.indoorvivants.detective" %% "platform" % Ver.detective,
-      libraryDependencies += "dev.dirs"     % "directories" % Ver.dirs,
-      libraryDependencies += "com.lihaoyi" %% "requests"    % "0.8.0"
+      libraryDependencies += "com.indoorvivants" %% "yank"     % Ver.yank,
+      libraryDependencies += "com.lihaoyi"       %% "requests" % "0.8.0"
     )
     .someVariations(
       Ver.Scala.all.toList,
@@ -395,8 +395,8 @@ lazy val skipPublish = Seq(
 )
 
 lazy val noCache = Seq(
-  pullRemoteCache := (),
-  pushRemoteCache := ()
+  pullRemoteCache := {},
+  pushRemoteCache := {}
 )
 
 Global / onChangedBuildSource := ReloadOnSourceChanges
