@@ -51,7 +51,10 @@ class Markdown(
   }
   private val parser = Parser.builder(parserOpts).build()
 
-  private val renderer = HtmlRenderer.builder(parserOpts).build()
+  private val renderer = HtmlRenderer
+    .builder(parserOpts)
+    .attributeProviderFactory(D2Extension.ImageAttributeProvider.factory())
+    .build()
 
   def renderToString(document: Document): String = {
     renderer.render(document)

@@ -95,3 +95,16 @@ a -> b: To err is human, to moo bovine {
 
 ### Diagrams 2
 
+
+### Diagrams
+
+Linked one:
+
+```d2:test-sequence
+shape: sequence_diagram
+alice -> bob: What does it mean\nto be well-adjusted?
+bob -> alice: The ability to play bridge or\ngolf as if they were games.
+```
+
+
+test?

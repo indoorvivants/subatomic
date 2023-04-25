@@ -8,6 +8,7 @@ Subatomic can render diagrams using [D2](https://github.com/terrastruct/d2), all
 
 ````text
 ```d2:sample-1
+direction: right
 dogs -> cats -> mice: chase
 replica 1 <-> replica 2
 a -> b: To err is human, to moo bovine {
@@ -26,6 +27,7 @@ The resulting diagram will be placed under `assets/d2-diagrams/sample-1.svg` and
 with an image.
 
 ```d2:sample-1
+direction: right
 dogs -> cats -> mice: chase
 replica 1 <-> replica 2
 a -> b: To err is human, to moo bovine {
@@ -45,6 +47,7 @@ For example, here's how you can select ELK rendering engine and change the theme
 
 ````text
 ```d2:sample-2:--layout=elk:--theme=100
+direction: right
 dogs -> cats -> mice: chase
 replica 1 <-> replica 2
 a -> b: To err is human, to moo bovine {
@@ -58,6 +61,7 @@ cats -- a
 ````
 
 ```d2:sample-2:--layout=elk:--theme=100
+direction: right
 dogs -> cats -> mice: chase
 replica 1 <-> replica 2
 a -> b: To err is human, to moo bovine {
@@ -67,5 +71,27 @@ a -> b: To err is human, to moo bovine {
   }
 }
 cats -- a
+```
+
+## Embedded diagrams
+
+If you want to embed the diagrams directly into the page, without generating a stable 
+file in your assets, use the `d2-embed` language and remove the name.
+
+For example:
+
+````
+```d2-embed:--layout=elk:--theme=100
+shape: sequence_diagram
+alice -> bob: What does it mean\nto be well-adjusted?
+bob -> alice: The ability to play bridge or\ngolf as if they were games.
+```
+````
+
+
+```d2-embed:--layout=elk:--theme=100
+shape: sequence_diagram
+alice -> bob: What does it mean\nto be well-adjusted?
+bob -> alice: The ability to play bridge or\ngolf as if they were games.
 ```
 

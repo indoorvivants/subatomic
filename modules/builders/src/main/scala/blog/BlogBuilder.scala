@@ -197,11 +197,11 @@ object Blog {
 
   def markdownParser(
       siteConfig: Blog,
-      diagramResolver: Option[D2Extension.Diagram => SitePath] = None
+      diagramResolver: Option[BuilderSteps.d2Resolver] = None
   ) =
     Markdown(
       parserExtensions = siteConfig.markdownExtensions.toList ++ diagramResolver
-        .map(D2Extension.create(_).create())
+        .map(d2 => D2Extension.create(d2.named(_), d2.immediate(_)).create())
         .toList
     )
 
@@ -271,10 +271,10 @@ object Blog {
       buildConfig: cli.BuildConfig,
       extra: Site[Doc] => Site[Doc]
   ): Unit = {
-    val tailwind = TailwindCSS.bootstrap(TailwindCSS.Config.default)
-    val d2       = D2.bootstrap(D2.Config.default)
-    val (getDiagrams, diagramResolver) = BuilderSteps.d2Resolver
-    val renderingMarkdown = markdownParser(siteConfig, Some(diagramResolver))
+    val tailwind          = TailwindCSS.bootstrap(TailwindCSS.Config.default)
+    val d2                = D2.bootstrap(D2.Config.default)
+    val d2Resolver        = BuilderSteps.d2Resolver(d2)
+    val renderingMarkdown = markdownParser(siteConfig, Some(d2Resolver))
     // val markdown = markdownParser(siteConfig)
     val content = discoverContent(siteConfig, markdownParser(siteConfig, None))
 
@@ -481,7 +481,7 @@ object Blog {
         template.theme.Markdown,
         template.theme.Search
       ),
-      builderSteps.d2Step(d2, getDiagrams())
+      builderSteps.d2Step(d2, d2Resolver.collected())
     )
 
     val process = steps.foldLeft(identity[Site[Doc]] _) { case (step, next) =>

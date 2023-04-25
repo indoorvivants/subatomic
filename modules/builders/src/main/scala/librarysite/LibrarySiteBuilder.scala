@@ -211,13 +211,15 @@ object LibrarySite {
 
   def markdownParser(
       siteConfig: LibrarySite,
-      diagramResolver: Option[D2Extension.Diagram => SitePath] = None
+      diagramResolver: Option[BuilderSteps.d2Resolver] = None
   ) = {
     val base = List(
       RelativizeLinksExtension(siteConfig.base.toRelPath),
       YamlFrontMatterExtension.create(),
       AnchorLinkExtension.create()
-    ) ++ diagramResolver.map(D2Extension.create(_).create()).toList
+    ) ++ diagramResolver
+      .map(d2 => D2Extension.create(d2.named(_), d2.immediate(_)).create())
+      .toList
 
     Markdown(
       parserExtensions = base
@@ -232,9 +234,9 @@ object LibrarySite {
     val tailwind = TailwindCSS.bootstrap(TailwindCSS.Config.default)
     val d2       = D2.bootstrap(D2.Config.default)
 
-    val (getDiagrams, diagramResolver) = BuilderSteps.d2Resolver
+    val d2Resolver = BuilderSteps.d2Resolver(d2)
 
-    val renderingMarkdown = markdownParser(siteConfig, Some(diagramResolver))
+    val renderingMarkdown = markdownParser(siteConfig, Some(d2Resolver))
 
     val (content, navigation) =
       discoverContent(siteConfig, markdownParser(siteConfig, None))
@@ -379,7 +381,7 @@ object LibrarySite {
           template.theme.Markdown,
           template.theme.Search
         ),
-      builderSteps.d2Step(d2, getDiagrams())
+      builderSteps.d2Step(d2, d2Resolver.collected())
     )
 
     val process = steps.foldLeft(identity[Site[Doc]] _) { case (step, next) =>
