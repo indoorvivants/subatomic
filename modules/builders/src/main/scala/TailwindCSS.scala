@@ -22,6 +22,7 @@ import java.nio.file.Path
 import com.indoorvivants.detective.Platform
 import com.indoorvivants.detective.Platform.Arch._
 import com.indoorvivants.detective.Platform.OS._
+import com.indoorvivants.yank.tools
 
 class TailwindCSS(val binary: Path) {
   def process(files: Seq[os.Path], extraCSS: String) = {
@@ -57,51 +58,10 @@ object TailwindCSS {
     val default: Config = Config(version = "3.2.7")
   }
 
-  def bootstrap(config: Config, cacheDir: Path) = {
+  def bootstrap(config: Config) = new TailwindCSS(
+    tools.TailwindCSS.bootstrap(
+      tools.TailwindCSS.Config(version = config.version)
+    )
+  )
 
-    val path =
-      cacheDir.resolve(config.version).resolve(binaryName(Platform.target))
-    Files.createDirectories(path.getParent())
-
-    if (!path.toFile().exists()) {
-      val url = binaryUrl(config, Platform.target)
-
-      System.err.println(s"Downloading $url to $path")
-
-      os.write(os.Path(path), requests.get.stream(url))
-
-      path.toFile().setExecutable(true)
-
-    } else if (!Files.isExecutable(path)) {
-      path.toFile().setExecutable(true)
-    }
-    new TailwindCSS(path)
-
-  }
-
-  def binaryName(target: Platform.Target) = {
-    val prefix = "tailwindcss"
-    val ext = target.os match {
-      case Platform.OS.Windows => ".exe"
-      case _                   => ""
-    }
-    val os = target.os match {
-      case Linux   => "linux"
-      case MacOS   => "macos"
-      case Unknown => "unknown"
-      case Windows => "windows"
-    }
-
-    val arch = target.arch match {
-      case Arm if target.bits == Platform.Bits.x64 => "arm64"
-      case Arm                                     => "armv7"
-      case Intel                                   => "x64"
-    }
-
-    s"$prefix-$os-$arch$ext"
-  }
-
-  def binaryUrl(config: Config, target: Platform.Target) = {
-    s"https://github.com/tailwindlabs/tailwindcss/releases/download/v${config.version}/${binaryName(target)}"
-  }
 }
