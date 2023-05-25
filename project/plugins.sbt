@@ -6,7 +6,7 @@
 
 /* resolvers += Resolver.sonatypeRepo("snapshots") */
 
-addSbtPlugin("com.github.cb372" % "sbt-explicit-dependencies" % "0.2.16")
+addSbtPlugin("com.github.cb372" % "sbt-explicit-dependencies" % "0.3.1")
 
 addSbtPlugin("org.scalameta" % "sbt-scalafmt" % "2.5.0")
 
