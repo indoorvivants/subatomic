@@ -1,7 +1,7 @@
 import java.io.FileReader
 val Ver = new {
   val flexmark              = "0.62.2"
-  val coursier              = "2.1.0"
+  val coursier              = "2.1.4"
   val osLib                 = "0.9.1"
   val scalaUri              = "4.0.2"
   val scalaCollectionCompat = "2.9.0"
