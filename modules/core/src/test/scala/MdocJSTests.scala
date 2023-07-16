@@ -88,7 +88,7 @@ object MdocJSTests extends IOSuite {
     |render(node, rootElement)
     |```""".stripMargin
 
-    res.process(content, Set("com.raquo::laminar_sjs1:15.0.1"), log = log) {
+    res.process(content, Set("com.raquo::laminar_sjs1:16.0.0"), log = log) {
       result =>
         expect.all(
           read(result.mdFile).contains("mdoc-html-run0"),
