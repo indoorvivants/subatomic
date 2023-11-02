@@ -1,13 +1,13 @@
 import java.io.FileReader
 val Ver = new {
   val flexmark              = "0.62.2"
-  val coursier              = "2.1.6"
+  val coursier              = "2.1.7"
   val osLib                 = "0.9.1"
   val scalaUri              = "4.0.2"
-  val scalaCollectionCompat = "2.10.0"
+  val scalaCollectionCompat = "2.11.0"
   val scalatags             = "0.12.0"
-  val decline               = "2.3.1"
-  val laminar               = "15.0.1"
+  val decline               = "2.4.1"
+  val laminar               = "16.0.0"
   val upickle               = "3.1.0"
   val fansi                 = "0.4.0"
   val weaver                = "0.6.15"
@@ -19,8 +19,8 @@ val Ver = new {
 
   val Scala = new {
     val `2_12` = "2.12.15"
-    val `2_13` = "2.13.10"
-    val `3`    = "3.2.2"
+    val `2_13` = "2.13.12"
+    val `3`    = "3.3.1"
 
     val only_2    = Seq(`2_12`, `2_13`)
     val only_2_13 = Seq(`2_13`)
