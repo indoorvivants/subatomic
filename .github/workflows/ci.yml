@@ -48,7 +48,7 @@ jobs:
         run: $SBTN "test-2_13-$SCALA_PLATFORM;codeQuality-2_13-$SCALA_PLATFORM"
 
       - name: Test 3
-        run: $SBTN "test-3_2-$SCALA_PLATFORM;codeQuality-3_2-$SCALA_PLATFORM"
+        run: $SBTN "test-3_3-$SCALA_PLATFORM;codeQuality-3_3-$SCALA_PLATFORM"
 
       - name: SBT Plugin test
         run: $SBTN pluginTests-2_12-jvm
