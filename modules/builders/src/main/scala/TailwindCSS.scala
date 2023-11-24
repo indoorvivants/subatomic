@@ -55,7 +55,7 @@ class TailwindCSS(val binary: Path) {
 object TailwindCSS {
   case class Config(version: String)
   object Config {
-    val default: Config = Config(version = "3.2.7")
+    val default: Config = Config(version = "3.3.5")
   }
 
   def bootstrap(config: Config) = new TailwindCSS(

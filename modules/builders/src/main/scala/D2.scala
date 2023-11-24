@@ -35,7 +35,7 @@ class D2(binary: os.Path) {
 object D2 {
   case class Config(version: String)
   object Config {
-    val default: Config = Config(version = "0.4.0")
+    val default: Config = Config(version = "0.6.1")
   }
 
   def bootstrap(config: Config): D2 =
