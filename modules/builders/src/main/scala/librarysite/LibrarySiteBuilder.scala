@@ -40,7 +40,9 @@ case class LibrarySite(
     override val highlighting: SyntaxHighlighting =
       SyntaxHighlighting.HighlightJS.default,
     override val trackers: Seq[Tracker] = Seq.empty,
-    search: Boolean = true
+    search: Boolean = true,
+    d2Config: D2.Config = D2.Config.default,
+    tailwindConfig: TailwindCSS.Config = TailwindCSS.Config.default
 ) extends subatomic.builders.Builder
 
 object LibrarySite {
@@ -231,8 +233,8 @@ object LibrarySite {
       buildConfig: cli.BuildConfig,
       extra: Site[LibrarySite.Doc] => Site[LibrarySite.Doc]
   ) = {
-    val tailwind = TailwindCSS.bootstrap(TailwindCSS.Config.default)
-    val d2       = D2.bootstrap(D2.Config.default)
+    val tailwind = TailwindCSS.bootstrap(siteConfig.tailwindConfig)
+    val d2       = D2.bootstrap(siteConfig.d2Config)
 
     val d2Resolver = BuilderSteps.d2Resolver(d2)
 
