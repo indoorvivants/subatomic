@@ -19,11 +19,11 @@ package builders
 
 trait Builder {
   val contentRoot: os.Path
-  val assetsRoot: Option[os.Path]        = None
-  val base: SitePath                     = SiteRoot
-  val highlighting: SyntaxHighlighting   = SyntaxHighlighting.PrismJS.default
-  val assetsFilter: os.Path => Boolean   = _ => true
-  val trackers: Seq[Tracker]             = Nil
+  val assetsRoot: Option[os.Path]      = None
+  val base: SitePath                   = SiteRoot
+  val highlighting: SyntaxHighlighting = SyntaxHighlighting.PrismJS.default
+  val assetsFilter: os.Path => Boolean = _ => true
+  val trackers: Seq[Tracker]           = Nil
 
   lazy val managedStyles: List[StylesheetPath] =
     assetsRoot
