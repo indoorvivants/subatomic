@@ -57,7 +57,8 @@ case class Blog(
     additionalMarkdownExtensions: Vector[Extension] = Vector.empty,
     rssConfig: Option[RSSConfig] = None,
     d2Config: D2.Config = D2.Config.default,
-    tailwindConfig: TailwindCSS.Config = TailwindCSS.Config.default
+    tailwindConfig: TailwindCSS.Config = TailwindCSS.Config.default,
+    override val cache: Cache = Cache.NoCaching
 ) extends subatomic.builders.Builder {
   def markdownExtensions =
     RelativizeLinksExtension(base.toRelPath) +:
@@ -273,8 +274,12 @@ object Blog {
       buildConfig: cli.BuildConfig,
       extra: Site[Doc] => Site[Doc]
   ): Unit = {
-    val tailwind          = TailwindCSS.bootstrap(siteConfig.tailwindConfig)
-    val d2                = D2.bootstrap(siteConfig.d2Config)
+    val tailwind = TailwindCSS.bootstrap(siteConfig.tailwindConfig)
+    val d2 =
+      D2.bootstrap(
+        siteConfig.d2Config,
+        Cache.verbose(Cache.labelled("d2", siteConfig.cache))
+      )
     val d2Resolver        = BuilderSteps.d2Resolver(d2)
     val renderingMarkdown = markdownParser(siteConfig, Some(d2Resolver))
     // val markdown = markdownParser(siteConfig)

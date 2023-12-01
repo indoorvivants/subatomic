@@ -19,6 +19,7 @@ package builders
 
 trait Builder {
   val contentRoot: os.Path
+  val cache: Cache
   val assetsRoot: Option[os.Path]      = None
   val base: SitePath                   = SiteRoot
   val highlighting: SyntaxHighlighting = SyntaxHighlighting.PrismJS.default
