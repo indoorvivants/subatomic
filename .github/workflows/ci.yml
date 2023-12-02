@@ -41,9 +41,6 @@ jobs:
       - name: Pull cache 
         run: $SBTN pullRemoteCache-$SCALA_PLATFORM || echo 'remote cache not found'
 
-      - name: Test 2.12
-        run: $SBTN "test-2_12-$SCALA_PLATFORM;codeQuality-2_12-$SCALA_PLATFORM"
-
       - name: Test 2.13
         run: $SBTN "test-2_13-$SCALA_PLATFORM;codeQuality-2_13-$SCALA_PLATFORM"
 
