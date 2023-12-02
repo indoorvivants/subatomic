@@ -338,18 +338,18 @@ lazy val plugin = projectMatrix
     },
     scriptedBufferLog := false
   )
-// .settings(
-//   publishLocal := publishLocal
-//     .dependsOn(
-//       core.jvm(Ver.Scala.`2_12`) / publishLocal,
-//       builders.jvm(Ver.Scala.`2_12`) / publishLocal,
-//       searchIndex.jvm(Ver.Scala.`2_12`) / publishLocal,
-//       searchFrontendPack.jvm(Ver.Scala.`2_12`) / publishLocal,
-//       searchShared.jvm(Ver.Scala.`2_12`) / publishLocal,
-//       searchRetrieve.jvm(Ver.Scala.`2_12`) / publishLocal
-//     )
-//     .value
-// )
+  .settings(
+    publishLocal := publishLocal
+      .dependsOn(
+        core.jvm(Ver.Scala.`3`) / publishLocal,
+        builders.jvm(Ver.Scala.`3`) / publishLocal,
+        searchIndex.jvm(Ver.Scala.`3`) / publishLocal,
+        searchFrontendPack.jvm(Ver.Scala.`3`) / publishLocal,
+        searchShared.jvm(Ver.Scala.`3`) / publishLocal,
+        searchRetrieve.jvm(Ver.Scala.`3`) / publishLocal
+      )
+      .value
+  )
   .settings(
     Compile / resourceGenerators += Def.task {
       val out =
