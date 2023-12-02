@@ -21,14 +21,17 @@ import java.nio.file.Files
 import com.indoorvivants.detective.Platform
 import com.indoorvivants.yank.tools
 
-class D2(binary: os.Path) {
+class D2(binary: os.Path, cache: Cache) {
   def diagram(code: String, arguments: List[String] = Nil): String = {
-    os.proc(Seq(binary.toString()) ++ arguments ++ Seq("-", "-"))
-      .call(
-        stdin = os.ProcessInput.SourceInput(code)
-      )
-      .out
-      .text()
+    def compute =
+      os.proc(Seq(binary.toString()) ++ arguments ++ Seq("-", "-"))
+        .call(
+          stdin = os.ProcessInput.SourceInput(code)
+        )
+        .out
+        .text()
+
+    cache.produce((code, arguments))(compute)
   }
 }
 
@@ -38,8 +41,9 @@ object D2 {
     val default: Config = Config(version = "0.6.1")
   }
 
-  def bootstrap(config: Config): D2 =
+  def bootstrap(config: Config, cache: Cache): D2 =
     new D2(
-      os.Path(tools.D2.bootstrap(tools.D2.Config(version = config.version)))
+      os.Path(tools.D2.bootstrap(tools.D2.Config(version = config.version))),
+      cache
     )
 }

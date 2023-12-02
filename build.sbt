@@ -22,9 +22,8 @@ val Ver = new {
     val `2_13` = "2.13.12"
     val `3`    = "3.3.1"
 
-    val only_2    = Seq(`2_12`, `2_13`)
     val only_2_13 = Seq(`2_13`)
-    val all       = only_2 :+ `3`
+    val all       = only_2_13 :+ `3`
   }
 }
 
@@ -328,7 +327,7 @@ lazy val plugin = projectMatrix
   .withId("plugin")
   .settings(
     sbtPlugin                     := true,
-    pluginCrossBuild / sbtVersion := "1.4.4"
+    pluginCrossBuild / sbtVersion := "1.9.7"
   )
   .jvmPlatform(scalaVersions = Seq(Ver.Scala.`2_12`))
   .settings(
@@ -342,12 +341,12 @@ lazy val plugin = projectMatrix
   .settings(
     publishLocal := publishLocal
       .dependsOn(
-        core.jvm(Ver.Scala.`2_12`) / publishLocal,
-        builders.jvm(Ver.Scala.`2_12`) / publishLocal,
-        searchIndex.jvm(Ver.Scala.`2_12`) / publishLocal,
-        searchFrontendPack.jvm(Ver.Scala.`2_12`) / publishLocal,
-        searchShared.jvm(Ver.Scala.`2_12`) / publishLocal,
-        searchRetrieve.jvm(Ver.Scala.`2_12`) / publishLocal
+        core.jvm(Ver.Scala.`3`) / publishLocal,
+        builders.jvm(Ver.Scala.`3`) / publishLocal,
+        searchIndex.jvm(Ver.Scala.`3`) / publishLocal,
+        searchFrontendPack.jvm(Ver.Scala.`3`) / publishLocal,
+        searchShared.jvm(Ver.Scala.`3`) / publishLocal,
+        searchRetrieve.jvm(Ver.Scala.`3`) / publishLocal
       )
       .value
   )

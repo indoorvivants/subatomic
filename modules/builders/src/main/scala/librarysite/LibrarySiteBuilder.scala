@@ -42,7 +42,8 @@ case class LibrarySite(
     override val trackers: Seq[Tracker] = Seq.empty,
     search: Boolean = true,
     d2Config: D2.Config = D2.Config.default,
-    tailwindConfig: TailwindCSS.Config = TailwindCSS.Config.default
+    tailwindConfig: TailwindCSS.Config = TailwindCSS.Config.default,
+    override val cache: Cache = Cache.NoCaching
 ) extends subatomic.builders.Builder
 
 object LibrarySite {
@@ -234,7 +235,8 @@ object LibrarySite {
       extra: Site[LibrarySite.Doc] => Site[LibrarySite.Doc]
   ) = {
     val tailwind = TailwindCSS.bootstrap(siteConfig.tailwindConfig)
-    val d2       = D2.bootstrap(siteConfig.d2Config)
+    val d2 =
+      D2.bootstrap(siteConfig.d2Config, Cache.labelled("d2", Cache.InMemory))
 
     val d2Resolver = BuilderSteps.d2Resolver(d2)
 
