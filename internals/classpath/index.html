@@ -28,7 +28,7 @@ lazy val api = project.in(file(&quot;api&quot;)).dependsOn(core)
 <li>
 <p>Enable subatomic SBT plugin:</p>
 <p><strong>project/plugins.sbt</strong></p>
-<pre><code class="language-scala">  addSbtPlugin(&quot;com.indoorvivants&quot; % &quot;sbt-plugin&quot; % &quot;0.0.7+178-040085b7-SNAPSHOT&quot;)
+<pre><code class="language-scala">  addSbtPlugin(&quot;com.indoorvivants&quot; % &quot;sbt-plugin&quot; % &quot;0.0.7+180-afc17bb2-SNAPSHOT&quot;)
 </code></pre>
 <p><strong>build.sbt</strong></p>
 <pre><code class="language-scala"> lazy val docs = 
@@ -47,7 +47,7 @@ lazy val api = project.in(file(&quot;api&quot;)).dependsOn(core)
 <p>Doing so leads to two things happening:</p>
 <ol>
 <li>
-<p><code>docs</code> project now has dependency on <code>&quot;com.indoorvivants&quot; %% &quot;subatomic-builders&quot; % &quot;0.0.7+178-040085b7-SNAPSHOT&quot;</code> - which brings all the core things Subatomic will need to build the site</p>
+<p><code>docs</code> project now has dependency on <code>&quot;com.indoorvivants&quot; %% &quot;subatomic-builders&quot; % &quot;0.0.7+180-afc17bb2-SNAPSHOT&quot;</code> - which brings all the core things Subatomic will need to build the site</p>
 </li>
 <li>
 <p>A <a href="https://www.scala-sbt.org/1.x/docs/Classpaths.html#Unmanaged+vs+managed">managed resource file</a> called <strong>subatomic.properties</strong> is created (and kept updated)</p>
