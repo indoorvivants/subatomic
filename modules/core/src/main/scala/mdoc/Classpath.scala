@@ -88,7 +88,7 @@ private[subatomic] case class Classpath(deps: List[Classpath.Item]) {
 
 object Classpath {
   sealed trait Item {
-    def cp = Classpath(List(this))
+    def cp: Classpath = Classpath(List(this))
   }
   case class Dep(coord: String, exclusions: Set[(String, String)] = Set.empty)
       extends Item

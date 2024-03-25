@@ -35,7 +35,7 @@ object MdocConfiguration {
     MdocConfiguration(
       scalaBinaryVersion = BuildInfo.scalaBinaryVersion,
       scalaVersion = BuildInfo.scalaVersion,
-      mdocVersion = "2.3.7",
+      mdocVersion = "2.5.2+3-4ff050f3-SNAPSHOT",
       inheritClasspath = true,
       inheritVariables = true,
       variables = Map.empty,
@@ -56,8 +56,10 @@ object MdocConfiguration {
       .optionalOne("mdoc-scala")
       .map(_.trim)
       .getOrElse(defaultConfig.scalaBinaryVersion)
+
     val group =
       attrs.optionalOne("mdoc-group").map(_.trim).getOrElse(defaultConfig.group)
+
     val version = attrs
       .optionalOne("mdoc-version")
       .map(_.trim)
