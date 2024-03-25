@@ -23,12 +23,7 @@ import coursier.core.MinimizedExclusions
 import coursier.parse.DependencyParser
 import os.ProcessOutput
 
-case class MdocFile(
-    path: os.Path,
-    config: MdocConfiguration
-)
-
-class Mdoc(
+class Mdoc2(
     logger: Logger = Logger.default,
     config: MdocConfiguration = MdocConfiguration.default
 ) { self =>
