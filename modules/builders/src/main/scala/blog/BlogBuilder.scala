@@ -34,7 +34,6 @@ import com.vladsch.flexmark.util.misc.Extension
 import io.lemonlabs.uri.Url
 
 case class RSSConfig(
-    blogUrl: Url,
     description: String,
     title: String
 )
@@ -58,6 +57,7 @@ case class Blog(
     rssConfig: Option[RSSConfig] = None,
     d2Config: D2.Config = D2.Config.default,
     tailwindConfig: TailwindCSS.Config = TailwindCSS.Config.default,
+    publicUrl: Url,
     override val cache: Cache = Cache.NoCaching
 ) extends subatomic.builders.Builder {
   def markdownExtensions =
@@ -131,7 +131,16 @@ object Blog {
     )
   }
 
+  def absoluteUrl(doc: Doc, linker: Linker, baseUrl: Url): Url = {
+    val path = baseUrl.removeEmptyPathParts().path
+
+    baseUrl.withPath(
+      path.addParts(linker.findRelativePath(doc).segments)
+    )
+  }
+
   def createRss(
+      baseUrl: Url,
       config: RSSConfig,
       linker: Linker,
       content: Vector[Doc]
@@ -141,27 +150,20 @@ object Blog {
 
     val posts = content.collect { case p: Post => p }
 
-    val feedUrl = config.blogUrl.removeEmptyPathParts().addPathPart(rssPath)
+    val feedUrl = baseUrl.removeEmptyPathParts().addPathPart(rssPath)
 
     import util.rss._
 
-    val items = posts.map { p =>
-      val path = config.blogUrl.removeEmptyPathParts().path
-
-      val absolute =
-        config.blogUrl.withPath(
-          path.addParts(linker.findRelativePath(p).segments)
-        )
-
+    val items = posts.map { post =>
       Item
         .create(
-          Item.Title(p.title),
-          Item.Link(absolute.toString())
+          Item.Title(post.title),
+          Item.Link(absoluteUrl(post, linker, baseUrl).toString())
         )
-        .copy(description = p.description.map(Item.Description.apply))
+        .copy(description = post.description.map(Item.Description.apply))
         .copy(publicationDate =
           Some(
-            p.date.atStartOfDay().atZone(ZoneId.of("UTC")).toOffsetDateTime()
+            post.date.atStartOfDay().atZone(ZoneId.of("UTC")).toOffsetDateTime()
           )
         )
     }
@@ -169,7 +171,7 @@ object Blog {
     val channel = Channel
       .create(
         title = Channel.Title(config.title),
-        link = Channel.Link(config.blogUrl.toString),
+        link = Channel.Link(baseUrl.toString),
         description = Channel.Description(config.description)
       )
       .addItems(items: _*)
@@ -329,6 +331,8 @@ object Blog {
 
     def renderPost(
         title: String,
+        description: Option[String],
+        absoluteUrl: Url,
         tags: Seq[String],
         file: os.Path,
         links: Vector[NavLink],
@@ -339,10 +343,12 @@ object Blog {
       val toc              = TOC.build(headers)
       val renderedMarkdown = renderingMarkdown.renderToString(document)
       val renderedHtml =
-        template.post(
+        template.postPage(
           links,
           headings,
           title,
+          description,
+          absoluteUrl,
           tags,
           if (toc.length > 1) Some(toc) else None,
           renderedMarkdown
@@ -355,6 +361,8 @@ object Blog {
       .map { mdocResult =>
         renderPost(
           mdocResult.original.title,
+          mdocResult.original.description,
+          absoluteUrl(mdocResult.original, linker, siteConfig.publicUrl),
           mdocResult.original.tags,
           mdocResult.resultFile,
           navigation(mdocResult.original),
@@ -372,6 +380,8 @@ object Blog {
                 (identity[SitePath] _) ->
                   renderPost(
                     doc.title,
+                    doc.description,
+                    absoluteUrl(doc, linker, siteConfig.publicUrl),
                     doc.tags,
                     mdocResult.markdownFile,
                     navigation(doc),
@@ -392,6 +402,8 @@ object Blog {
               Map(
                 (identity[SitePath] _) -> renderPost(
                   doc.title,
+                  doc.description,
+                  absoluteUrl(doc, linker, siteConfig.publicUrl),
                   doc.tags,
                   doc.path,
                   navigation(doc),
@@ -420,6 +432,8 @@ object Blog {
               sitePath,
               renderPost(
                 doc.title,
+                doc.description,
+                absoluteUrl(doc, linker, siteConfig.publicUrl),
                 doc.tags,
                 doc.path,
                 navigation(doc),
@@ -460,7 +474,8 @@ object Blog {
       siteConfig.rssConfig match {
         case None => site
         case Some(rss) =>
-          val (at, xmlfeed) = createRss(rss, linker, content.map(_._2))
+          val (at, xmlfeed) =
+            createRss(siteConfig.publicUrl, rss, linker, content.map(_._2))
 
           site.add(
             at,

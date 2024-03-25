@@ -24,6 +24,8 @@ import subatomic.SiteRoot
 import subatomic.builders._
 import subatomic.builders.blog.themes.Theme
 
+import io.lemonlabs.uri.Url
+
 trait HtmlPage {
 
   def site: Blog
@@ -77,7 +79,8 @@ trait HtmlPage {
   def basePage(
       navigation: Option[Vector[NavLink]],
       headings: Option[Vector[Heading]],
-      content: TypedTag[_]
+      content: TypedTag[_],
+      openGraph: List[OpenGraphTags] = Nil
   ) = {
     val pageTitle = navigation
       .flatMap(_.find(_.selected)) match {
@@ -102,7 +105,8 @@ trait HtmlPage {
         meta(
           name            := "viewport",
           attr("content") := "width=device-width, initial-scale=1"
-        )
+        ),
+        openGraph.map(OpenGraphTags.renderAsHtml)
       ),
       body(
         whoosh(_.Body),
@@ -186,14 +190,17 @@ trait HtmlPage {
   def page(
       navigation: Vector[NavLink],
       headings: Option[Vector[Heading]],
-      content: TypedTag[_]
+      content: TypedTag[_],
+      openGraph: List[OpenGraphTags]
   ) =
-    basePage(Some(navigation), headings, content)
+    basePage(Some(navigation), headings, content, openGraph)
 
-  def post(
+  def postPage(
       navigation: Vector[NavLink],
       headings: Vector[Heading],
       title: String,
+      description: Option[String],
+      url: Url,
       tags: Seq[String],
       toc: Option[TOC],
       content: String
@@ -201,6 +208,8 @@ trait HtmlPage {
     navigation,
     headings,
     title,
+    description,
+    url,
     tags,
     toc,
     article(
@@ -215,6 +224,8 @@ trait HtmlPage {
       navigation: Vector[NavLink],
       headings: Vector[Heading],
       title: String,
+      description: Option[String],
+      url: Url,
       tags: Seq[String],
       toc: Option[TOC],
       content: TypedTag[_]
@@ -233,7 +244,12 @@ trait HtmlPage {
         h2(whoosh(_.Post.Title), title),
         p(whoosh(_.Post.Description), tagline),
         content
-      )
+      ),
+      List(
+        OpenGraphTags.Type.Article,
+        OpenGraphTags.Title(title),
+        OpenGraphTags.Url(url.toAbsoluteUrl.toString())
+      ) ++ description.map(OpenGraphTags.Description.apply).toList
     ).render
   }
 
@@ -252,6 +268,10 @@ trait HtmlPage {
           span(whoosh(_.Tag), tag)
         ),
         div(blogs.map(blogCard).toVector)
+      ),
+      List(
+        OpenGraphTags.Type.Website,
+        OpenGraphTags.Title(s"Posts tagged `$tag`")
       )
     )
   }

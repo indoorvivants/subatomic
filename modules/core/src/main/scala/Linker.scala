@@ -16,6 +16,10 @@
 
 package subatomic
 
+import io.lemonlabs.uri.Uri
+import io.lemonlabs.uri.Url
+import io.lemonlabs.uri.UrlPath
+
 class Linker(content: Vector[(SitePath, _)], base: SitePath) {
   private val mp = content.map(_._1).toSet;
 
@@ -33,6 +37,38 @@ class Linker(content: Vector[(SitePath, _)], base: SitePath) {
 
   }
 
+  def resolvePath(f: (SiteRoot with SitePath => SitePath)): SitePath = {
+    val rawLocation = f(SiteRoot)
+    if (mp(rawLocation)) rawLocation.prepend(base)
+    else
+      throw new IllegalArgumentException(
+        s"Could not resolve $rawLocation location in the site"
+      )
+
+  }
+
+  def absoluteUrl(u: Url, f: (SiteRoot with SitePath => SitePath)): Url = {
+    val path = f(SiteRoot).prepend(base)
+    u.withPath(UrlPath(path.segments))
+  }
+
+  def absoluteUrlForContent(u: Url, piece: Any): Url = {
+    val path = findPath(piece)
+
+    u.withPath(UrlPath(path.segments))
+  }
+
+  def findPath(piece: Any): SitePath = {
+    content
+      .find(_._2 == piece)
+      .map(found => resolvePath(_ / found._1))
+      .getOrElse(
+        throw new IllegalArgumentException(
+          s"Could not resolve $piece content in the site"
+        )
+      )
+  }
+
   def find(piece: Any): String = {
     content
       .find(_._2 == piece)
@@ -43,6 +79,7 @@ class Linker(content: Vector[(SitePath, _)], base: SitePath) {
         )
       )
   }
+
   def findRelativePath(piece: Any): SitePath = {
     content
       .find(_._2 == piece)

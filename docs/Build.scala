@@ -42,11 +42,11 @@ object DevBlog extends subatomic.builders.blog.Blog.App {
       trackers = Seq(Tracker.GoogleAnalytics("G-9RNQGQHVLB")),
       rssConfig = Some(
         RSSConfig(
-          blogUrl = Url.parse("https://subatomic.indoorvivants.com/blog/"),
           description = "Subatomic development blog",
           title = "Subatomic blog"
         )
-      )
+      ),
+      publicUrl = Url.parse("https://subatomic.indoorvivants.com/blog/")
     )
 }
 
