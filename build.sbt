@@ -18,9 +18,9 @@ val Ver = new {
   val yank                  = "0.0.1"
 
   val Scala = new {
-    val `2_12` = "2.12.15"
-    val `2_13` = "2.13.12"
-    val `3`    = "3.3.1"
+    val `2_12` = "2.12.19"
+    val `2_13` = "2.13.13"
+    val `3`    = "3.3.3"
 
     val only_2_13 = Seq(`2_13`)
     val all       = only_2_13 :+ `3`
@@ -423,8 +423,7 @@ lazy val buildInfoSettings = {
 
 inThisBuild(
   List(
-    scalaVersion := Ver.Scala.`2_13`,
-    scalafixDependencies += "com.github.liancheng" %% "organize-imports" % "0.5.0",
+    scalaVersion               := Ver.Scala.`2_13`,
     semanticdbEnabled          := true,
     semanticdbVersion          := scalafixSemanticdb.revision,
     scalafixScalaBinaryVersion := scalaBinaryVersion.value,

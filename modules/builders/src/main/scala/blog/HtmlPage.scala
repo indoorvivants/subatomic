@@ -74,33 +74,22 @@ trait HtmlPage {
     BuilderTemplate.managedScriptsBlock(linker, paths)
   }
 
-  private def searchStyles = {
-    val paths =
-      if (site.search)
-        List(
-          StylesheetPath(SiteRoot / "assets" / "subatomic-search.css"),
-          StylesheetPath(SiteRoot / "assets" / "subatomic-search.css")
-        )
-      else Nil
-
-    BuilderTemplate.managedStylesBlock(linker, paths)
-  }
-
   def basePage(
       navigation: Option[Vector[NavLink]],
       headings: Option[Vector[Heading]],
       content: TypedTag[_]
   ) = {
     val pageTitle = navigation
-      .flatMap(_.find(_.selected))
-      .map(_.title)
-      .map(": " + _)
-      .getOrElse("")
+      .flatMap(_.find(_.selected)) match {
+      case None => site.name
+      case Some(value) =>
+        value.title
+    }
 
     html(
       lang := "en",
       head(
-        scalatags.Text.tags2.title(site.name + pageTitle),
+        scalatags.Text.tags2.title(pageTitle),
         highlightingHeader(site.highlighting),
         BuilderTemplate.managedStylesBlock(linker, site.managedStyles),
         BuilderTemplate.managedStylesBlock(
@@ -109,7 +98,6 @@ trait HtmlPage {
         ),
         BuilderTemplate.managedScriptsBlock(linker, site.managedScripts),
         searchScripts,
-        searchStyles,
         meta(charset := "UTF-8"),
         meta(
           name            := "viewport",

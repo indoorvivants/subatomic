@@ -41,17 +41,6 @@ trait HtmlPage {
     BuilderTemplate.managedScriptsBlock(linker, paths)
   }
 
-  private def searchStyles = {
-    val paths =
-      if (site.search)
-        List(
-          StylesheetPath(SiteRoot / "assets" / "subatomic-search.css")
-        )
-      else Nil
-
-    BuilderTemplate.managedStylesBlock(linker, paths)
-  }
-
   private def templateStyles = {
     val paths = List(StylesheetPath(SiteRoot / "assets" / "tailwind.css"))
 
@@ -98,7 +87,6 @@ trait HtmlPage {
         BuilderTemplate.managedStylesBlock(linker, site.managedStyles),
         templateStyles,
         searchScripts,
-        searchStyles,
         meta(charset := "UTF-8"),
         meta(
           name            := "viewport",
