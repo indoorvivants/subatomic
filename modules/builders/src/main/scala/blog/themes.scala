@@ -67,10 +67,24 @@ trait Theme {
     var Container: WithClassname   = none
     var Description: WithClassname = none
     var Title: WithClassname       = none
+    var Tagline: WithClassname     = none
+
+    object Author {
+      var Container: WithClassname = none
+      var Link: WithClassname      = none
+    }
   }
 
   object TagPage {
     var Header: WithClassname = none
+  }
+
+  object AuthorPage {
+    object Links {
+      var Container: WithClassname = none
+      var Item: WithClassname      = none
+      var Link: WithClassname      = none
+    }
   }
 
   object ArchivePage {
@@ -125,6 +139,14 @@ trait DefaultTheme extends Theme {
   Post.Container = c("p-4")
   Post.Description = c("text-base underline")
   Post.Title = c("text-2xl m-2 font-bold")
+  Post.Tagline = c("p-2")
+
+  Post.Author.Container = c("p-2")
+  Post.Author.Link = c("font-bold no-underline hover:underline")
+
+  AuthorPage.Links.Container = c("pl-4")
+  AuthorPage.Links.Item = c("pl-2")
+  AuthorPage.Links.Link = c("font-bold underline hover:no-underline")
 
   Markdown = MarkdownTheme.default
   Search = SearchTheme.default

@@ -46,7 +46,18 @@ object DevBlog extends subatomic.builders.blog.Blog.App {
           title = "Subatomic blog"
         )
       ),
-      publicUrl = Url.parse("https://subatomic.indoorvivants.com/blog/")
+      publicUrl = Url.parse("https://subatomic.indoorvivants.com/blog/"),
+      authors = List(
+        Author(
+          "anton",
+          "Anton Sviridov",
+          Map(
+            "Github"  -> "https://github.com/keynmol",
+            "Twitter" -> "https://twitter.com/velvetbaldmime"
+          )
+        ),
+        Author("anton-evil-twin", "Anton Evilov")
+      )
     )
 }
 

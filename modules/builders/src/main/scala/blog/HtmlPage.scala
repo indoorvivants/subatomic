@@ -203,7 +203,8 @@ trait HtmlPage {
       url: Url,
       tags: Seq[String],
       toc: Option[TOC],
-      content: String
+      content: String,
+      author: Option[Author]
   ): String = post(
     navigation,
     headings,
@@ -212,6 +213,7 @@ trait HtmlPage {
     url,
     tags,
     toc,
+    author,
     article(
       whoosh(_.Post.Container),
       cls := "markdown",
@@ -228,6 +230,7 @@ trait HtmlPage {
       url: Url,
       tags: Seq[String],
       toc: Option[TOC],
+      author: Option[Author],
       content: TypedTag[_]
   ) = {
     val tagline = tags.toList.map { tag =>
@@ -242,7 +245,19 @@ trait HtmlPage {
       Some(headings),
       div(
         h2(whoosh(_.Post.Title), title),
-        p(whoosh(_.Post.Description), tagline),
+        p(whoosh(_.Post.Tagline), tagline),
+        author
+          .map(author =>
+            p(
+              whoosh(_.Post.Author.Container),
+              "By ",
+              a(
+                whoosh(_.Post.Author.Link),
+                href := linker.unsafe(_ / "author" / s"${author.id}.html"),
+                author.name
+              )
+            )
+          ),
         content
       ),
       List(
@@ -251,6 +266,38 @@ trait HtmlPage {
         OpenGraphTags.Url(url.toAbsoluteUrl.toString())
       ) ++ description.map(OpenGraphTags.Description.apply).toList
     ).render
+  }
+
+  def authorPage(
+      navigation: Vector[NavLink],
+      author: Author,
+      blogs: Seq[Post]
+  ) = {
+    page(
+      navigation,
+      None,
+      div(
+        h3(
+          whoosh(_.TagPage.Header),
+          "Posts by ",
+          b(author.name)
+        ),
+        ul(
+          whoosh(_.AuthorPage.Links.Container),
+          author.links.toList.sortBy(_._1).map { case (title, link) =>
+            li(
+              whoosh(_.AuthorPage.Links.Item),
+              a(href := link, title, whoosh(_.AuthorPage.Links.Link))
+            )
+          }
+        ),
+        div(blogs.map(blogCard).toVector)
+      ),
+      List(
+        OpenGraphTags.Type.Website,
+        OpenGraphTags.Title(s"Posts by ${author.name}")
+      )
+    )
   }
 
   def tagPage(
