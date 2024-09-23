@@ -364,7 +364,7 @@ trait HtmlPage {
             href := linker.find(blogPost),
             blogPost.title
           ),
-          span(
+          time(
             whoosh(_.PostCard.Date),
             blogPost.date.format(DateTimeFormatter.ISO_LOCAL_DATE)
           )
