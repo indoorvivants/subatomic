@@ -34,6 +34,7 @@ trait HtmlPage {
   def theme: Theme
 
   import scalatags.Text.all._
+  import scalatags.Text.tags2.time
   import scalatags.Text.TypedTag
 
   def Nav(navigation: Vector[NavLink]) = {
@@ -325,14 +326,6 @@ trait HtmlPage {
 
   def dateFormat(dt: LocalDate) = dt.format(DateTimeFormatter.ISO_DATE)
 
-  def blogPostSummary(
-      title: String,
-      date: LocalDate,
-      url: String
-  ) = {
-    li(h3(a(href := url, title)), dateFormat(date))
-  }
-
   def tagCloud = {
     section(
       whoosh(_.Aside.Section.Container),
@@ -366,7 +359,7 @@ trait HtmlPage {
           ),
           time(
             whoosh(_.PostCard.Date),
-            blogPost.date.format(DateTimeFormatter.ISO_LOCAL_DATE)
+            dateFormat(blogPost.date)
           )
         ),
         p(whoosh(_.PostCard.Description), blogPost.description)
