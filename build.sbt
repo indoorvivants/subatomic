@@ -385,7 +385,7 @@ lazy val munitTestSettings = Seq(
   libraryDependencies += "com.eed3si9n.verify" %%% "verify" % Ver.verify % Test,
   resolvers +=
     "Sonatype S01 OSS Snapshots" at "https://s01.oss.sonatype.org/content/repositories/snapshots",
-  libraryDependencies += "org.scalacheck" %%% "scalacheck" % "1.17.0" % Test,
+  libraryDependencies += "org.scalacheck" %%% "scalacheck" % "1.17.1" % Test,
   testFrameworks += new TestFramework("verify.runner.Framework")
 )
 
