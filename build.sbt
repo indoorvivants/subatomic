@@ -117,7 +117,7 @@ lazy val builders =
       libraryDependencies += "com.lihaoyi"  %% "scalatags" % Ver.scalatags,
       libraryDependencies += "com.indoorvivants.detective" %% "platform" % Ver.detective,
       libraryDependencies += "com.indoorvivants" %% "yank"     % Ver.yank,
-      libraryDependencies += "com.lihaoyi"       %% "requests" % "0.8.0"
+      libraryDependencies += "com.lihaoyi"       %% "requests" % "0.8.3"
     )
     .someVariations(
       Ver.Scala.all.toList,
