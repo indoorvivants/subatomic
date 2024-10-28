@@ -14,7 +14,7 @@ val Ver = new {
   val verify                = "1.0.0"
   val geny                  = "1.0.0"
   val scalaXml              = "2.1.0"
-  val detective             = "0.0.2"
+  val detective             = "0.1.0"
   val yank                  = "0.0.1"
 
   val Scala = new {
