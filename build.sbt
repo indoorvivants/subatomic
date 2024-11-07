@@ -327,7 +327,7 @@ lazy val plugin = projectMatrix
   .withId("plugin")
   .settings(
     sbtPlugin                     := true,
-    pluginCrossBuild / sbtVersion := "1.9.7"
+    pluginCrossBuild / sbtVersion := "1.9.9"
   )
   .jvmPlatform(scalaVersions = Seq(Ver.Scala.`2_12`))
   .settings(
