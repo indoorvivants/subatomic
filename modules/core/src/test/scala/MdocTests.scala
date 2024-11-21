@@ -100,15 +100,24 @@ trait MdocTestHarness { self: weaver.IOSuite =>
     )(
         result: String => Expectations
     ): IO[Expectations] = {
-      val logger = new Logger(s =>
-        log.info(s.replace("\n", "  ")).unsafeRunSync()
-      )
+      val handler = scribe.handler.LogHandler(scribe.Level.Info) { msg =>
+        log.info(msg.toString.replace("\n", "  ")).unsafeRunSync()
+      }
+
+      // an orphan logger with no handlers but the one we
+      // created above
+      val logger =
+        scribe.Logger.empty
+          .orphan()
+          .clearHandlers()
+          .withHandler(handler)
+
       val config = MdocConfiguration.default.copy(
         extraDependencies = dependencies,
         variables = variables
       )
       val mdoc =
-        new Mdoc(logger, config)
+        Mdoc(config, logger)
 
       val tmpFile = os.temp(content, suffix = ".md", deleteOnExit = false)
 

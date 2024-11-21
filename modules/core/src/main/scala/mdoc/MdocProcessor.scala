@@ -45,7 +45,7 @@ class MdocProcessor[C] private (
         key,
         internalFiles.getOrElse(key, Map.empty).updated(content, mdocFile)
       )
-      internalMdocs.update(key, new Mdoc(config = key))
+      internalMdocs.update(key, Mdoc(config = key))
     }
   }
 

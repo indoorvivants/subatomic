@@ -89,6 +89,8 @@ lazy val core = projectMatrix
 
     },
     libraryDependencies ++= Seq(
+      "com.outr" %%% "scribe" % "3.12.0",
+      "org.scalameta" % "mdoc-interfaces" % "2.5.2+3-4ff050f3-SNAPSHOT",
       "com.lihaoyi" %% "os-lib" % Ver.osLib,
       "org.scala-lang.modules" %% "scala-collection-compat" % Ver.scalaCollectionCompat,
       "io.lemonlabs" %% "scala-uri" % Ver.scalaUri
@@ -595,5 +597,5 @@ val cacheSettings = {
   )
 }
 
-pushRemoteCache := ()
-pullRemoteCache := ()
+pushRemoteCache := {}
+pullRemoteCache := {}
