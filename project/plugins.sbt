@@ -16,7 +16,7 @@ addSbtPlugin("ch.epfl.scala" % "sbt-scalafix" % "0.12.1")
 
 addSbtPlugin("de.heikoseeberger" % "sbt-header" % "5.9.0")
 
-addSbtPlugin("com.eed3si9n" % "sbt-projectmatrix" % "0.10.0")
+addSbtPlugin("com.eed3si9n" % "sbt-projectmatrix" % "0.10.1")
 
 addSbtPlugin("com.eed3si9n" % "sbt-buildinfo" % "0.11.0")
 
