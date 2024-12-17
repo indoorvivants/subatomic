@@ -21,6 +21,7 @@ import java.time.LocalDate
 
 import subatomic.builders.Tracker
 
+import com.indoorvivants.yank.tools.ScalaHighlight
 import io.lemonlabs.uri.Url
 
 object DevBlog extends subatomic.builders.blog.Blog.App {
@@ -40,6 +41,7 @@ object DevBlog extends subatomic.builders.blog.Blog.App {
         "Github"           -> "https://github.com/indoorvivants/subatomic"
       ),
       trackers = Seq(Tracker.GoogleAnalytics("G-9RNQGQHVLB")),
+      scalaHighlightConfig = Some(ScalaHighlight.Config(version = "0.0.2")),
       rssConfig = Some(
         RSSConfig(
           description = "Subatomic development blog",

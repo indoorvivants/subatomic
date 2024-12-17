@@ -2,25 +2,26 @@ import java.io.FileReader
 val Ver = new {
   val flexmark              = "0.62.2"
   val coursier              = "2.1.17"
-  val osLib                 = "0.9.3"
+  val osLib                 = "0.11.3"
   val scalaUri              = "4.0.2"
-  val scalaCollectionCompat = "2.11.0"
+  val scalaCollectionCompat = "2.12.0"
   val scalatags             = "0.13.1"
   val decline               = "2.4.1"
-  val laminar               = "16.0.0"
-  val upickle               = "3.1.4"
+  val laminar               = "17.2.0"
+  val upickle               = "4.0.2"
   val fansi                 = "0.5.0"
   val weaver                = "0.6.15"
   val verify                = "1.0.0"
   val geny                  = "1.1.1"
   val scalaXml              = "2.1.0"
   val detective             = "0.1.0"
-  val yank                  = "0.0.1"
+  val yank                  = "0.0.2"
+  val scalacheck            = "1.18.1"
 
   val Scala = new {
-    val `2_12` = "2.12.19"
-    val `2_13` = "2.13.13"
-    val `3`    = "3.3.3"
+    val `2_12` = "2.12.20"
+    val `2_13` = "2.13.15"
+    val `3`    = "3.3.4"
 
     val only_2_13 = Seq(`2_13`)
     val all       = only_2_13 :+ `3`
@@ -385,7 +386,7 @@ lazy val munitTestSettings = Seq(
   libraryDependencies += "com.eed3si9n.verify" %%% "verify" % Ver.verify % Test,
   resolvers +=
     "Sonatype S01 OSS Snapshots" at "https://s01.oss.sonatype.org/content/repositories/snapshots",
-  libraryDependencies += "org.scalacheck" %%% "scalacheck" % "1.17.0" % Test,
+  libraryDependencies += "org.scalacheck" %%% "scalacheck" % Ver.scalacheck % Test,
   testFrameworks += new TestFramework("verify.runner.Framework")
 )
 

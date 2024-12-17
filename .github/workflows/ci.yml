@@ -17,7 +17,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        java: [8]
+        java: [11]
         scalaPlatform: ["jvm", "js", "native"]
     runs-on: ${{ matrix.os }}
     env:
@@ -79,7 +79,7 @@ jobs:
       - uses: actions/setup-java@v2
         with:
           distribution: 'temurin' 
-          java-version: '8'
+          java-version: '11'
       - run: git fetch --unshallow
       - name: Publish ${{ github.ref }}
         run: sbt ci-release
@@ -98,7 +98,7 @@ jobs:
       - uses: actions/setup-java@v2
         with:
           distribution: 'temurin' 
-          java-version: '8'
+          java-version: '11'
       - uses: coursier/cache-action@v3      
       - run: git fetch --unshallow
       - name: Build site

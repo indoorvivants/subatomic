@@ -41,7 +41,8 @@ object SyntaxHighlighting {
       ) ++ languages.map(lang => url("languages", s"$lang.min.js"))
 
     def initScript = """
-    hljs.initHighlightingOnLoad();
+    hljs.configure({cssSelector: 'pre:not(.ts-hl) > code'});
+    hljs.highlightAll();
   """.trim()
   }
 
