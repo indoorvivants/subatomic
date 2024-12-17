@@ -35,7 +35,7 @@ object MdocConfiguration {
     MdocConfiguration(
       scalaBinaryVersion = BuildInfo.scalaBinaryVersion,
       scalaVersion = BuildInfo.scalaVersion,
-      mdocVersion = "2.3.7",
+      mdocVersion = "2.6.2",
       inheritClasspath = true,
       inheritVariables = true,
       variables = Map.empty,
