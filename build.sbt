@@ -18,9 +18,9 @@ val Ver = new {
   val yank                  = "0.0.1"
 
   val Scala = new {
-    val `2_12` = "2.12.19"
-    val `2_13` = "2.13.13"
-    val `3`    = "3.3.3"
+    val `2_12` = "2.12.20"
+    val `2_13` = "2.13.16"
+    val `3`    = "3.3.5"
 
     val only_2_13 = Seq(`2_13`)
     val all       = only_2_13 :+ `3`
