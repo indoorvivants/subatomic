@@ -90,9 +90,10 @@ object Cache {
         compute
       }
       val result = cache.produce(params)(newCompute())
+      val paramsStr = params.toString().replace("\n", "\\n").take(150)
 
-      if (miss) Logger.default.logLine(s"Cache miss: ${params}")
-      else Logger.default.logLine(s"Cache hit: ${params}")
+      if (miss) Logger.default.logLine(s"Cache miss: ${paramsStr}")
+      else Logger.default.logLine(s"Cache hit: ${paramsStr}")
 
       result
     }

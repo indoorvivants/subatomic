@@ -64,7 +64,7 @@ case class Blog(
     d2Config: D2.Config = D2.Config.default,
     tailwindConfig: TailwindCSS.Config = TailwindCSS.Config.default,
     scalaHighlightConfig: Option[ScalaHighlight.Config] = Some(
-      ScalaHighlight.Config("0.0.3")
+      ScalaHighlight.Config("0.0.4")
     ),
     publicUrl: Url,
     override val cache: Cache = Cache.NoCaching,
@@ -343,6 +343,8 @@ object Blog {
           siteConfig.d2Config,
           Cache.verbose(Cache.labelled("d2", siteConfig.cache))
         )
+
+      val scalaHighlightCache = Cache.verbose(Cache.labelled("scala-highlight", siteConfig.cache))
       val scalaHighlight =
         sys.env
           .get("SCALA_HIGHLIGHT_PATH")
@@ -407,7 +409,6 @@ object Blog {
           author: Option[Author]
       ) = {
 
-        println(s"Processing $title")
         val processed =
           scalaHighlight match {
             case None => file
@@ -415,6 +416,7 @@ object Blog {
               val tmp = os.temp(suffix = "-scala-highlight.md")
               os.proc(
                 cli.toString,
+                "markdown",
                 "--in",
                 file,
                 "--out",
