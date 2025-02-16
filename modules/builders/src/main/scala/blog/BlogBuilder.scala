@@ -27,6 +27,7 @@ import subatomic.builders._
 import subatomic.builders.blog.themes.Theme
 import subatomic.builders.blog.themes.default
 
+import com.indoorvivants.yank.tools.ScalaHighlight
 import com.vladsch.flexmark.ext.anchorlink.AnchorLinkExtension
 import com.vladsch.flexmark.ext.autolink.AutolinkExtension
 import com.vladsch.flexmark.ext.yaml.front.matter.YamlFrontMatterExtension
@@ -62,6 +63,9 @@ case class Blog(
     rssConfig: Option[RSSConfig] = None,
     d2Config: D2.Config = D2.Config.default,
     tailwindConfig: TailwindCSS.Config = TailwindCSS.Config.default,
+    scalaHighlightConfig: Option[ScalaHighlight.Config] = Some(
+      ScalaHighlight.Config("0.0.4")
+    ),
     publicUrl: Url,
     override val cache: Cache = Cache.NoCaching,
     authors: List[Author] = Nil
@@ -339,9 +343,15 @@ object Blog {
           siteConfig.d2Config,
           Cache.verbose(Cache.labelled("d2", siteConfig.cache))
         )
+
+      val scalaHighlightCache = Cache.verbose(Cache.labelled("scala-highlight", siteConfig.cache))
+      val scalaHighlight =
+        sys.env
+          .get("SCALA_HIGHLIGHT_PATH")
+          .map(Paths.get(_))
+          .orElse(siteConfig.scalaHighlightConfig.map(ScalaHighlight.bootstrap))
       val d2Resolver        = BuilderSteps.d2Resolver(d2)
       val renderingMarkdown = markdownParser(siteConfig, Some(d2Resolver))
-      // val markdown = markdownParser(siteConfig)
       val content =
         discoverContent(siteConfig, markdownParser(siteConfig, None))
 
@@ -398,7 +408,26 @@ object Blog {
           headings: Vector[Heading],
           author: Option[Author]
       ) = {
-        val document = renderingMarkdown.read(file)
+
+        val processed =
+          scalaHighlight match {
+            case None => file
+            case Some(cli) =>
+              val tmp = os.temp(suffix = "-scala-highlight.md")
+              os.proc(
+                cli.toString,
+                "markdown",
+                "--in",
+                file,
+                "--out",
+                tmp.toString,
+                "--theme",
+                "kanagawa"
+              ).call()
+              tmp
+          }
+
+        val document = renderingMarkdown.read(processed)
         val headers  = renderingMarkdown.extractMarkdownHeadings(document)
         val toc      = TOC.build(headers)
         val renderedMarkdown = renderingMarkdown.renderToString(document)
@@ -411,7 +440,7 @@ object Blog {
             url = absoluteUrl,
             tags = tags,
             toc = if (toc.length > 1) Some(toc) else None,
-            content = renderedMarkdown,
+            content = processed.toString + renderedMarkdown,
             author = author
           )
 
