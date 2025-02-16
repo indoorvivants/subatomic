@@ -84,7 +84,8 @@ case class Post(
     mdocConfig: Option[MdocConfiguration],
     archived: Boolean,
     headings: Vector[Heading],
-    author: Option[String]
+    author: Option[String],
+    hidden: Boolean
 ) extends Doc {
   def scalajsEnabled: Boolean = mdocConfig.exists(_.scalajsConfig.nonEmpty)
 }
@@ -236,6 +237,8 @@ object Blog {
         siteConfig: Blog,
         markdown: Markdown
     ): Vector[(SitePath, Doc)] = {
+      val boolTrue  = Set("true", "yes", "y")
+      val boolFalse = Set("false", "no", "n")
       val posts = Discover
         .someMarkdown(siteConfig.contentRoot, markdown) {
           case MarkdownDocument(path, filename, attributes) =>
@@ -246,6 +249,16 @@ object Blog {
             val title       = attributes.requiredOne("title")
             val description = attributes.optionalOne("description")
             val author      = attributes.optionalOne("author")
+            val hidden =
+              attributes.optionalOne("hidden").map(_.trim.toLowerCase()).map {
+                value =>
+                  if (boolFalse.contains(value)) false
+                  else if (boolTrue.contains(value)) true
+                  else
+                    SubatomicError.raise(
+                      s"Value [$value] cannot be interpreted as boolean; use one of ${boolFalse ++ boolTrue}"
+                    )
+              }
             // TODO: handle error here correctly
             val archived =
               attributes
@@ -275,7 +288,8 @@ object Blog {
               mdocConfig = mdocConfig,
               archived = archived,
               headings = headings,
-              author = author
+              author = author,
+              hidden = hidden.contains(true)
             ).asInstanceOf[Doc]
 
             sitePath -> post
@@ -341,13 +355,19 @@ object Blog {
         )
       val d2Resolver        = BuilderSteps.d2Resolver(d2)
       val renderingMarkdown = markdownParser(siteConfig, Some(d2Resolver))
-      // val markdown = markdownParser(siteConfig)
       val content =
         discoverContent(siteConfig, markdownParser(siteConfig, None))
 
       val linker = new Linker(content, siteConfig.base)
 
-      val navigation = createNavigation(linker, content.map(_._2))
+      val navigation = createNavigation(
+        linker,
+        content.map(_._2).collect {
+          case p: Post if !p.hidden => p
+          case t: TagPage           => t
+          case a: AuthorPage        => a
+        }
+      )
 
       val template =
         DefaultHtmlPage(
@@ -362,7 +382,7 @@ object Blog {
       val mdocProcessor =
         if (!buildConfig.disableMdoc)
           MdocProcessor.create[Post]() {
-            case Post(_, path, _, _, _, Some(config), _, _, _)
+            case Post(_, path, _, _, _, Some(config), _, _, _, _)
                 if config.scalajsConfig.nonEmpty =>
               MdocFile(path, config)
           }
@@ -377,7 +397,7 @@ object Blog {
           MdocJSProcessor
             .create[Post]() {
               // TODO: this is becoming unusable
-              case Post(_, path, _, _, _, Some(config), _, _, _)
+              case Post(_, path, _, _, _, Some(config), _, _, _, _)
                   if config.scalajsConfig.nonEmpty =>
                 MdocFile(path, config)
             }
@@ -524,7 +544,7 @@ object Blog {
 
       def addIndexPage(site: Site[Doc]): Site[Doc] = {
         val blogPosts = content.map(_._2).collect {
-          case p: Post if !p.archived => p
+          case p: Post if !p.archived && !p.hidden => p
         }
 
         site.addPage(
