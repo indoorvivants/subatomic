@@ -165,7 +165,10 @@ object Blog {
       val rssPath = "rss.xml"
       val at      = SiteRoot / rssPath
 
-      val posts = content.collect { case p: Post => p }
+      val posts = content
+        .collect { case p: Post if !p.hidden => p }
+        .sortBy(_.date)
+        .reverse
 
       val feedUrl = baseUrl.removeEmptyPathParts().addPathPart(rssPath)
 
