@@ -52,10 +52,20 @@ object MdocConfiguration {
       .map(_.split(",").toList.map(_.trim).toSet)
       .getOrElse(default.extraDependencies)
 
+    def detectBinary(ver: String) =
+      if (ver.startsWith("3.")) "3"
+      else if (ver.startsWith("2.13")) "2.13"
+      else if (ver.startsWith("2.12")) "2.12"
+      else
+        SubatomicError.raise(
+          s"Cannot detect binary version for Scala version [$ver]"
+        )
+
     val scalaVersion = attrs
       .optionalOne("mdoc-scala")
       .map(_.trim)
-      .getOrElse(defaultConfig.scalaBinaryVersion)
+      .getOrElse(defaultConfig.scalaVersion)
+
     val group =
       attrs.optionalOne("mdoc-group").map(_.trim).getOrElse(defaultConfig.group)
     val version = attrs
@@ -66,7 +76,8 @@ object MdocConfiguration {
     val scalajs = ScalaJSConfig.fromAttrs(attrs: Discover.YamlAttributes)
 
     val config = defaultConfig.copy(
-      scalaBinaryVersion = scalaVersion,
+      scalaBinaryVersion = detectBinary(scalaVersion),
+      scalaVersion = scalaVersion,
       group = group,
       mdocVersion = version,
       extraDependencies = dependencies,

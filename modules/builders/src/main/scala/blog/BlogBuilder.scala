@@ -386,7 +386,7 @@ object Blog {
         if (!buildConfig.disableMdoc)
           MdocProcessor.create[Post]() {
             case Post(_, path, _, _, _, Some(config), _, _, _, _)
-                if config.scalajsConfig.nonEmpty =>
+                if config.scalajsConfig.isEmpty =>
               MdocFile(path, config)
           }
         else {
