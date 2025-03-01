@@ -26,9 +26,8 @@ object MdocJSTests extends IOSuite {
     )(
         result: ScalaJSResult => Expectations
     ): IO[Expectations] = {
-      val logger = new Logger(s =>
-        log.info(s.replace("\n", "  ")).unsafeRunSync()
-      )
+      val logger =
+        new Logger(s => log.info(s.replace("\n", "  ")).unsafeRunSync())
 
       val config =
         MdocConfiguration.default.copy(
