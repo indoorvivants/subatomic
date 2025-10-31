@@ -85,7 +85,7 @@ trait HtmlPage {
   ) = {
     val pageTitle = navigation
       .flatMap(_.find(_.selected)) match {
-      case None => site.name
+      case None        => site.name
       case Some(value) =>
         value.title
     }
@@ -159,7 +159,7 @@ trait HtmlPage {
 
   private def headingsSection(headings: Option[Vector[Heading]]) =
     headings match {
-      case None => span()
+      case None        => span()
       case Some(value) =>
         section(
           whoosh(_.Aside.Section.Container),

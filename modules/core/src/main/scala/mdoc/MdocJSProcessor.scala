@@ -33,7 +33,7 @@ class MdocJSProcessor[C] private (
   private val internalFiles =
     scala.collection.mutable.Map.empty[Key, Map[C, MdocFile]]
   private val internalTriggers = scala.collection.mutable.Map.empty[C, Key]
-  private val internalResults =
+  private val internalResults  =
     scala.collection.mutable.Map.empty[Key, Map[C, MdocJSResult[C]]]
   private val internalMdocs = scala.collection.mutable.Map.empty[Key, MdocJS]
 

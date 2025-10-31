@@ -118,7 +118,7 @@ object SearchIndex {
       val arr = c.arr
 
       val termId = upickle.default.read[Option[TermIdx]](arr.apply(1))
-      val rest = arr.apply(0).obj.map { case (key, value) =>
+      val rest   = arr.apply(0).obj.map { case (key, value) =>
         key.charAt(0) -> read(value)
       }
 

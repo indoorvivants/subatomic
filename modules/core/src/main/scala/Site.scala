@@ -148,7 +148,7 @@ case class Site[Content] private (
       throw SubatomicError.dangerousOverwriting(destination)
 
     ass match {
-      case Page(content) => write(content, destination)
+      case Page(content)  => write(content, destination)
       case CopyOf(source) =>
         os.makeDir.all(destination / os.up)
 

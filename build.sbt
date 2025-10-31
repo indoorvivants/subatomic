@@ -289,7 +289,7 @@ lazy val docs = projectMatrix
   )
   .settings(Compile / resourceGenerators += Def.task {
     val properties = new java.util.Properties()
-    val out =
+    val out        =
       (Compile / unmanagedResourceDirectories).value.head / "subatomic.properties"
 
     val classpath =
@@ -331,7 +331,7 @@ lazy val plugin = projectMatrix
   )
   .jvmPlatform(scalaVersions = Seq(Ver.Scala.`2_12`))
   .settings(
-    moduleName := "subatomic-plugin",
+    moduleName         := "subatomic-plugin",
     scriptedLaunchOpts := {
       scriptedLaunchOpts.value ++
         Seq("-Xmx1024M", "-Dplugin.version=" + version.value)
@@ -412,7 +412,7 @@ lazy val buildInfoSettings = {
       else "native"
     },
     buildInfoPackage.withRank(KeyRanks.Invisible) := "subatomic.internal",
-    buildInfoKeys.withRank(KeyRanks.Invisible) := Seq[BuildInfoKey](
+    buildInfoKeys.withRank(KeyRanks.Invisible)    := Seq[BuildInfoKey](
       version,
       scalaVersion,
       scalaBinaryVersion,
@@ -431,7 +431,7 @@ inThisBuild(
     organizationName           := "Anton Sviridov",
     homepage  := Some(url("https://github.com/indoorvivants/subatomic")),
     startYear := Some(2020),
-    licenses := List(
+    licenses  := List(
       "Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")
     ),
     developers := List(
@@ -577,7 +577,7 @@ val cacheSettings = {
   }
 
   Seq(
-    semanticdbIncludeInJar := true,
+    semanticdbIncludeInJar              := true,
     Compile / packageCache / moduleName := artifactName(
       moduleName.value,
       virtualAxes.value

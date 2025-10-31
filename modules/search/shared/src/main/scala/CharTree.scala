@@ -104,7 +104,7 @@ object CharTree {
 
             matchingBranch match {
               case Some(value) => value._2.terminal = Some(idx)
-              case None =>
+              case None        =>
                 val newMutableCharTree =
                   MutableCharTree(mut.Map.empty, Some(idx))
 

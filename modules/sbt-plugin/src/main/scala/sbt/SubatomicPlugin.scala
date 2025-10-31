@@ -84,7 +84,7 @@ object SubatomicPlugin extends AutoPlugin {
           proj: ProjectReference,
           group: String = "default"
       ): DocDependency = ProjectDocDependency(proj, group)
-      def thisProjectClasses(group: String) = ThisProjectClasses(group)
+      def thisProjectClasses(group: String)      = ThisProjectClasses(group)
       def thisProjectDependencies(group: String) = ThisProjectDependencies(
         group
       )
@@ -112,7 +112,7 @@ object SubatomicPlugin extends AutoPlugin {
       subatomicInheritClasspath   := true,
       subatomicCoreDependency     := true,
       subatomicBuildersDependency := true,
-      subatomicDependencies := List(
+      subatomicDependencies       := List(
         ThisProjectClasses("default"),
         ThisProjectDependencies("default")
       ),
@@ -162,7 +162,7 @@ object SubatomicPlugin extends AutoPlugin {
             case ModuleDocDependency(mid, gr) =>
               mut ++= getJars(mid).map(gr -> _)
             case ClassesDocDependency(cls, gr) => mut ++= cls.map(gr -> _)
-            case ThisProjectClasses(gr) =>
+            case ThisProjectClasses(gr)        =>
               mut += gr -> (Compile / classDirectory).value
             case ThisProjectDependencies(gr) =>
               mut ++= dependencyClasspath

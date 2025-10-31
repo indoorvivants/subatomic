@@ -105,7 +105,7 @@ object LibrarySite {
       depth: Int
   ) {
     override def toString() = {
-      val sb = new StringBuilder
+      val sb                           = new StringBuilder
       def go(l: NavTree, i: Int): Unit = {
         l.level.foreach { case (doc, nt, expanded) =>
           sb.append(s"${" " * i} - ${doc.title} (${expanded})\n")
@@ -121,7 +121,7 @@ object LibrarySite {
 
   def discoverContent(siteConfig: LibrarySite, markdown: Markdown) = {
     val sections = Vector.newBuilder[(SitePath, Doc)]
-    val docs = Discover
+    val docs     = Discover
       .someMarkdown[(SitePath, Doc)](siteConfig.contentRoot, markdown) {
         case MarkdownDocument(path, filename, attributes) =>
           val id = attributes.optionalOne("id").getOrElse(filename)
@@ -235,7 +235,7 @@ object LibrarySite {
       extra: Site[LibrarySite.Doc] => Site[LibrarySite.Doc]
   ) = {
     val tailwind = TailwindCSS.bootstrap(siteConfig.tailwindConfig)
-    val d2 =
+    val d2       =
       D2.bootstrap(siteConfig.d2Config, Cache.labelled("d2", Cache.InMemory))
 
     val d2Resolver = BuilderSteps.d2Resolver(d2)
