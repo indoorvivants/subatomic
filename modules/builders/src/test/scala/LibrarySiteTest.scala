@@ -47,7 +47,7 @@ object LibrarySiteTest extends SimpleIOSuite with BuildersHelpers {
     val regularPage = page(Map("title" -> "base"), "test")
 
     val testDependency = "org.typelevel::cats:2.3.1"
-    val mdocPage = page(
+    val mdocPage       = page(
       Map(
         "title"             -> "mdoc",
         "mdoc"              -> "true",
@@ -111,7 +111,7 @@ trait BuildersHelpers {
   case class PreparedContent(root: os.Path, files: Map[SitePath, os.Path])
 
   def prepareContent(sps: (SitePath, String)*): PreparedContent = {
-    val root = os.temp.dir()
+    val root  = os.temp.dir()
     val files = sps.map { case (rp, value) =>
       os.makeDir.all((root / rp.toRelPath) / os.up)
       os.write.over(root / rp.toRelPath, value)

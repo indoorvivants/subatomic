@@ -242,7 +242,7 @@ object Blog {
     ): Vector[(SitePath, Doc)] = {
       val boolTrue  = Set("true", "yes", "y")
       val boolFalse = Set("false", "no", "n")
-      val posts = Discover
+      val posts     = Discover
         .someMarkdown(siteConfig.contentRoot, markdown) {
           case MarkdownDocument(path, filename, attributes) =>
             // TODO: handle the error here correctly
@@ -252,7 +252,7 @@ object Blog {
             val title       = attributes.requiredOne("title")
             val description = attributes.optionalOne("description")
             val author      = attributes.optionalOne("author")
-            val hidden =
+            val hidden      =
               attributes.optionalOne("hidden").map(_.trim.toLowerCase()).map {
                 value =>
                   if (boolFalse.contains(value)) false
@@ -351,14 +351,14 @@ object Blog {
         extra: Site[Doc] => Site[Doc]
     ): Unit = {
       val tailwind = TailwindCSS.bootstrap(siteConfig.tailwindConfig)
-      val d2 =
+      val d2       =
         D2.bootstrap(
           siteConfig.d2Config,
           Cache.verbose(Cache.labelled("d2", siteConfig.cache))
         )
       val d2Resolver        = BuilderSteps.d2Resolver(d2)
       val renderingMarkdown = markdownParser(siteConfig, Some(d2Resolver))
-      val content =
+      val content           =
         discoverContent(siteConfig, markdownParser(siteConfig, None))
 
       val linker = new Linker(content, siteConfig.base)
@@ -425,7 +425,7 @@ object Blog {
         val headers  = renderingMarkdown.extractMarkdownHeadings(document)
         val toc      = TOC.build(headers)
         val renderedMarkdown = renderingMarkdown.renderToString(document)
-        val renderedHtml =
+        val renderedHtml     =
           template.postPage(
             navigation = links,
             headings = headings,
@@ -569,7 +569,7 @@ object Blog {
 
       val addRSSPage: Site[Doc] => Site[Doc] = site =>
         siteConfig.rssConfig match {
-          case None => site
+          case None      => site
           case Some(rss) =>
             val (at, xmlfeed) =
               createRss(siteConfig.publicUrl, rss, linker, content.map(_._2))

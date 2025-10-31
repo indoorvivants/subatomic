@@ -60,7 +60,7 @@ class BuilderSteps(markdown: Markdown) {
         val allHtml     = os.walk(destination).filter(_.ext == "html")
         val allJs       = os.walk(destination).filter(_.ext == "js")
         val markdownCSS = renderMarkdownBase(markdownTheme)
-        val searchCSS =
+        val searchCSS   =
           renderSearchTheme(searchTheme, ".subatomic-search-container")
         Page(tailwind.process(allHtml ++ allJs, s"$markdownCSS\n$searchCSS"))
 
@@ -77,7 +77,7 @@ class BuilderSteps(markdown: Markdown) {
   ): subatomic.search.SearchIndex = {
     subatomic.search.Indexer.default(content).processSome {
       case (_, raw) if d.isDefinedAt(raw) =>
-        val doc = d(raw)
+        val doc              = d(raw)
         val markdownSections =
           markdown
             .extractMarkdownSections(doc.title, linker.find(raw), doc.path)
@@ -127,7 +127,7 @@ class BuilderSteps(markdown: Markdown) {
 
   private def renderSearchTheme(base: SearchTheme, selector: String) = {
 
-    val applications = Vector.newBuilder[String]
+    val applications                                 = Vector.newBuilder[String]
     def add(query: String, cls: WithClassname): Unit = {
       import ExtraStyles._
       cls match {

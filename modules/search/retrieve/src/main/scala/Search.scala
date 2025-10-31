@@ -95,7 +95,7 @@ class Search(index: SearchIndex, debug: Boolean = false) {
     val entries = termDocumentRanks
       .groupBy(_._1)
       .map { case (documentIdx, ranks) =>
-        val document = index.documentsMapping(documentIdx)
+        val document         = index.documentsMapping(documentIdx)
         val documentSections =
           document.sections.keys.toVector
             .map(sid => sid -> sectionRef.getOrElse((documentIdx, sid), 0.0))

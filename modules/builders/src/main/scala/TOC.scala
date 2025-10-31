@@ -21,7 +21,7 @@ import scala.collection.immutable
 import subatomic.Markdown.Header
 
 case class TOC(level: Vector[(Header, TOC)]) {
-  val length: Int = level.map(_._2.length + 1).sum
+  val length: Int    = level.map(_._2.length + 1).sum
   def toStringPretty = {
     def go(levels: Vector[(Header, TOC)], indent: Int): String = {
       val id = " " * indent
@@ -37,7 +37,7 @@ case class TOC(level: Vector[(Header, TOC)]) {
   }
 }
 object TOC {
-  val empty = TOC(Vector.empty)
+  val empty                               = TOC(Vector.empty)
   def build(headers: Vector[Header]): TOC = {
 
     def go(h: List[Header]): TOC = {

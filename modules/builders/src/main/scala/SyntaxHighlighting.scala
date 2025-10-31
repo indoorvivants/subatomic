@@ -67,7 +67,7 @@ object SyntaxHighlighting {
       additionalPlugins: List[String] = Nil,
       autoLoaderEnabled: Boolean = true
   ) extends SyntaxHighlighting {
-    private val urlBase = s"//unpkg.com/prismjs@$version"
+    private val urlBase                        = s"//unpkg.com/prismjs@$version"
     private def url(segments: String*): String = {
       (Seq(urlBase) ++ segments).mkString("/")
     }

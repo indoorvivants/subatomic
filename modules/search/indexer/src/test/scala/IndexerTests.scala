@@ -55,7 +55,7 @@ object IndexerSuite extends verify.BasicTestSuite {
   test("in document frequency is correctly calculated") {
     def getInDocumentFrequency(term: String, url: String) = {
       val termIdx = idx.termMapping(TermName(term))
-      val docIdx = idx
+      val docIdx  = idx
         .documentByUrl(url)
         .getOrElse(err(s"Document with $url not found in the index"))
 

@@ -35,7 +35,7 @@ object SearchTheme {
   import WithClassname.{apply => c}
   object none    extends SearchTheme
   object default extends Default
-  trait Default extends SearchTheme {
+  trait Default  extends SearchTheme {
     Container = c("relative")
     Input = c("text-xl rounded-md p-2 w-full text-black")
     ResultsContainer = c(

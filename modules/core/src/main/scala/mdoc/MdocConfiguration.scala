@@ -47,7 +47,7 @@ object MdocConfiguration {
   def fromAttrs(attrs: Discover.YamlAttributes): Option[MdocConfiguration] = {
     val defaultConfig = default
     val enabled       = attrs.optionalOne("mdoc").getOrElse("false").toBoolean
-    val dependencies = attrs
+    val dependencies  = attrs
       .optionalOne("mdoc-dependencies")
       .map(_.split(",").toList.map(_.trim).toSet)
       .getOrElse(default.extraDependencies)

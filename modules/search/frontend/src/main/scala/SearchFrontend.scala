@@ -30,7 +30,7 @@ class SearchFrontend private (idx: SearchIndex) {
 
   val node = {
     val queryVar = Var("")
-    val ip = input(
+    val ip       = input(
       value <-- queryVar.signal,
       cls         := "subatomic-search-input",
       placeholder := "Search...",

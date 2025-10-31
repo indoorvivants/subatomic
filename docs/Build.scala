@@ -26,7 +26,7 @@ import io.lemonlabs.uri.Url
 object DevBlog extends subatomic.builders.blog.Blog.App {
   import subatomic.builders.blog._
   val docsBase = os.pwd / "docs" / "blog"
-  def config =
+  def config   =
     Blog(
       contentRoot = docsBase / "content",
       base = SiteRoot / "blog",

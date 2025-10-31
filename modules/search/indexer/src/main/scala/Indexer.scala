@@ -91,7 +91,7 @@ private[subatomic] class TF_IDF(
   private val documentIndexes     = mutable.Map[Document, DocumentIdx]()
   private val globalTermFrequency = mutable.Map[TermIdx, GlobalTermFrequency]()
   private val termsMapping        = mutable.Map[TermName, TermIdx]()
-  private val termsInDocuments =
+  private val termsInDocuments    =
     mutable
       .Map[TermIdx, mutable.Map[DocumentIdx, TermDocumentOccurence]]()
 

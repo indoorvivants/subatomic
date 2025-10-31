@@ -143,7 +143,7 @@ class Mdoc(
           propagateEnv = false
         )
     ) match {
-      case scala.util.Success(_) =>
+      case scala.util.Success(_)  =>
       case scala.util.Failure(ex) =>
         val tmp =
           os.temp(deleteOnExit = false, contents = (base ++ args).mkString(" "))

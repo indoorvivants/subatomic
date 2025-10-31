@@ -49,7 +49,7 @@ object Cache {
 
   class TrackingCache(cache: Cache) extends Cache {
     def produce[I: ReadWriter, O: ReadWriter](params: I)(compute: => O): O = {
-      var hit = false
+      var hit        = false
       val newCompute = () => {
         hit = true
         compute
@@ -84,7 +84,7 @@ object Cache {
     override def produce[I: ReadWriter, O: ReadWriter](
         params: I
     )(compute: => O): O = {
-      var miss = false
+      var miss       = false
       val newCompute = () => {
         miss = true
         compute
