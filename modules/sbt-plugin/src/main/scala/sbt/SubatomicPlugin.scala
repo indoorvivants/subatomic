@@ -83,8 +83,8 @@ object SubatomicPlugin extends AutoPlugin {
       def project(
           proj: ProjectReference,
           group: String = "default"
-      ): DocDependency = ProjectDocDependency(proj, group)
-      def thisProjectClasses(group: String)      = ThisProjectClasses(group)
+      ): DocDependency                      = ProjectDocDependency(proj, group)
+      def thisProjectClasses(group: String) = ThisProjectClasses(group)
       def thisProjectDependencies(group: String) = ThisProjectDependencies(
         group
       )
