@@ -21,22 +21,19 @@ import scalatags.Text.all._
 
 object Html {
 
-  def renderTOC(toc: TOC, theme: MarkdownTheme) = {
-
-    def whoosh(t: MarkdownTheme => WithClassname) =
-      t(theme).className.map(cls := _)
+  def renderTOC(toc: TOC) = {
 
     div(
-      whoosh(_.TableOfContents.Container), {
+      cls := "sb-toc-container", {
         def render(toc: TOC): Option[TypedTag[String]] = {
           if (toc.level.nonEmpty)
             Some(
               ul(
-                whoosh(_.TableOfContents.List),
+                cls := "sbt-toc-list-container",
                 toc.level.map { case (h, nest) =>
                   li(
                     a(
-                      whoosh(_.TableOfContents.Link),
+                      cls  := "sbt-toc-list-link",
                       href := s"#${h.anchorId}",
                       h.title
                     ),
@@ -47,6 +44,7 @@ object Html {
             )
           else None
         }
+
         render(toc)
       }
     )

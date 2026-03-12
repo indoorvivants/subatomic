@@ -22,7 +22,6 @@ import java.time.format.DateTimeFormatter
 import subatomic.Linker
 import subatomic.SiteRoot
 import subatomic.builders._
-import subatomic.builders.blog.themes.Theme
 
 import io.lemonlabs.uri.Url
 
@@ -31,7 +30,6 @@ trait HtmlPage {
   def site: Blog
   def linker: Linker
   def tagPages: Seq[TagPage]
-  def theme: Theme
 
   import scalatags.Text.all._
   import scalatags.Text.tags2.time
@@ -39,12 +37,24 @@ trait HtmlPage {
 
   def Nav(navigation: Vector[NavLink]) = {
     ul(
-      whoosh(_.Aside.NavContainer),
+      cls := "sb-aside-navigation-container",
       navigation.map {
         case NavLink(_, title, selected) if selected =>
-          li(span(whoosh(_.Aside.NavCurrent), title))
+          li(
+            span(
+              cls := "sb-aside-navigation-link-current",
+              cls := "sb-aside-navigation-link",
+              title
+            )
+          )
         case NavLink(url, title, _) =>
-          li(a(whoosh(_.Aside.NavLink), href := url, title))
+          li(
+            a(
+              cls  := "sb-aside-navigation-link",
+              href := url,
+              title
+            )
+          )
       }
     )
   }
@@ -98,7 +108,7 @@ trait HtmlPage {
         BuilderTemplate.managedStylesBlock(linker, site.managedStyles),
         BuilderTemplate.managedStylesBlock(
           linker,
-          List(StylesheetPath(SiteRoot / "assets" / "tailwind.css"))
+          List(StylesheetPath(SiteRoot / "assets" / "styles.css"))
         ),
         BuilderTemplate.managedScriptsBlock(linker, site.managedScripts),
         searchScripts,
@@ -110,11 +120,11 @@ trait HtmlPage {
         openGraph.map(OpenGraphTags.renderAsHtml)
       ),
       body(
-        whoosh(_.Body),
+        cls := "sb-body",
         div(
-          whoosh(_.Container),
+          cls := "sb-main-container",
           aside(
-            whoosh(_.Aside.Container),
+            cls := "sb-aside",
             blogTitleSection,
             staticNav,
             searchSection,
@@ -133,24 +143,27 @@ trait HtmlPage {
 
   def archiveLink = {
     section(
+      cls := "sb-aside-section",
       h4(
-        whoosh(_.Aside.Section.TitleLink),
-        a(href := linker.unsafe(_ / "archive.html"), "Archive")
+        cls := "sb-aside-link-container",
+
+        a(
+          href := linker.unsafe(_ / "archive.html"),
+          "Archive",
+          cls := "sb-aside-link"
+        )
       )
     )
   }
-
-  private def whoosh(t: Theme => WithClassname) =
-    t(theme).className.map(cls := _)
 
   private def navigationSection(navigation: Option[Vector[NavLink]]) =
     navigation match {
       case Some(value) =>
         section(
-          whoosh(_.Aside.Section.Container),
-          h4(whoosh(_.Aside.Section.Title), "posts"),
+          cls := "sb-aside-section",
+          h4(cls := "sb-aside-section-title", "posts"),
           nav(
-            whoosh(_.Aside.Section.Content),
+            cls := "sb-aside-section-content",
             Nav(value)
           )
         )
@@ -162,9 +175,8 @@ trait HtmlPage {
       case None        => span()
       case Some(value) =>
         section(
-          whoosh(_.Aside.Section.Container),
-          style := "position: sticky; position: -webkit-sticky; top: 0",
-          h4(whoosh(_.Aside.Section.Title), "contents"),
+          cls := "sb-aside-section",
+          h4(cls := "sb-aside-section-title", "contents"),
           value.filter(_.level <= 3).map { hd =>
             span(
               raw("&nbsp;&nbsp;" * (hd.level - 1)),
@@ -177,15 +189,15 @@ trait HtmlPage {
 
   private def blogTitleSection =
     div(
-      whoosh(_.Logo.Container),
-      a(whoosh(_.Logo.Title), href := linker.root, site.name),
+      cls := "sb-logo-container",
+      a(cls := "sb-logo-title", href := linker.root, site.name),
       about
     )
 
   private def searchSection =
     section(
-      cls := "site-search",
-      div(id := "searchContainer", cls := "searchContainer")
+      cls := "sb-search-section",
+      div(id := "sb-search-container")
     )
 
   def page(
@@ -216,9 +228,9 @@ trait HtmlPage {
     toc,
     author,
     article(
-      whoosh(_.Post.Container),
-      cls := "markdown",
-      toc.map(Html.renderTOC(_, theme.Markdown)),
+      cls := "sb-content-container",
+      cls := "sb-post-content",
+      { val x = toc.map(Html.renderTOC(_)); println(s"$title - $x"); x },
       rawHtml(content)
     )
   )
@@ -236,7 +248,7 @@ trait HtmlPage {
   ) = {
     val tagline = tags.toList.map { tag =>
       a(
-        whoosh(_.Tag),
+        cls  := "sb-tag-link",
         href := linker.unsafe(_ / "tags" / s"$tag.html"),
         tag
       )
@@ -245,15 +257,15 @@ trait HtmlPage {
       navigation,
       Some(headings),
       div(
-        h2(whoosh(_.Post.Title), title),
-        p(whoosh(_.Post.Tagline), tagline),
+        h2(cls := "sb-post-title", title),
+        p(cls  := "sbt-post-tagline", tagline),
         author
           .map(author =>
             p(
-              whoosh(_.Post.Author.Container),
+              cls := "sb-post-author-container",
               "By ",
               a(
-                whoosh(_.Post.Author.Link),
+                cls  := "sb-post-author-link",
                 href := linker.unsafe(_ / "author" / s"${author.id}.html"),
                 author.name
               )
@@ -279,16 +291,18 @@ trait HtmlPage {
       None,
       div(
         h3(
-          whoosh(_.TagPage.Header),
+          // whoosh(_.TagPage.Header),
+          cls := "sb-page-header",
           "Posts by ",
           b(author.name)
         ),
         ul(
-          whoosh(_.AuthorPage.Links.Container),
+          // whoosh(_.AuthorPage.Links.Container),
+          cls := "sb-authorpage-links-container",
           author.links.toList.sortBy(_._1).map { case (title, link) =>
             li(
-              whoosh(_.AuthorPage.Links.Item),
-              a(href := link, title, whoosh(_.AuthorPage.Links.Link))
+              cls := "sb-authorpage-links-link-container",
+              a(href := link, title, cls := "sb-authorpage-links-link")
             )
           }
         ),
@@ -311,9 +325,9 @@ trait HtmlPage {
       None,
       div(
         h3(
-          whoosh(_.TagPage.Header),
+          cls := "sb-page-header",
           "Posts tagged with ",
-          span(whoosh(_.Tag), tag)
+          span(cls := "sb-tag", tag)
         ),
         div(blogs.map(blogCard).toVector)
       ),
@@ -328,16 +342,16 @@ trait HtmlPage {
 
   def tagCloud = {
     section(
-      whoosh(_.Aside.Section.Container),
-      h4(whoosh(_.Aside.Section.Title), "tags"),
+      cls := "sb-aside-section",
+      h4(cls := "sb-aside-section-title", "tags"),
       nav(
-        whoosh(_.Aside.Section.Content),
-        whoosh(_.TagCloud.Container),
-        tagPages.toList.map { tagPage =>
+        cls := "sb-aside-section-content",
+        cls := "sb-aside-tag-container",
+        tagPages.sortBy(_.posts.length).reverse.take(30).toList.map { tagPage =>
           a(
-            whoosh(_.TagCloud.Tag),
+            cls  := "sb-aside-tag-link",
             href := linker.find(tagPage),
-            small(tagPage.tag)
+            tagPage.tag + s" (${tagPage.posts.length})"
           )
         }
       )
@@ -348,21 +362,22 @@ trait HtmlPage {
       blogPost: Post
   ) = {
     section(
-      whoosh(_.PostCard.Container),
+      cls := "sb-postcard-container",
       div(
-        whoosh(_.PostCard.Body),
+        cls := "sb-postcard-body",
         div(
+          cls := "sb-postcard-title-container",
           a(
-            whoosh(_.PostCard.Title),
+            cls  := "sb-postcard-title",
             href := linker.find(blogPost),
             blogPost.title
           ),
           time(
-            whoosh(_.PostCard.Date),
+            cls := "sb-postcard-date",
             dateFormat(blogPost.date)
           )
         ),
-        p(whoosh(_.PostCard.Description), blogPost.description)
+        p(cls := "sb-postcard-description", blogPost.description)
       )
     )
   }
@@ -400,8 +415,8 @@ trait HtmlPage {
       None,
       None,
       div(
-        h3(whoosh(_.ArchivePage.Header), "Archive"),
-        div(cls := "card-columns", blogs.sorted.reverse.map(blogCard).toVector)
+        h3(cls  := "sb-archive-link-container", "Archive"),
+        div(cls := "sb-blog-cards", blogs.sorted.reverse.map(blogCard).toVector)
       )
     )
   }
@@ -412,16 +427,19 @@ trait HtmlPage {
   val article = tag("article")
 
   def about =
-    p(whoosh(_.Logo.Subtitle), site.tagline)
+    p(cls := "sb-logo-subtitle", site.tagline)
 
   def staticNav =
     section(
+      cls := "sb-aside-section",
       ul(
-        whoosh(_.Aside.StaticLinks.Container),
+        cls := "sb-static-links-container",
+        // whoosh(_.Aside.StaticLinks.Container),
         site.links.map { case (title, url) =>
           li(
+            cls := "sb-static-links-link-container",
             a(
-              whoosh(_.Aside.StaticLinks.Link),
+              cls  := "sb-static-links-link",
               href := url,
               title
             )

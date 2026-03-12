@@ -42,7 +42,7 @@ trait HtmlPage {
   }
 
   private def templateStyles = {
-    val paths = List(StylesheetPath(SiteRoot / "assets" / "tailwind.css"))
+    val paths = List(StylesheetPath(SiteRoot / "assets" / "styles.css"))
 
     BuilderTemplate.managedStylesBlock(linker, paths)
   }
@@ -70,8 +70,8 @@ trait HtmlPage {
       case _            => Seq.empty
     }
 
-  private def whoosh(t: Theme => WithClassname) =
-    t(theme).className.map(cls := _)
+  // private def whoosh(t: Theme => WithClassname) =
+  //   t(theme).className.map(cls := _)
 
   def doc(
       title: String,
@@ -95,15 +95,14 @@ trait HtmlPage {
       ),
       body(
         onclick := "SubatomicSearchFrontend.sayHello()",
-        whoosh(_.Body),
+        cls     := "sb-body",
         Header,
         tag("main")(
-          whoosh(_.Container),
-          tag("aside")(whoosh(_.Aside), NavigationBar(links)),
+          cls := "sb-main-container",
+          tag("aside")(cls := "sb-aside", NavigationBar(links)),
           tag("article")(
-            whoosh(_.Main),
-            cls := "markdown",
-            toc.map(Html.renderTOC(_, theme.Markdown)),
+            cls := "sb-article",
+            toc.map(Html.renderTOC(_)),
             content
           )
         ),
@@ -117,11 +116,19 @@ trait HtmlPage {
   def NavigationBar(levels: LibrarySite.NavTree) = {
     def rend(nt: LibrarySite.NavTree): TypedTag[String] = {
       ul(
-        whoosh(_.Navigation.Container(nt.depth)),
+        cls := "sb-navbar-container",
+        cls := s"sb-navbar-container-${nt.depth}",
         nt.level.map { case (doc, sub, expanded) =>
           li(
+            cls := "sb-navbar-link-container",
             a(
-              whoosh(_.Navigation.Link(nt.depth, expanded)),
+              cls := "sb-navbar-link",
+              cls := s"sb-navbar-link-${nt.depth}",
+              // TODO
+              // Option.when(expanded)(
+              //   cls := "sb-navbar-link-expanded",
+              //   cls := s"sb-navbar-link-expanded-${nt.depth}"
+              // ).toList,
               href := linker.find(doc),
               doc.title
             ),
@@ -136,20 +143,21 @@ trait HtmlPage {
 
   def Header =
     header(
-      whoosh(_.Header.Container),
+      cls := "sb-header",
       div(
-        whoosh(_.Header.TitleContainer),
-        a(whoosh(_.Header.Title), href := linker.root, site.name),
-        site.tagline.map { tagline => p(whoosh(_.Header.Subtitle), tagline) }
+        cls := "sb-title-container",
+        a(cls := "sb-title-link", href := linker.root, site.name),
+        site.tagline.map { tagline => p(cls := "sb-title-tagline", tagline) }
       ),
-      div(id := "searchContainer"),
+      div(id := "sb-search-container"),
       div(
-        cls := "site-links",
+        cls := "sb-site-links",
         site.githubUrl.map { githubUrl =>
           a(
+            cls  := "sb-github-link",
             href := githubUrl,
             img(
-              whoosh(_.Header.GithubUrl),
+              cls := "sb-github-image",
               src := "https://cdn.svgporn.com/logos/github-icon.svg"
             )
           )
@@ -158,5 +166,5 @@ trait HtmlPage {
     )
 
   def Footer =
-    footer(whoosh(_.Footer), site.copyright)
+    footer(cls := "sb-footer", site.copyright)
 }

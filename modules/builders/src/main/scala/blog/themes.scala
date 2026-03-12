@@ -19,137 +19,137 @@ package builders
 package blog
 package themes
 
-trait Theme {
-  val c = WithClassname.apply(_)
-  import WithClassname.none
+// trait Theme {
+//   val c = WithClassname.apply(_)
+//   import WithClassname.none
 
-  var Body: WithClassname      = none
-  var Container: WithClassname = none
-  var Main: WithClassname      = none
-  object Aside {
-    var Container = none
-    object Section {
-      var Container = none
-      var Title     = none
-      var TitleLink = none
-      var Content   = none
-    }
+//   var Body: WithClassname      = none
+//   var Container: WithClassname = none
+//   var Main: WithClassname      = none
+//   object Aside {
+//     var Container = none
+//     object Section {
+//       var Container = none
+//       var Title     = none
+//       var TitleLink = none
+//       var Content   = none
+//     }
 
-    var NavLink      = none
-    var NavCurrent   = none
-    var NavContainer = none
+//     var NavLink      = none
+//     var NavCurrent   = none
+//     var NavContainer = none
 
-    object StaticLinks {
-      var Container: WithClassname = none
-      var Link: WithClassname      = none
-    }
-  }
-  var Tag = none
+//     object StaticLinks {
+//       var Container: WithClassname = none
+//       var Link: WithClassname      = none
+//     }
+//   }
+//   var Tag = none
 
-  object TagCloud {
-    var Container = none
-    var Tag       = none
-  }
-  object PostCard {
-    var Container: WithClassname   = none
-    var Body: WithClassname        = none
-    var Title: WithClassname       = none
-    var Date: WithClassname        = none
-    var Description: WithClassname = none
-  }
-  object Logo {
-    var Container: WithClassname = none
-    var Title: WithClassname     = none
-    var Subtitle: WithClassname  = none
-  }
+//   object TagCloud {
+//     var Container = none
+//     var Tag       = none
+//   }
+//   object PostCard {
+//     var Container: WithClassname   = none
+//     var Body: WithClassname        = none
+//     var Title: WithClassname       = none
+//     var Date: WithClassname        = none
+//     var Description: WithClassname = none
+//   }
+//   object Logo {
+//     var Container: WithClassname = none
+//     var Title: WithClassname     = none
+//     var Subtitle: WithClassname  = none
+//   }
 
-  object Post {
-    var Container: WithClassname   = none
-    var Description: WithClassname = none
-    var Title: WithClassname       = none
-    var Tagline: WithClassname     = none
+//   object Post {
+//     var Container: WithClassname   = none
+//     var Description: WithClassname = none
+//     var Title: WithClassname       = none
+//     var Tagline: WithClassname     = none
 
-    object Author {
-      var Container: WithClassname = none
-      var Link: WithClassname      = none
-    }
-  }
+//     object Author {
+//       var Container: WithClassname = none
+//       var Link: WithClassname      = none
+//     }
+//   }
 
-  object TagPage {
-    var Header: WithClassname = none
-  }
+//   object TagPage {
+//     var Header: WithClassname = none
+//   }
 
-  object AuthorPage {
-    object Links {
-      var Container: WithClassname = none
-      var Item: WithClassname      = none
-      var Link: WithClassname      = none
-    }
-  }
+//   object AuthorPage {
+//     object Links {
+//       var Container: WithClassname = none
+//       var Item: WithClassname      = none
+//       var Link: WithClassname      = none
+//     }
+//   }
 
-  object ArchivePage {
-    var Header: WithClassname = none
-  }
+//   object ArchivePage {
+//     var Header: WithClassname = none
+//   }
 
-  var Markdown: MarkdownTheme = MarkdownTheme.none
-  var Search: SearchTheme     = SearchTheme.none
+//   var Markdown: MarkdownTheme = MarkdownTheme.none
+//   var Search: SearchTheme     = SearchTheme.none
 
-}
+// }
 
-trait DefaultTheme extends Theme {
-  PostCard.Container = c("p-6")
-  Body = c("h-full min-h-screen")
-  Container = c(
-    "flex flex-col-reverse sm:flex-col-reverse md:flex-row lg:flex-row min-h-screen lg:max-w-6xl m-auto"
-  )
-  PostCard.Title = c("font-bold text-2xl")
-  PostCard.Date = c("m-2 text-sm italic")
-  Tag = c(
-    "text-sm border-slate-700 hover:bg-slate-900 hover:border-slate-900 hover:text-white border-2 " +
-      " border-l-[6px] p-1 m-1 inline-block hover:no-underline"
-  )
-  TagCloud.Container = c("flex gap-1 flex-wrap")
-  TagCloud.Tag = c("text-lg no-underline hover:underline text-slate-400")
+// trait DefaultTheme extends Theme {
+//   PostCard.Container = c("p-6")
+//   Body = c("h-full min-h-screen")
+//   Container = c(
+//     "flex flex-col-reverse sm:flex-col-reverse md:flex-row lg:flex-row min-h-screen lg:max-w-6xl m-auto"
+//   )
+//   PostCard.Title = c("font-bold text-2xl")
+//   PostCard.Date = c("m-2 text-sm italic")
+//   Tag = c(
+//     "text-sm border-slate-700 hover:bg-slate-900 hover:border-slate-900 hover:text-white border-2 " +
+//       " border-l-[6px] p-1 m-1 inline-block hover:no-underline"
+//   )
+//   TagCloud.Container = c("flex gap-1 flex-wrap")
+//   TagCloud.Tag = c("text-lg no-underline hover:underline text-slate-400")
 
-  Aside.Container = c(
-    "bg-slate-900 text-white pr-6 pl-4 py-4 border-r-8 border-slate-700 grow-0 flex flex-col gap-4 md:w-[300px] shrink-0"
-  )
-  Aside.NavContainer = c("flex flex-col gap-2 text-sm")
-  Aside.NavLink = c("no-underline hover:underline")
-  Aside.NavCurrent = c("text-amber-200")
+//   Aside.Container = c(
+//     "bg-slate-900 text-white pr-6 pl-4 py-4 border-r-8 border-slate-700 grow-0 flex flex-col gap-4 md:w-[300px] shrink-0"
+//   )
+//   Aside.NavContainer = c("flex flex-col gap-2 text-sm")
+//   Aside.NavLink = c("no-underline hover:underline")
+//   Aside.NavCurrent = c("text-amber-200")
 
-  Aside.StaticLinks.Container = c("ml-2 flex flex-col gap-1 ")
-  Aside.StaticLinks.Link = c(
-    "text-sm border-b-2 border-slate-700 hover:underline hover:border-0"
-  )
+//   Aside.StaticLinks.Container = c("ml-2 flex flex-col gap-1 ")
+//   Aside.StaticLinks.Link = c(
+//     "text-sm border-b-2 border-slate-700 hover:underline hover:border-0"
+//   )
 
-  Aside.Section.Content = c("ml-4")
-  Aside.Section.Title = c("font-bold")
-  Aside.Section.TitleLink = c("font-bold underline hover:no-underline")
+//   Aside.Section.Content = c("ml-4")
+//   Aside.Section.Title = c("font-bold")
+//   Aside.Section.TitleLink = c("font-bold underline hover:no-underline")
 
-  Logo.Container = c(
-    "rounded-lg bg-white text-2xl p-4 text-black block w-full"
-  )
-  Logo.Title = c("font-bold text-center block")
-  Logo.Subtitle = c("italic text-center text-sm block")
+//   Logo.Container = c(
+//     "rounded-lg bg-white text-2xl p-4 text-black block w-full"
+//   )
+//   Logo.Title = c("font-bold text-center block")
+//   Logo.Subtitle = c("italic text-center text-sm block")
 
-  TagPage.Header = c("p-4 text-xl")
-  ArchivePage.Header = c("p-4 text-xl")
+//   TagPage.Header = c("p-4 text-xl")
+//   ArchivePage.Header = c("p-4 text-xl")
 
-  Post.Container = c("p-4")
-  Post.Description = c("text-base underline")
-  Post.Title = c("text-2xl m-2 font-bold")
-  Post.Tagline = c("p-2")
+//   Post.Container = c("p-4")
+//   Post.Description = c("text-base underline")
+//   Post.Title = c("text-2xl m-2 font-bold")
+//   Post.Tagline = c("p-2")
 
-  Post.Author.Container = c("p-2")
-  Post.Author.Link = c("font-bold no-underline hover:underline")
+//   Post.Author.Container = c("p-2")
+//   Post.Author.Link = c("font-bold no-underline hover:underline")
 
-  AuthorPage.Links.Container = c("pl-4")
-  AuthorPage.Links.Item = c("pl-2")
-  AuthorPage.Links.Link = c("font-bold underline hover:no-underline")
+//   AuthorPage.Links.Container = c("pl-4")
+//   AuthorPage.Links.Item = c("pl-2")
+//   AuthorPage.Links.Link = c("font-bold underline hover:no-underline")
 
-  Markdown = MarkdownTheme.default
-  Search = SearchTheme.default
-}
+//   Markdown = MarkdownTheme.default
+//   Search = SearchTheme.default
+// }
 
-object default extends DefaultTheme
+// object default extends DefaultTheme

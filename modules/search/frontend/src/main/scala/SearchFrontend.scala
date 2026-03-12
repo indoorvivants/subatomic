@@ -32,7 +32,7 @@ class SearchFrontend private (idx: SearchIndex) {
     val queryVar = Var("")
     val ip       = input(
       value <-- queryVar.signal,
-      cls         := "subatomic-search-input",
+      cls         := "sb-search-input",
       placeholder := "Search...",
       onInput.mapToValue.map(_.trim) --> queryVar
     )
@@ -40,13 +40,13 @@ class SearchFrontend private (idx: SearchIndex) {
     val results = queryVar.signal.map(query)
 
     div(
-      cls := "subatomic-search-container",
+      cls := "sb-search-container",
       ip,
       ul(
         queryVar.signal.map(_.isEmpty) --> SearchFrontend.HideResults,
         display <-- SearchFrontend.HideResults.signal
           .map(if (_) "none" else "block"),
-        cls := "subatomic-search-results",
+        cls := "sb-search-results",
         children <-- results.map { results =>
           results.entries.map { case (ResultsEntry(document, sections), _) =>
             sections.find(o =>
@@ -54,10 +54,10 @@ class SearchFrontend private (idx: SearchIndex) {
             ) match {
               case None =>
                 div(
-                  cls := "subatomic-search-result-container",
+                  cls := "sb-search-result-container",
                   onClick.stopPropagation --> { _ => },
                   span(
-                    cls := "subatomic-search-result-document-title",
+                    cls := "sb-search-result-document-title",
                     document.title
                   ),
                   renderSections(sections)
@@ -65,10 +65,10 @@ class SearchFrontend private (idx: SearchIndex) {
 
               case Some(oneSection) =>
                 div(
-                  cls := "subatomic-search-result-container",
+                  cls := "sb-search-result-container",
                   onClick.stopPropagation --> { _ => },
                   a(
-                    cls  := "subatomic-search-result-document-url",
+                    cls  := "sb-search-result-document-url",
                     href := document.url,
                     document.title
                   ),
@@ -97,7 +97,7 @@ class SearchFrontend private (idx: SearchIndex) {
   }
 }
 @js.annotation.JSExportTopLevel("SubatomicSearchFrontend")
-object SearchFrontend extends LaminarApp("searchContainer") {
+object SearchFrontend extends LaminarApp("sb-search-container") {
   def load(s: String) = new SearchFrontend(read[SearchIndex](s))
 
   def app = {

@@ -271,7 +271,9 @@ lazy val docs = projectMatrix
     disableScalafixForScala3
   )
   .settings(
-    publish / skip := true,
+    publish / skip      := true,
+    fork                := true,
+    run / baseDirectory := (ThisBuild / baseDirectory).value,
     // To react to asset changes
     watchSources += WatchSource(
       (ThisBuild / baseDirectory).value / "docs" / "assets"
