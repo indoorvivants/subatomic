@@ -350,7 +350,6 @@ object Blog {
         buildConfig: cli.BuildConfig,
         extra: Site[Doc] => Site[Doc]
     ): Unit = {
-      val tailwind = TailwindCSS.bootstrap(siteConfig.tailwindConfig)
       val d2       =
         D2.bootstrap(
           siteConfig.d2Config,
@@ -594,12 +593,8 @@ object Blog {
           .addAllAssets[Doc](siteConfig.assetsRoot, siteConfig.assetsFilter),
         addRSSPage,
         extra,
-        builderSteps.tailwindStep(
-          buildConfig.destination,
-          tailwind,
-          template.theme.Markdown,
-          template.theme.Search
-        ),
+        // TODO
+        // builderSteps.injectThemeCSS(SiteKind.Blog, siteConfig.theme),
         builderSteps.d2Step(d2, d2Resolver.collected())
       )
 

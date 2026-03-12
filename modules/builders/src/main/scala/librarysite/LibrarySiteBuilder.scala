@@ -35,14 +35,13 @@ case class LibrarySite(
     copyright: Option[String] = None,
     githubUrl: Option[String] = None,
     tagline: Option[String] = None,
-    theme: Theme = default,
+    theme: Theme = Theme.Default,
     links: Vector[(String, String)] = Vector.empty,
     override val highlighting: SyntaxHighlighting =
       SyntaxHighlighting.HighlightJS.default,
     override val trackers: Seq[Tracker] = Seq.empty,
     search: Boolean = true,
     d2Config: D2.Config = D2.Config.default,
-    tailwindConfig: TailwindCSS.Config = TailwindCSS.Config.default,
     override val cache: Cache = Cache.NoCaching
 ) extends subatomic.builders.Builder
 
@@ -234,7 +233,7 @@ object LibrarySite {
       buildConfig: cli.BuildConfig,
       extra: Site[LibrarySite.Doc] => Site[LibrarySite.Doc]
   ) = {
-    val tailwind = TailwindCSS.bootstrap(siteConfig.tailwindConfig)
+    // val tailwind = TailwindCSS.bootstrap(siteConfig.tailwindConfig)
     val d2       =
       D2.bootstrap(siteConfig.d2Config, Cache.labelled("d2", Cache.InMemory))
 
@@ -378,13 +377,7 @@ object LibrarySite {
       builderSteps
         .addAllAssets[Doc](siteConfig.assetsRoot, siteConfig.assetsFilter),
       extra,
-      builderSteps
-        .tailwindStep(
-          buildConfig.destination,
-          tailwind,
-          template.theme.Markdown,
-          template.theme.Search
-        ),
+      builderSteps.injectThemeCSS(SiteKind.Library, siteConfig.theme),
       builderSteps.d2Step(d2, d2Resolver.collected())
     )
 

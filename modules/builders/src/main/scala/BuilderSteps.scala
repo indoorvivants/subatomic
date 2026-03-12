@@ -18,6 +18,8 @@ package subatomic
 package builders
 
 import BuilderSteps._
+import subatomic.builders.librarysite.Theme
+import subatomic.builders.librarysite.Theme.Default
 
 class BuilderSteps(markdown: Markdown) {
 
@@ -47,26 +49,26 @@ class BuilderSteps(markdown: Markdown) {
 
   }
 
-  def tailwindStep[Doc](
-      destination: os.Path,
-      tailwind: TailwindCSS,
-      markdownTheme: MarkdownTheme,
-      searchTheme: SearchTheme
+  def injectThemeCSS[Doc](
+      kind: SiteKind,
+      theme: Theme
   ): Site[Doc] => Site[Doc] = site => {
+    theme match {
+      case Theme.None => site
+      case Default    =>
+        site.addReadyAsset(
+          SiteRoot / "assets" / "styles.css",
 
-    site.addDelayedAsset(
-      SiteRoot / "assets" / "tailwind.css",
-      { () =>
-        val allHtml     = os.walk(destination).filter(_.ext == "html")
-        val allJs       = os.walk(destination).filter(_.ext == "js")
-        val markdownCSS = renderMarkdownBase(markdownTheme)
-        val searchCSS   =
-          renderSearchTheme(searchTheme, ".subatomic-search-container")
-        Page(tailwind.process(allHtml ++ allJs, s"$markdownCSS\n$searchCSS"))
+          Page(
+            new String(
+              getClass()
+                .getResourceAsStream(s"/themes/${kind.label}-default.css")
+                .readAllBytes()
+            )
+          )
+        )
 
-      },
-      "<generated and minified tailwind CSS"
-    )
+    }
   }
 
   def buildSearchIndex[Doc](

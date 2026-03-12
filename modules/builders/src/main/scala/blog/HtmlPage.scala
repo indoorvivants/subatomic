@@ -218,7 +218,7 @@ trait HtmlPage {
     article(
       whoosh(_.Post.Container),
       cls := "markdown",
-      toc.map(Html.renderTOC(_, theme.Markdown)),
+      toc.map(Html.renderTOC(_)),
       rawHtml(content)
     )
   )

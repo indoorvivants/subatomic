@@ -272,6 +272,8 @@ lazy val docs = projectMatrix
   )
   .settings(
     publish / skip := true,
+    fork := true,
+    run / baseDirectory := (ThisBuild / baseDirectory).value,
     // To react to asset changes
     watchSources += WatchSource(
       (ThisBuild / baseDirectory).value / "docs" / "assets"
