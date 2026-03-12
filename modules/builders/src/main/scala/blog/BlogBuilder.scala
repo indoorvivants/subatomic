@@ -24,8 +24,6 @@ import java.time.format.DateTimeFormatter
 
 import subatomic.Discover.MarkdownDocument
 import subatomic.builders._
-import subatomic.builders.blog.themes.Theme
-import subatomic.builders.blog.themes.default
 
 import com.vladsch.flexmark.ext.anchorlink.AnchorLinkExtension
 import com.vladsch.flexmark.ext.autolink.AutolinkExtension
@@ -51,10 +49,10 @@ case class Blog(
     tagline: Option[String] = None,
     copyright: Option[String] = None,
     githubUrl: Option[String] = None,
-    theme: Theme = default,
+    theme: Theme = Theme.Default,
     links: Vector[(String, String)] = Vector.empty,
     override val highlighting: SyntaxHighlighting =
-      SyntaxHighlighting.HighlightJS.default,
+      SyntaxHighlighting.HighlightJS.default.copy(theme = "atom-one-dark"),
     override val assetsFilter: os.Path => Boolean = _ => true,
     override val trackers: Seq[Tracker] = Seq.empty,
     search: Boolean = true,
@@ -350,7 +348,7 @@ object Blog {
         buildConfig: cli.BuildConfig,
         extra: Site[Doc] => Site[Doc]
     ): Unit = {
-      val d2       =
+      val d2 =
         D2.bootstrap(
           siteConfig.d2Config,
           Cache.verbose(Cache.labelled("d2", siteConfig.cache))
@@ -594,7 +592,7 @@ object Blog {
         addRSSPage,
         extra,
         // TODO
-        // builderSteps.injectThemeCSS(SiteKind.Blog, siteConfig.theme),
+        builderSteps.injectThemeCSS(SiteKind.Blog, siteConfig.theme),
         builderSteps.d2Step(d2, d2Resolver.collected())
       )
 

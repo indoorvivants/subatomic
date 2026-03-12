@@ -18,8 +18,6 @@ package subatomic
 package builders
 
 import BuilderSteps._
-import subatomic.builders.librarysite.Theme
-import subatomic.builders.librarysite.Theme.Default
 
 class BuilderSteps(markdown: Markdown) {
 
@@ -54,8 +52,8 @@ class BuilderSteps(markdown: Markdown) {
       theme: Theme
   ): Site[Doc] => Site[Doc] = site => {
     theme match {
-      case Theme.None => site
-      case Default    =>
+      case Theme.None    => site
+      case Theme.Default =>
         site.addReadyAsset(
           SiteRoot / "assets" / "styles.css",
 

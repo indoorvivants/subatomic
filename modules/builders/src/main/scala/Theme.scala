@@ -15,7 +15,6 @@
  */
 
 package subatomic.builders
-package librarysite
 
 sealed abstract class Theme extends Product with Serializable
 object Theme {

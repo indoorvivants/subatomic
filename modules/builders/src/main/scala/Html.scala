@@ -44,6 +44,7 @@ object Html {
             )
           else None
         }
+
         render(toc)
       }
     )
