@@ -20,7 +20,7 @@ package eval
 
 import java.nio.file.Path
 
-import decline_derive.*
+import decline_derive._
 
 @Name("search-eval")
 @Help(

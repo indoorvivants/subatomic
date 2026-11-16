@@ -37,7 +37,16 @@ object IndexerSuite extends weaver.FunSuite {
     // body words, plus the section title ("section1") and the words of
     // document titles ("Document at /hello/world")
     val allWords =
-      Set("lorem", "ipsum", "dolor", "amet", "section1", "document", "hello", "world")
+      Set(
+        "lorem",
+        "ipsum",
+        "dolor",
+        "amet",
+        "section1",
+        "document",
+        "hello",
+        "world"
+      )
 
     expect(
       idx.termMapping.keySet.map(_.value) ==

@@ -168,10 +168,10 @@ lazy val searchEval =
     .in(file("modules/search/eval"))
     .dependsOn(searchIndex, searchRetrieve)
     .settings(
-      name := "subatomic-search-eval",
+      name                                 := "subatomic-search-eval",
       libraryDependencies += "com.lihaoyi" %% "os-lib" % Ver.osLib,
       libraryDependencies += "com.indoorvivants" %% "decline-derive" % Ver.declineDerive,
-      fork := true,
+      fork                := true,
       run / baseDirectory := (ThisBuild / baseDirectory).value
     )
     .settings(skipPublish)

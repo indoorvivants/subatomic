@@ -34,7 +34,8 @@ class Search(index: SearchIndex, debug: Boolean = false) {
   }
 
   // Sections are the unit of retrieval: BM25 statistics are computed over them
-  private val totalSections = index.sectionLengths.valuesIterator.map(_.size).sum
+  private val totalSections =
+    index.sectionLengths.valuesIterator.map(_.size).sum
 
   private val averageSectionLength = {
     val total = index.sectionLengths.valuesIterator.flatten.sum
@@ -55,8 +56,8 @@ class Search(index: SearchIndex, debug: Boolean = false) {
 
     val postings = queryTerms.flatMap { tok =>
       for {
-        termIdx      <- index.resolveTerm(tok)
-        _             = debugPrint(s"token $tok resolved to $termIdx")
+        termIdx <- index.resolveTerm(tok)
+        _ = debugPrint(s"token $tok resolved to $termIdx")
         docsWithTerm <- index.termsInDocuments.get(termIdx.value)
       } yield docsWithTerm
     }
@@ -92,7 +93,10 @@ class Search(index: SearchIndex, debug: Boolean = false) {
 
           val key  = (documentIdx, sectionIdx)
           val prev = sectionScores.getOrElse(key, Acc(0.0, 0))
-          sectionScores.update(key, Acc(prev.score + tf * idf, prev.matchedTerms + 1))
+          sectionScores.update(
+            key,
+            Acc(prev.score + tf * idf, prev.matchedTerms + 1)
+          )
         }
       }
     }
@@ -153,8 +157,8 @@ object Algorithms {
       1.0 + (collectionSize - unitsWithTerm + 0.5) / (unitsWithTerm + 0.5)
     )
 
-  /** BM25 term frequency component: saturates as frequency grows, and
-    * penalises units longer than average.
+  /** BM25 term frequency component: saturates as frequency grows, and penalises
+    * units longer than average.
     */
   def bm25_TF(frequency: Int, length: Int, averageLength: Double): Double =
     if (frequency <= 0) 0.0

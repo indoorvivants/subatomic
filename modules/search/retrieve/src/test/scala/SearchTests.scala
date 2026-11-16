@@ -88,7 +88,8 @@ object SearchSuite extends weaver.SimpleIOSuite with Checkers {
       Document.section("Two", "/two", "alpha alpha alpha alpha alpha")
     )
 
-    val urls = new Search(idx).string("alpha beta").entries.map(_._1.document.url)
+    val urls =
+      new Search(idx).string("alpha beta").entries.map(_._1.document.url)
 
     expect(urls == Vector("/one", "/two"))
   }

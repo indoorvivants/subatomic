@@ -20,9 +20,8 @@ package eval
 
 object Metrics {
 
-  /** Normalised Discounted Cumulative Gain at rank k, with linear gains
-    * (`gain = relevance grade`), matching trec_eval's `ndcg_cut` which BEIR
-    * reports.
+  /** Normalised Discounted Cumulative Gain at rank k, with linear gains (`gain =
+    * relevance grade`), matching trec_eval's `ndcg_cut` which BEIR reports.
     *
     * @param ranking
     *   document ids, best first

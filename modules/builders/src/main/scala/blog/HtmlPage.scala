@@ -390,9 +390,9 @@ trait HtmlPage {
             blogPost.title
           ),
           time(
-            cls               := "sb-postcard-date",
-            attr("datetime")  := dateFormat(blogPost.date),
-            title             := dateFormat(blogPost.date),
+            cls              := "sb-postcard-date",
+            attr("datetime") := dateFormat(blogPost.date),
+            title            := dateFormat(blogPost.date),
             humanDateFormat(blogPost.date)
           )
         ),

@@ -44,8 +44,9 @@ object Dataset {
   case class Doc(id: String, title: String, text: String)
 
   val Splits     = List("train", "dev", "test")
-  val QueryTypes = List("titles", "vid-titles", "vid-desc", "nontopic-titles", "all")
-  val Grades     = List("2-1-0", "3-2-1")
+  val QueryTypes =
+    List("titles", "vid-titles", "vid-desc", "nontopic-titles", "all")
+  val Grades = List("2-1-0", "3-2-1")
 
   def load(
       root: os.Path,
@@ -77,11 +78,11 @@ object Dataset {
         s"Not an NFCorpus folder, missing: ${missing.mkString(", ")}"
       )
       corpusIds = docsFiles.flatMap(f => tsv(f).map(_.head)).distinct
-      raw       = tsv(rawDocsFile).collect {
-        case Array(id, _, title, text) => id -> Doc(id, cleanTitle(title), text)
+      raw       = tsv(rawDocsFile).collect { case Array(id, _, title, text) =>
+        id -> Doc(id, cleanTitle(title), text)
       }.toMap
       corpus <- corpusIds.partition(raw.contains) match {
-        case (found, Nil) => Right(found.map(raw).toVector)
+        case (found, Nil)  => Right(found.map(raw).toVector)
         case (_, notFound) =>
           Left(
             s"${notFound.size} documents are missing from $rawDocsFile, e.g. ${notFound.take(5).mkString(", ")}"
