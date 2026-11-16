@@ -3,21 +3,19 @@ package subatomic
 import weaver.Expectations
 import cats.effect.IO
 import weaver._
-import cats.effect.Blocker
+import cats.effect.unsafe.implicits.global
 import cats.effect.Resource
 
 object MdocJSTests extends IOSuite {
   override type Res = Processor
   override def sharedResource: Resource[IO, Res] =
-    Blocker[IO].map(new Processor(_))
+    Resource.pure(new Processor)
   override def maxParallelism: Int =
     sys.env.get("CI").map(_ => 1).getOrElse(100)
 
   val HelloWorldPath = SiteRoot / "hello" / "world"
 
-  class Processor(
-      blocker: Blocker
-  ) {
+  class Processor {
 
     def process(
         content: String,
@@ -38,8 +36,8 @@ object MdocJSTests extends IOSuite {
 
       val tmpFile = os.temp(content, suffix = ".md")
 
-      blocker
-        .blockOn(IO(mdoc.processAll(os.pwd, Seq(tmpFile))))
+      IO
+        .blocking(mdoc.processAll(os.pwd, Seq(tmpFile)))
         .map(_.head._2)
         .map(result)
     }

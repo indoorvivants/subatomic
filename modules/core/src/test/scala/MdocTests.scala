@@ -3,7 +3,7 @@ package subatomic
 import weaver.Expectations
 import cats.effect.IO
 import weaver.Log
-import cats.effect.Blocker
+import cats.effect.unsafe.implicits.global
 import cats.effect.Resource
 
 object MdocTests extends weaver.IOSuite with MdocTestHarness {
@@ -106,10 +106,8 @@ trait MdocTestHarness { self: weaver.IOSuite =>
 
   override type Res = Processor
   override def sharedResource: Resource[IO, Res] =
-    Blocker[IO].map(new Processor(_))
-  class Processor(
-      blocker: Blocker
-  ) {
+    Resource.pure(new Processor)
+  class Processor {
     def process(
         content: String,
         dependencies: Set[String] = Set.empty,
@@ -129,7 +127,7 @@ trait MdocTestHarness { self: weaver.IOSuite =>
 
       val tmpFile = os.temp(content, suffix = ".md", deleteOnExit = false)
 
-      blocker.blockOn(IO(mdoc.process(tmpFile))).map { p =>
+      IO.blocking(mdoc.process(tmpFile)).map { p =>
         result(os.read(p))
       }
     }

@@ -1,12 +1,12 @@
 package subatomic
 
-import weaver.SimpleMutableIOSuite
+import weaver.SimpleIOSuite
 import subatomic.Discover.MarkdownDocument
 import com.vladsch.flexmark.ext.yaml.front.matter.YamlFrontMatterExtension
 import weaver.Expectations
 import subatomic.Discover.YamlAttributes
 
-object DiscoverTests extends SimpleMutableIOSuite {
+object DiscoverTests extends SimpleIOSuite {
 
   pureTest("readYaml - reading YAML-like attributes from a markdown file") {
     val content =

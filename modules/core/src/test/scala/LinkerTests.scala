@@ -2,9 +2,9 @@ package subatomic
 
 import scala.util.Try
 
-import weaver.SimpleMutableIOSuite
+import weaver.SimpleIOSuite
 
-object LinkerTests extends SimpleMutableIOSuite {
+object LinkerTests extends SimpleIOSuite {
 
   val content = Vector(
     SiteRoot                     -> "indexpage!",

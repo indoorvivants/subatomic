@@ -82,18 +82,14 @@ object LibrarySite {
 
       import cli._
 
-      command.parse(args.toList) match {
-        case Left(value) =>
-          println(value)
-          sys.exit(-1)
-        case Right(buildConfig: BuildConfig) =>
+      parseOrExit[CommandConfig](args.toList) match {
+        case buildConfig: BuildConfig =>
           createSite(
             config,
             buildConfig,
             extra _
           )
-
-        case Right(search: SearchConfig) =>
+        case search: SearchConfig =>
           testSearch(config, search)
       }
     }

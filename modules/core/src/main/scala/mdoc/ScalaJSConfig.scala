@@ -16,13 +16,15 @@
 
 package subatomic
 
+import subatomic.internal.BuildInfo
+
 case class ScalaJSConfig(
     version: String,
     domVersion: String
 )
 
 object ScalaJSConfig {
-  def default = ScalaJSConfig(version = "1.18.2", "2.8.0")
+  def default = ScalaJSConfig(version = BuildInfo.scalaJSVersion, "2.8.0")
 
   def fromAttrs(attrs: Discover.YamlAttributes): Option[ScalaJSConfig] = {
     val enabled = attrs.optionalOne("mdoc-js").map(_.toBoolean).getOrElse(false)

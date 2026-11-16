@@ -90,4 +90,40 @@ object cli {
   )
 
   val command = Command("subatomic", "static site builder")(build orElse search)
+
+  trait CommandApplication[T] {
+    def command: Command[T]
+  }
+
+  object CommandApplication {
+    def apply[T](implicit ev: CommandApplication[T]): CommandApplication[T] = ev
+
+    def instance[T](cmd: Command[T]): CommandApplication[T] =
+      new CommandApplication[T] {
+        override def command: Command[T] = cmd
+      }
+
+    implicit val commandConfig: CommandApplication[CommandConfig] =
+      instance(cli.command)
+  }
+
+  /** Parses the arguments, or prints help/errors to stderr and exits.
+    *
+    * Exits with 0 if help was requested explicitly (e.g. with `--help`), and
+    * with a non-zero code if there were any parsing errors.
+    */
+  def parseOrExit[T: CommandApplication](
+      args: Seq[String],
+      env: Map[String, String] = sys.env,
+      printHelp: Boolean = true
+  ): T =
+    CommandApplication[T].command.parse(args, env) match {
+      case Left(help) =>
+        if (printHelp)
+          System.err.println(help.render(HelpFormat.autoColors(env)))
+
+        if (help.errors.nonEmpty) sys.exit(-1) else sys.exit(0)
+      case Right(value) =>
+        value
+    }
 }

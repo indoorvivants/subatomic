@@ -2,9 +2,9 @@ package subatomic
 
 import scala.util.Try
 
-import weaver.SimpleMutableIOSuite
+import weaver.SimpleIOSuite
 
-object SitePathTests extends SimpleMutableIOSuite {
+object SitePathTests extends SimpleIOSuite {
 
   val HelloWorldPath = SiteRoot / "hello" / "world"
 

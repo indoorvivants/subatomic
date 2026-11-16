@@ -6,12 +6,12 @@ import weaver.Expectations
 import weaver.{Log => WeaverLog}
 import cats.effect.IO
 import scala.collection.mutable.ListBuffer
-import cats.effect.Blocker
+import cats.effect.unsafe.implicits.global
 import cats.effect.Resource
 
 object SiteTests extends weaver.IOSuite {
   override type Res = Check
-  override def sharedResource: Resource[IO, Res] = Blocker[IO].map(new Check(_))
+  override def sharedResource: Resource[IO, Res] = Resource.pure(new Check)
 
   private val content = Vector(
     SiteRoot / "index.html"                     -> "indexpage!",
@@ -152,17 +152,17 @@ object SiteTests extends weaver.IOSuite {
       .init(content)
       .changeLogger(s => log.info(s.replace("\n", "  ")).unsafeRunSync())
 
-  class Check(blocker: Blocker) {
+  class Check {
     def check[C](
         site: Site[C]
     )(f: os.Path => Expectations): IO[Expectations] = {
-      blocker.blockOn(IO {
+      IO.blocking {
         val destination = os.temp.dir()
 
         site.buildAt(destination)
 
         f(destination)
-      })
+      }
     }
   }
 

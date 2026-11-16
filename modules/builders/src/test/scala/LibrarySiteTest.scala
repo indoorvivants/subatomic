@@ -87,19 +87,20 @@ trait BuildersHelpers {
 
   import weaver._
   import cats.effect._
+  import cats.effect.unsafe.implicits.global
   import weaver.{Log => WeaverLog}
 
-  class Check(blocker: Blocker)(implicit cs: ContextShift[IO]) {
+  class Check {
     def check[C](
         site: Site[C]
     )(f: os.Path => Expectations): IO[Expectations] = {
-      blocker.blockOn(IO {
+      IO.blocking {
         val destination = os.temp.dir()
 
         site.buildAt(destination)
 
         f(destination)
-      })
+      }
     }
   }
 

@@ -119,17 +119,14 @@ object Blog {
 
       import cli._
 
-      command.parse(args.toList) match {
-        case Left(value) =>
-          println(value)
-          sys.exit(-1)
-        case Right(buildConfig: BuildConfig) =>
+      parseOrExit[CommandConfig](args.toList) match {
+        case buildConfig: BuildConfig =>
           new Builder(config).createSite(
             config,
             buildConfig,
             extra _
           )
-        case Right(search: SearchConfig) =>
+        case search: SearchConfig =>
           new Builder(config).testSearch(config, search)
       }
     }
