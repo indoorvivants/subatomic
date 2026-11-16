@@ -230,7 +230,7 @@ trait HtmlPage {
     article(
       cls := "sb-content-container",
       cls := "sb-post-content",
-      { val x = toc.map(Html.renderTOC(_)); println(s"$title - $x"); x },
+      toc.map(Html.renderTOC(_)),
       rawHtml(content)
     )
   )

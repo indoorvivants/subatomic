@@ -235,11 +235,15 @@ object Blog {
 
     def markdownParser(
         siteConfig: Blog,
-        diagramResolver: Option[BuilderSteps.d2Resolver] = None
+        diagramResolver: Option[BuilderSteps.d2Resolver] = None,
+        embedSnippets: Boolean = true
     ) =
       Markdown(
         parserExtensions =
-          siteConfig.markdownExtensions.toList ++ diagramResolver
+          siteConfig.markdownExtensions.toList.filter {
+            case _: SnippetExtension#Extension => embedSnippets
+            case _                             => true
+          } ++ diagramResolver
             .map(d2 =>
               D2Extension.create(d2.named(_), d2.immediate(_)).create()
             )
@@ -286,7 +290,7 @@ object Blog {
             val mdocConfig = MdocConfiguration.fromAttrs(attributes)
 
             val headings =
-              markdownParser(siteConfig)
+              markdown
                 .extractMarkdownSections("", "", path)
                 .collect { case Markdown.Section(title, level, Some(url), _) =>
                   Heading(level, title, url)
@@ -365,10 +369,17 @@ object Blog {
           siteConfig.d2Config,
           Cache.verbose(Cache.labelled("d2", siteConfig.cache))
         )
+      siteConfig.markdownExtensions.foreach {
+        case e: SnippetExtension#Extension => e.clearCache()
+        case _                             =>
+      }
       val d2Resolver        = BuilderSteps.d2Resolver(d2)
       val renderingMarkdown = markdownParser(siteConfig, Some(d2Resolver))
       val content           =
-        discoverContent(siteConfig, markdownParser(siteConfig, None))
+        discoverContent(
+          siteConfig,
+          markdownParser(siteConfig, None, embedSnippets = false)
+        )
 
       val linker = new Linker(content, siteConfig.base)
 
