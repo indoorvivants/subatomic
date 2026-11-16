@@ -310,28 +310,6 @@
   border-bottom: none;
 }
 
-.sb-search-result-document-title {
-  display: block;
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.9);
-  margin-bottom: 0.25rem;
-}
-
-.sb-search-result-document-url {
-  display: block;
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: #10b981;
-  text-decoration: none;
-  margin-bottom: 0.25rem;
-  transition: color 0.15s ease;
-}
-
-.sb-search-result-document-url:hover {
-  color: #34d399;
-}
-
 .subatomic-search-sections-container {
   list-style: none;
   margin: 0;
@@ -342,17 +320,46 @@
   margin: 0;
 }
 
+/* Matched sections are the main links of a result */
 .subatomic-search-section-url {
   display: block;
   padding: 0.125rem 0;
-  font-size: 0.8125rem;
-  color: rgba(255, 255, 255, 0.55);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.92);
   text-decoration: none;
   transition: color 0.15s ease;
 }
 
 .subatomic-search-section-url:hover {
-  color: rgba(255, 255, 255, 0.9);
+  color: #34d399;
+}
+
+/* ...with the post they belong to underneath, as context */
+.sb-search-result-document-url {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.5);
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.sb-search-result-document-url:hover {
+  color: #10b981;
+}
+
+.sb-search-message {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.sb-search-result-document-url:focus-visible,
+.subatomic-search-section-url:focus-visible {
+  outline: 2px solid #10b981;
+  outline-offset: 2px;
+  border-radius: 2px;
 }
 
 /* ===== Main Content ===== */

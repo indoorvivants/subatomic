@@ -315,29 +315,6 @@
   border-bottom: none;
 }
 
-.sb-search-result-document-title {
-  display: block;
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: var(--sb-text-color);
-  margin-bottom: 0.25rem;
-}
-
-.sb-search-result-document-url {
-  display: block;
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: var(--sb-primary-color);
-  text-decoration: none;
-  margin-bottom: 0.25rem;
-  transition: color 0.15s ease;
-}
-
-.sb-search-result-document-url:hover {
-  color: var(--sb-primary-hover);
-  text-decoration: underline;
-}
-
 .subatomic-search-sections-container {
   list-style: none;
   margin: 0;
@@ -348,17 +325,48 @@
   margin: 0;
 }
 
+/* Matched sections are the main links of a result */
 .subatomic-search-section-url {
   display: block;
   padding: 0.125rem 0;
-  font-size: 0.8125rem;
-  color: var(--sb-text-muted);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--sb-primary-color);
   text-decoration: none;
   transition: color 0.15s ease;
 }
 
 .subatomic-search-section-url:hover {
+  color: var(--sb-primary-hover);
+  text-decoration: underline;
+}
+
+/* ...with the page they belong to underneath, as context */
+.sb-search-result-document-url {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  color: var(--sb-text-muted);
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.sb-search-result-document-url:hover {
   color: var(--sb-primary-color);
+  text-decoration: underline;
+}
+
+.sb-search-message {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  color: var(--sb-text-muted);
+}
+
+.sb-search-result-document-url:focus-visible,
+.subatomic-search-section-url:focus-visible {
+  outline: 2px solid var(--sb-primary-color);
+  outline-offset: 2px;
+  border-radius: 2px;
 }
 
 /* Table of Contents */
