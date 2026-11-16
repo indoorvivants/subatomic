@@ -6,6 +6,7 @@ object Ver {
   val scalaCollectionCompat = "2.14.0"
   val scalatags             = "0.13.1"
   val decline               = "2.6.2"
+  val declineDerive         = "0.3.6"
   val laminar               = "16.0.0"
   val upickle               = "4.4.3"
   val fansi                 = "0.5.1"

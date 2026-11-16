@@ -18,6 +18,7 @@ package subatomic.builders.blog
 
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 import subatomic.Linker
 import subatomic.SiteRoot
@@ -123,17 +124,18 @@ trait HtmlPage {
         cls := "sb-body",
         div(
           cls := "sb-main-container",
+          // Source order matches the mobile layout (header, content, sidebar);
+          // on wider screens the stylesheet places the header at the top of
+          // the left column, above the aside.
+          siteHeader,
+          tag("main")(cls := "sb-main", content),
           aside(
             cls := "sb-aside",
-            blogTitleSection,
-            staticNav,
-            searchSection,
             tagCloud,
             navigationSection(navigation),
             archiveLink,
             headingsSection(headings)
-          ),
-          tag("main")(content)
+          )
         ),
         highlightingBody(site.highlighting),
         site.trackers.flatMap(_.scripts)
@@ -186,6 +188,17 @@ trait HtmlPage {
           }
         )
     }
+
+  /** Logo, tagline, static links and search: the part of the sidebar that
+    * should stay visible at the top of the page on narrow screens.
+    */
+  def siteHeader =
+    header(
+      cls := "sb-site-header",
+      blogTitleSection,
+      staticNav,
+      searchSection
+    )
 
   private def blogTitleSection =
     div(
@@ -340,6 +353,10 @@ trait HtmlPage {
 
   def dateFormat(dt: LocalDate) = dt.format(DateTimeFormatter.ISO_DATE)
 
+  /** e.g. "14 March 2022". Fixed to English, matching the page's `lang`. */
+  def humanDateFormat(dt: LocalDate) =
+    dt.format(DateTimeFormatter.ofPattern("d MMMM yyyy", Locale.ENGLISH))
+
   def tagCloud = {
     section(
       cls := "sb-aside-section",
@@ -373,8 +390,10 @@ trait HtmlPage {
             blogPost.title
           ),
           time(
-            cls := "sb-postcard-date",
-            dateFormat(blogPost.date)
+            cls               := "sb-postcard-date",
+            attr("datetime")  := dateFormat(blogPost.date),
+            title             := dateFormat(blogPost.date),
+            humanDateFormat(blogPost.date)
           )
         ),
         p(cls := "sb-postcard-description", blogPost.description)
@@ -422,6 +441,7 @@ trait HtmlPage {
   }
 
   val section = tag("section")
+  val header  = tag("header")
   val aside   = tag("aside")
   val nav     = tag("nav")
   val article = tag("article")
@@ -430,8 +450,8 @@ trait HtmlPage {
     p(cls := "sb-logo-subtitle", site.tagline)
 
   def staticNav =
-    section(
-      cls := "sb-aside-section",
+    nav(
+      cls := "sb-site-header-links",
       ul(
         cls := "sb-static-links-container",
         // whoosh(_.Aside.StaticLinks.Container),

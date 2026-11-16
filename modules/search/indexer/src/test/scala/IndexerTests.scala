@@ -34,7 +34,10 @@ object IndexerSuite extends weaver.FunSuite {
     )
   }
   test("all words have entry in the index") {
-    val allWords = Set("lorem", "ipsum", "dolor", "amet")
+    // body words, plus the section title ("section1") and the words of
+    // document titles ("Document at /hello/world")
+    val allWords =
+      Set("lorem", "ipsum", "dolor", "amet", "section1", "document", "hello", "world")
 
     expect(
       idx.termMapping.keySet.map(_.value) ==
@@ -94,25 +97,92 @@ object IndexerSuite extends weaver.FunSuite {
     expect(
       getDocumentTerms("/") ==
         Map(
-          "lorem" -> 2,
-          "ipsum" -> 1,
-          "dolor" -> 1,
-          "amet"  -> 1
+          "lorem"    -> 2,
+          "ipsum"    -> 1,
+          "dolor"    -> 1,
+          "amet"     -> 1,
+          "section1" -> Indexer.SectionTitleWeight,
+          "document" -> Indexer.DocumentTitleWeight
         )
     ) &&
     expect(
       getDocumentTerms("/hello") ==
         Map(
-          "lorem" -> 1,
-          "dolor" -> 1
+          "lorem"    -> 1,
+          "dolor"    -> 1,
+          "section1" -> Indexer.SectionTitleWeight,
+          "document" -> Indexer.DocumentTitleWeight,
+          "hello"    -> Indexer.DocumentTitleWeight
         )
     ) &&
     expect(
       getDocumentTerms("/hello/world") ==
         Map(
-          "ipsum" -> 1,
-          "dolor" -> 1,
-          "amet"  -> 2
+          "ipsum"    -> 1,
+          "dolor"    -> 1,
+          "amet"     -> 2,
+          "section1" -> Indexer.SectionTitleWeight,
+          "document" -> Indexer.DocumentTitleWeight,
+          "hello"    -> Indexer.DocumentTitleWeight,
+          "world"    -> Indexer.DocumentTitleWeight
+        )
+    )
+  }
+
+  val multiSection = Document(
+    "Guide",
+    "/guide",
+    Vector(
+      Section("Guide", None, "widget intro"),
+      Section("Usage", Some("/guide#usage"), "widget widget usage")
+    )
+  )
+
+  test("global term frequency counts documents, not sections") {
+    val idx = Indexer
+      .default(Vector(multiSection, Document.section("x", "/x", "widget")))
+      .processAll(identity)
+
+    val widget = idx.termMapping(TermName("widget"))
+
+    expect(idx.globalTermFrequency(widget).value == 2)
+  }
+
+  test("collection size only counts indexed documents") {
+    val idx = Indexer
+      .default(Vector("/a" -> true, "/b" -> false, "/c" -> false))
+      .processSome { case (url, true) => Document.section("t", url, "text") }
+
+    expect(idx.collectionSize.value == 1)
+  }
+
+  test("titles are weighted, document title only counts once") {
+    val idx = Indexer.default(Vector(multiSection)).processAll(identity)
+
+    def sectionFreqs(term: String) =
+      idx
+        .termsInDocuments(idx.termMapping(TermName(term)))
+        .values
+        .head
+        .sectionOccurences
+        .map { case (k, v) => k.value -> v.value }
+
+    expect.all(
+      // first section's title equals the document title: not double-counted
+      sectionFreqs("guid") == Map(0 -> Indexer.DocumentTitleWeight),
+      sectionFreqs("usag") == Map(1 -> (Indexer.SectionTitleWeight + 1)),
+      sectionFreqs("widget") == Map(0 -> 1, 1 -> 2)
+    )
+  }
+
+  test("section lengths include title weights") {
+    val idx = Indexer.default(Vector(multiSection)).processAll(identity)
+
+    expect(
+      idx.sectionLengths.values.head ==
+        Vector(
+          Indexer.DocumentTitleWeight + 2,
+          Indexer.SectionTitleWeight + 3
         )
     )
   }

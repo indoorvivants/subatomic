@@ -73,4 +73,84 @@ object SearchSuite extends weaver.SimpleIOSuite with Checkers {
       expect(results.entries.sortBy(-1 * _._2) == results.entries)
     }
   }
+
+  def index(docs: Document*) =
+    Indexer.default(docs.toVector).processAll(identity)
+
+  pureTest("empty query returns nothing") {
+    expect(search.string("  ").entries.isEmpty) &&
+    expect(search.string("the and").entries.isEmpty)
+  }
+
+  pureTest("documents matching more of the query rank higher") {
+    val idx = index(
+      Document.section("One", "/one", "alpha beta gamma delta"),
+      Document.section("Two", "/two", "alpha alpha alpha alpha alpha")
+    )
+
+    val urls = new Search(idx).string("alpha beta").entries.map(_._1.document.url)
+
+    expect(urls == Vector("/one", "/two"))
+  }
+
+  pureTest("a term in a section title outranks the same term in body text") {
+    val idx = index(
+      Document(
+        "Guide",
+        "/guide",
+        Vector(
+          Section("Guide", None, "intro text"),
+          Section("Configuration", Some("/guide#config"), "lots of words here")
+        )
+      ),
+      Document.section("Other", "/other", "configuration lots of words here")
+    )
+
+    val results = new Search(idx).string("configuration").entries
+
+    expect(results.map(_._1.document.url) == Vector("/guide", "/other")) &&
+    expect(results.head._1.sections.map(_.url) == List("/guide#config"))
+  }
+
+  pureTest("a term in the document title outranks a section title") {
+    val idx = index(
+      Document(
+        "Installation",
+        "/install",
+        Vector(Section("Installation", None, "how to get it"))
+      ),
+      Document(
+        "Guide",
+        "/guide",
+        Vector(
+          Section("Guide", None, "intro"),
+          Section("Installation", Some("/guide#install"), "how to get it")
+        )
+      )
+    )
+
+    val urls =
+      new Search(idx).string("installation").entries.map(_._1.document.url)
+
+    expect(urls == Vector("/install", "/guide"))
+  }
+
+  pureTest("sections are ordered by score") {
+    val idx = index(
+      Document(
+        "Doc",
+        "/doc",
+        Vector(
+          Section("Doc", None, "unrelated"),
+          // same length, so only the term frequency differs
+          Section("Alpha", Some("/doc#a"), "widget foo bar"),
+          Section("Beta", Some("/doc#b"), "widget widget widget")
+        )
+      )
+    )
+
+    val sections = new Search(idx).string("widget").entries.head._1.sections
+
+    expect(sections.map(_.url) == List("/doc#b", "/doc#a"))
+  }
 }

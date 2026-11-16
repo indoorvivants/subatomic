@@ -58,7 +58,7 @@ class Indexer[ContentType](
       extract: PartialFunction[ContentType, Document]
   ): SearchIndex = {
     val total  = extract.lift
-    val tf_idf = new TF_IDF(content.size, tokenizer, debug)
+    val tf_idf = new TF_IDF(tokenizer, debug)
     content.foreach { case cnt =>
       total(cnt).foreach { tf_idf.add }
     }
@@ -76,13 +76,24 @@ object Indexer {
       content: Iterable[ContentType],
       debug: Boolean = false
   ): Indexer[ContentType] = new Indexer(content, debug = debug)
+
+  /** Each token of the document title counts as this many occurrences in the
+    * document's first section (which is where a link to the page itself
+    * points).
+    */
+  final val DocumentTitleWeight = 5
+
+  /** Each token of a section title counts as this many occurrences in that
+    * section.
+    */
+  final val SectionTitleWeight = 3
 }
 
 private[subatomic] class TF_IDF(
-    collectionSize: Int,
     tokenizer: String => Vector[String],
     debug: Boolean = false
 ) {
+  import Indexer.{DocumentTitleWeight, SectionTitleWeight}
 
   @inline def debugPrint(s: Any) = {
     if (debug) println(s)
@@ -96,7 +107,7 @@ private[subatomic] class TF_IDF(
       .Map[TermIdx, mutable.Map[DocumentIdx, TermDocumentOccurence]]()
 
   private val documentEntries = mutable.Map[DocumentIdx, DocumentEntry]()
-  private val sectionEntries  = mutable.Map[DocumentIdx, List[SectionIdx]]()
+  private val sectionLengths  = mutable.Map[DocumentIdx, Vector[Int]]()
 
   private val ZeroTermFreq = TermFrequency(0)
 
@@ -155,6 +166,30 @@ private[subatomic] class TF_IDF(
     termsInDocuments(termId).update(docIdx, tdo)
   }
 
+  /** Tokens of a section together with how many occurrences each of them is
+    * worth. Body tokens are worth 1, title tokens are boosted.
+    */
+  private def weightedTokens(
+      document: Document,
+      section: Section,
+      sectionIdx: Int
+  ): Vector[(String, Int)] = {
+    def weighted(text: String, weight: Int) =
+      tokenizer(text).map(_ -> weight)
+
+    val isFirst                = sectionIdx == 0
+    val sectionRepeatsDocTitle = isFirst && section.title == document.title
+
+    val documentTitle =
+      if (isFirst) weighted(document.title, DocumentTitleWeight)
+      else Vector.empty
+    val sectionTitle =
+      if (sectionRepeatsDocTitle) Vector.empty
+      else weighted(section.title, SectionTitleWeight)
+
+    documentTitle ++ sectionTitle ++ weighted(section.content, 1)
+  }
+
   def add(document: Document) = {
     val docIdx = getDocumentId(document)
 
@@ -173,35 +208,40 @@ private[subatomic] class TF_IDF(
 
     debugPrint(s"----\nIndexing $docIdx $document\n----")
 
-    document.sections.zipWithIndex
-      .map { case (s, i) => s -> SectionIdx(i) }
-      .foreach { case (Section(_, _, text), sectionIdx) =>
-        val tokens             = tokenizer(text)
-        val documentRegistered = mutable.Set[TermIdx]()
+    // Global term frequency is the number of *documents* containing the term,
+    // so a term is registered at most once per document
+    val documentRegistered = mutable.Set[TermIdx]()
+    val lengths            = Vector.newBuilder[Int]
 
-        tokens
-          .groupBy(identity)
-          .map { case (tok, occs) => tok -> TermFrequency(occs.size) }
-          .foreach { case (tok, termFrequency) =>
-            val termIdx = getTermId(tok)
+    document.sections.zipWithIndex.foreach { case (section, i) =>
+      val sectionIdx = SectionIdx(i)
+      val tokens     = weightedTokens(document, section, i)
 
-            if (!documentRegistered.contains(termIdx)) {
-              increaseGlobalTermFrequency(termIdx, TermFrequency(1))
-              documentRegistered.add(termIdx): Unit
-            }
+      lengths += tokens.map(_._2).sum
 
-            val currentStats = getTermDocumentOccurennce(termIdx, docIdx)
+      tokens
+        .groupMapReduce(_._1)(_._2)(_ + _)
+        .foreach { case (tok, occurrences) =>
+          val termFrequency = TermFrequency(occurrences)
+          val termIdx       = getTermId(tok)
 
-            val newStats = currentStats.copy(
-              frequencyInDocument =
-                currentStats.frequencyInDocument + termFrequency,
-              sectionOccurences = currentStats.sectionOccurences
-                .updated(sectionIdx, termFrequency)
-            )
+          if (documentRegistered.add(termIdx))
+            increaseGlobalTermFrequency(termIdx, TermFrequency(1))
 
-            updateTermDocumentOccurrence(termIdx, docIdx, newStats)
-          }
-      }
+          val currentStats = getTermDocumentOccurennce(termIdx, docIdx)
+
+          val newStats = currentStats.copy(
+            frequencyInDocument =
+              currentStats.frequencyInDocument + termFrequency,
+            sectionOccurences = currentStats.sectionOccurences
+              .updated(sectionIdx, termFrequency)
+          )
+
+          updateTermDocumentOccurrence(termIdx, docIdx, newStats)
+        }
+    }
+
+    sectionLengths.update(docIdx, lengths.result())
   }
 
   implicit class TermFrequencyOpts(tf: TermFrequency) {
@@ -234,8 +274,9 @@ private[subatomic] class TF_IDF(
       globalTermFrequency.toMap,
       termsMapping.toMap,
       invertTermsToDocuments,
-      sectionEntries.toMap,
-      CollectionSize(collectionSize),
+      sectionLengths.toMap,
+      // only documents that were actually indexed, not all the content
+      CollectionSize(documentIndexes.size),
       CharTree.build(termsMapping)
     )
   }

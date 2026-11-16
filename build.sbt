@@ -9,7 +9,8 @@ lazy val root = project
       searchFrontend.projectRefs,
       searchFrontendPack.projectRefs,
       searchRetrieve.projectRefs,
-      searchCli.projectRefs
+      searchCli.projectRefs,
+      searchEval.projectRefs
     ).flatten *
   )
   .settings(skipPublish)
@@ -161,6 +162,24 @@ lazy val searchCli =
     )(scalajsOverrides)
     .settings(testSettings)
     .settings(buildInfoSettings)
+
+lazy val searchEval =
+  projectMatrix
+    .in(file("modules/search/eval"))
+    .dependsOn(searchIndex, searchRetrieve)
+    .settings(
+      name := "subatomic-search-eval",
+      libraryDependencies += "com.lihaoyi" %% "os-lib" % Ver.osLib,
+      libraryDependencies += "com.indoorvivants" %% "decline-derive" % Ver.declineDerive,
+      fork := true,
+      run / baseDirectory := (ThisBuild / baseDirectory).value
+    )
+    .settings(skipPublish)
+    .someVariations(
+      Ver.Scala.all.toList,
+      List(VirtualAxis.jvm)
+    )(MatrixAction.ForAll.Keep)
+    .settings(testSettings)
 
 lazy val searchIndex =
   projectMatrix

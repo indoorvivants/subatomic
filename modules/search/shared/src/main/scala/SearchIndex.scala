@@ -50,6 +50,8 @@ case class SectionEntry(
   * @param termsInDocuments
   * @param globalTermFrequency
   * @param termMapping
+  * @param sectionLengths
+  *   weighted token count of each section, indexed by [[SectionIdx]]
   * @param collectionSize
   */
 case class SearchIndex private[search] (
@@ -58,7 +60,7 @@ case class SearchIndex private[search] (
     globalTermFrequency: Map[TermIdx, GlobalTermFrequency],
     termMapping: Map[TermName, TermIdx],
     documentTerms: Map[DocumentIdx, Map[TermIdx, TermDocumentOccurence]],
-    sectionMapping: Map[DocumentIdx, List[SectionIdx]],
+    sectionLengths: Map[DocumentIdx, Vector[Int]],
     collectionSize: CollectionSize,
     charTree: CharTree
 ) {

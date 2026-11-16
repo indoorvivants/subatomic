@@ -33,135 +33,135 @@ class Search(index: SearchIndex, debug: Boolean = false) {
     if (debug) println(s)
   }
 
-  def string(s: String): SearchResults = {
-    val tokens = DefaultTokenizer(s)
+  // Sections are the unit of retrieval: BM25 statistics are computed over them
+  private val totalSections = index.sectionLengths.valuesIterator.map(_.size).sum
 
-    val terms = tokens.distinct.flatMap { tok =>
+  private val averageSectionLength = {
+    val total = index.sectionLengths.valuesIterator.flatten.sum
+    if (totalSections == 0 || total == 0) 1.0
+    else total.toDouble / totalSections
+  }
+
+  private def sectionLength(doc: DocumentIdx, section: SectionIdx): Int =
+    index.sectionLengths
+      .get(doc)
+      .flatMap(_.lift(section.value))
+      .getOrElse(averageSectionLength.toInt)
+
+  def string(s: String): SearchResults = {
+    val queryTerms = DefaultTokenizer(s).distinct
+
+    if (queryTerms.isEmpty) return SearchResults(Vector.empty)
+
+    val postings = queryTerms.flatMap { tok =>
       for {
-        termIdx <- index.resolveTerm(tok)
-        _ = debugPrint(s"token $tok resolved to $termIdx")
+        termIdx      <- index.resolveTerm(tok)
+        _             = debugPrint(s"token $tok resolved to $termIdx")
         docsWithTerm <- index.termsInDocuments.get(termIdx.value)
-        _ = debugPrint(s"documents with $tok: $docsWithTerm")
-      } yield termIdx -> docsWithTerm
+      } yield docsWithTerm
     }
 
-    val validTerms = terms.map(_._1)
-    val candidates = terms.flatMap(_._2.keys)
+    case class Acc(score: Double, matchedTerms: Int)
 
-    val sectionRef =
-      scala.collection.mutable.HashMap[(DocumentIdx, SectionIdx), Double]()
+    val sectionScores =
+      scala.collection.mutable.HashMap[(DocumentIdx, SectionIdx), Acc]()
+    val documentMatches = scala.collection.mutable.HashMap[DocumentIdx, Int]()
 
-    val termDocumentRanks = candidates.flatMap { documentId =>
-      val documentTerms = getDocumentTerms(documentId)
+    postings.foreach { docsWithTerm =>
+      val sectionsWithTerm =
+        docsWithTerm.valuesIterator.map(_.sectionOccurences.size).sum
 
-      validTerms.map { termId =>
-        documentTerms.get(termId.value) match {
-          case Some(tdo) =>
-            val TF = Algorithms.augmented_Term_Frequency(
-              termId.value,
-              documentTerms.map { case (k, v) => k -> v.frequencyInDocument }
-            )
+      val idf = Algorithms.bm25_IDF(totalSections, sectionsWithTerm)
 
-            val IDF = Algorithms.inverse_Document_Frequency(
-              index.collectionSize,
-              getGlobalTermFrequency(termId.value)
-            )
+      docsWithTerm.foreach { case (documentIdx, tdo) =>
+        documentMatches.update(
+          documentIdx,
+          documentMatches.getOrElse(documentIdx, 0) + 1
+        )
 
-            debugPrint(
-              s"DocumentId: $documentId, Term: ${termId}, TF: $TF, IDF: $IDF"
-            )
+        tdo.sectionOccurences.foreach { case (sectionIdx, frequency) =>
+          val tf = Algorithms.bm25_TF(
+            frequency.value,
+            sectionLength(documentIdx, sectionIdx),
+            averageSectionLength
+          )
 
-            val TERM_SCORE = TF * IDF
+          debugPrint(
+            s"($documentIdx, $sectionIdx): freq=${frequency.value}, TF=$tf, IDF=$idf"
+          )
 
-            tdo.sectionOccurences.foreach {
-              case (sectionIdx, frequencyInSection) =>
-                val key = (documentId, sectionIdx)
-                debugPrint(
-                  s"Updating ($documentId, $sectionIdx) for $termId with ${frequencyInSection.value * TERM_SCORE}"
-                )
-                sectionRef.update(
-                  key,
-                  frequencyInSection.value * TERM_SCORE + sectionRef
-                    .getOrElseUpdate(key, 0.0)
-                )
-            }
-
-            (documentId, TERM_SCORE)
-          case None => (documentId, 0.0)
+          val key  = (documentIdx, sectionIdx)
+          val prev = sectionScores.getOrElse(key, Acc(0.0, 0))
+          sectionScores.update(key, Acc(prev.score + tf * idf, prev.matchedTerms + 1))
         }
       }
     }
 
-    val entries = termDocumentRanks
-      .groupBy(_._1)
-      .map { case (documentIdx, ranks) =>
-        val document         = index.documentsMapping(documentIdx)
-        val documentSections =
-          document.sections.keys.toVector
-            .map(sid => sid -> sectionRef.getOrElse((documentIdx, sid), 0.0))
-            .filter(_._2 != 0.0)
-            .sortBy(-1 * _._2)
-            .take(3)
-            .map(_._1)
+    val totalTerms = queryTerms.size.toDouble
+
+    val entries = sectionScores.toVector
+      .groupBy(_._1._1)
+      .map { case (documentIdx, sections) =>
+        val document = index.documentsMapping(documentIdx)
+
+        // sections are ranked by their own score, scaled by how much of the
+        // query they cover
+        val rankedSections = sections
+          .map { case ((_, sectionIdx), acc) =>
+            sectionIdx -> acc.score * (acc.matchedTerms / totalTerms)
+          }
+          .sortBy { case (sid, score) => (-score, sid.value) }
+
+        // the document is as good as its best section, scaled by how much of
+        // the query the document as a whole covers
+        val documentScore =
+          rankedSections.head._2 * (documentMatches(documentIdx) / totalTerms)
 
         debugPrint(
-          s"document: ${document.title}, sections: ${documentSections}"
+          s"document: ${document.title}, score: $documentScore, sections: $rankedSections"
         )
 
-        debugPrint(s"document: ${document.title}, Section ref: $sectionRef")
-
-        val resultEntry = ResultsEntry(
+        ResultsEntry(
           document,
-          documentSections.map(document.sections).toList
-        )
-
-        resultEntry -> ranks.map(_._2).sum
+          rankedSections.take(3).map(r => document.sections(r._1)).toList
+        ) -> documentScore
       }
       .toVector
-      .sortBy(-1 * _._2)
-      .filter(_._1.sections.nonEmpty)
+      .sortBy { case (entry, score) => (-score, entry.document.url) }
 
     SearchResults(entries)
   }
-
-  def getDocumentSections(documentId: DocumentIdx): List[SectionIdx] =
-    index.sectionMapping(documentId)
-
-  def getDocumentTerms(
-      documentId: DocumentIdx
-  ): Map[TermIdx, TermDocumentOccurence] =
-    index.documentTerms(documentId)
-
-  def getGlobalTermFrequency(termId: TermIdx): GlobalTermFrequency =
-    index.globalTermFrequency(termId)
-
 }
 
 object Algorithms {
-  def augmented_Term_Frequency(
-      term: TermIdx,
-      document: Map[TermIdx, TermFrequency]
-  ) = {
-    if (document.isEmpty || !document.contains(term)) 0.0
+
+  /** BM25 term frequency saturation parameter */
+  final val K1 = 1.2
+
+  /** BM25 length normalisation parameter */
+  final val B = 0.75
+
+  /** Okapi BM25 IDF, with +1 inside the log so it's always positive.
+    *
+    * @param collectionSize
+    *   total number of retrievable units (sections)
+    * @param unitsWithTerm
+    *   number of units containing the term
+    */
+  def bm25_IDF(collectionSize: Int, unitsWithTerm: Int): Double =
+    math.log(
+      1.0 + (collectionSize - unitsWithTerm + 0.5) / (unitsWithTerm + 0.5)
+    )
+
+  /** BM25 term frequency component: saturates as frequency grows, and
+    * penalises units longer than average.
+    */
+  def bm25_TF(frequency: Int, length: Int, averageLength: Double): Double =
+    if (frequency <= 0) 0.0
     else {
-      val maxFreq = document.maxBy(_._2.value.toDouble)._2.value.toDouble
-      val freq    = document(term).value.toDouble
-
-      0.5 + 0.5 * (freq / maxFreq)
+      val norm = 1.0 - B + B * (length.toDouble / averageLength)
+      frequency * (K1 + 1.0) / (frequency + K1 * norm)
     }
-  }
-
-  def inverse_Document_Frequency(
-      numDocuments: CollectionSize,
-      globalTermFrequency: GlobalTermFrequency
-  ) = {
-    if (globalTermFrequency.value == numDocuments.value)
-      math.log(
-        numDocuments.value.toDouble / (numDocuments.value.toDouble + 1.0)
-      )
-    else
-      math.log(numDocuments.value.toDouble / globalTermFrequency.value.toDouble)
-  }
 }
 
 object Search {

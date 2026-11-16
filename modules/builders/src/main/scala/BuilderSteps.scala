@@ -85,7 +85,7 @@ class BuilderSteps(markdown: Markdown) {
           doc.title,
           linker.find(raw),
           markdownSections.map { case Markdown.Section(title, _, url, text) =>
-            subatomic.search.Section(title, url, title + "\n\n" + text)
+            subatomic.search.Section(title, url, text)
           }
         )
     }
