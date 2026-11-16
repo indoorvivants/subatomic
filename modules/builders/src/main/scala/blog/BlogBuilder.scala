@@ -110,6 +110,17 @@ case class AuthorPage(
 
 object Blog {
 
+  /** Common commands, plus blog-specific ones (see [[BlogCommands]]) */
+  implicit val blogCommandApplication: cli.CommandApplication[
+    Either[BlogCommands.Extra, cli.CommandConfig]
+  ] =
+    cli.CommandApplication.instance(
+      com.monovore.decline.Command(cli.command.name, cli.command.header)(
+        (cli.build orElse cli.search).map(Right(_)) orElse
+          BlogCommands.extra.map(Left(_))
+      )
+    )
+
   trait App {
     def extra(site: Site[Doc]) = site
 
@@ -119,15 +130,19 @@ object Blog {
 
       import cli._
 
-      parseOrExit[CommandConfig](args.toList) match {
-        case buildConfig: BuildConfig =>
+      parseOrExit[Either[BlogCommands.Extra, CommandConfig]](
+        args.toList
+      ) match {
+        case Right(buildConfig: BuildConfig) =>
           new Builder(config).createSite(
             config,
             buildConfig,
             extra _
           )
-        case search: SearchConfig =>
+        case Right(search: SearchConfig) =>
           new Builder(config).testSearch(config, search)
+        case Left(blogCommand) =>
+          BlogCommands.run(blogCommand, config)
       }
     }
   }

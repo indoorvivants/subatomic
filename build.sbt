@@ -17,6 +17,7 @@ val Ver = new {
   val detective             = "0.1.0"
   val yank                  = "0.0.1"
   val mdoc                  = "2.9.2"
+  val cue4s                 = "0.0.13"
 
   val Scala = new {
     val `2_12` = "2.12.20"
@@ -119,7 +120,14 @@ lazy val builders =
       libraryDependencies += "com.lihaoyi"  %% "scalatags" % Ver.scalatags,
       libraryDependencies += "com.indoorvivants.detective" %% "platform" % Ver.detective,
       libraryDependencies += "com.indoorvivants" %% "yank"     % Ver.yank,
-      libraryDependencies += "com.lihaoyi"       %% "requests" % "0.8.3"
+      libraryDependencies += "com.lihaoyi"       %% "requests" % "0.8.3",
+      // cue4s is only published for Scala 3, the `post` command of the blog
+      // builder is only available there
+      libraryDependencies ++= {
+        if (scalaVersion.value.startsWith("3."))
+          Seq("tech.neander" %% "cue4s" % Ver.cue4s)
+        else Seq.empty
+      }
     )
     .someVariations(
       Ver.Scala.all.toList,
