@@ -80,8 +80,7 @@ trait HtmlPage {
     val paths =
       if (site.search)
         List(
-          ScriptPath(SiteRoot / "assets" / "search.js"),
-          ScriptPath(SiteRoot / "assets" / "search-index.js")
+          ScriptPath(SiteRoot / "assets" / "search.js")
         )
       else Nil
 
@@ -210,7 +209,7 @@ trait HtmlPage {
   private def searchSection =
     section(
       cls := "sb-search-section",
-      div(id := "sb-search-container")
+      BuilderSteps.searchContainer(linker)
     )
 
   def page(

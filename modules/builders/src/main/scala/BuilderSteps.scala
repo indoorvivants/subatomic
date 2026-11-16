@@ -97,30 +97,15 @@ class BuilderSteps(markdown: Markdown) {
       content: Vector[(SitePath, Doc)]
   ): Site[Doc] => Site[Doc] = {
 
-    val indexJson      = buildSearchIndex(linker, d)(content).asJsonString
-    val doubleQ        = '"'.toString()
-    val escapedDoubleQ = """ \" """.trim()
+    val indexJson = buildSearchIndex(linker, d)(content).asJsonString
 
-    val lines = indexJson
-      .grouped(500)
-      .map(
-        _.replace("'", raw"\'")
-          .replace(doubleQ, escapedDoubleQ)
-      )
-      .map(str => s"'${str}'")
-      .mkString(",\n")
-
-    val tmpFile = os.temp {
-      s"""
-        var ln = [$lines];var SearchIndexText = ln.join('')
-        """
-    }
-
+    // Fetched by the search frontend the first time the search box is used
+    val tmpFile   = os.temp(indexJson)
     val tmpFileJS = os.temp(search.SearchFrontendPack.fullJS)
 
     site =>
       site
-        .addCopyOf(SiteRoot / "assets" / "search-index.js", tmpFile)
+        .addCopyOf(BuilderSteps.SearchIndexPath, tmpFile)
         .addCopyOf(SiteRoot / "assets" / "search.js", tmpFileJS)
 
   }
@@ -212,6 +197,17 @@ class BuilderSteps(markdown: Markdown) {
 }
 
 object BuilderSteps {
+  val SearchIndexPath = SiteRoot / "assets" / "search-index.json"
+
+  /** Mount point for the search frontend, telling it where the index is */
+  def searchContainer(linker: Linker) = {
+    import scalatags.Text.all._
+    div(
+      id                      := "sb-search-container",
+      attr("data-index-url") := linker.unsafe(_ => SearchIndexPath)
+    )
+  }
+
 
   case class SearchableDocument(
       title: String,

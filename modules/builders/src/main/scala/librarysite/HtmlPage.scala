@@ -33,8 +33,7 @@ trait HtmlPage {
     val paths =
       if (site.search)
         List(
-          ScriptPath(SiteRoot / "assets" / "search.js"),
-          ScriptPath(SiteRoot / "assets" / "search-index.js")
+          ScriptPath(SiteRoot / "assets" / "search.js")
         )
       else Nil
 
@@ -94,7 +93,6 @@ trait HtmlPage {
         )
       ),
       body(
-        onclick := "SubatomicSearchFrontend.sayHello()",
         cls     := "sb-body",
         Header,
         tag("main")(
@@ -149,7 +147,7 @@ trait HtmlPage {
         a(cls := "sb-title-link", href := linker.root, site.name),
         site.tagline.map { tagline => p(cls := "sb-title-tagline", tagline) }
       ),
-      div(id := "sb-search-container"),
+      BuilderSteps.searchContainer(linker),
       div(
         cls := "sb-site-links",
         site.githubUrl.map { githubUrl =>
