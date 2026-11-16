@@ -4,7 +4,7 @@ package search
 import upickle.default._
 import scala.util.{Try, Success}
 
-object JsonRoundtripTests extends verify.BasicTestSuite {
+object JsonRoundtripTests extends weaver.FunSuite {
   test("SearchIndex roundtrip") {
     val content = Vector(
       "/"            -> "lorem ipsum dolor amet lorem",
@@ -27,7 +27,7 @@ object JsonRoundtripTests extends verify.BasicTestSuite {
         read[T](writeJs(value).render())
       }
 
-      assert(result == Success(value))
+      expect(result == Success(value))
     }
 
     roundtrip(idx)

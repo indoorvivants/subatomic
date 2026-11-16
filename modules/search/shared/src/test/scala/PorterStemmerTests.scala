@@ -1,11 +1,13 @@
 package subatomic
 package search
 
-object PorterStemmerTests extends verify.BasicTestSuite {
+object PorterStemmerTests extends weaver.FunSuite {
   import PorterStemmer.stem
   test("stems?") {
-    assert(stem("doing") == "do")
-    assert(stem("interesting") == "interest")
-    assert(stem("better") == "better")
+    expect.all(
+      stem("doing") == "do",
+      stem("interesting") == "interest",
+      stem("better") == "better"
+    )
   }
 }

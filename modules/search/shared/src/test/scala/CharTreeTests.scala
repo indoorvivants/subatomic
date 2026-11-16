@@ -1,10 +1,14 @@
 package subatomic
 package search
 
+import cats.Show
 import org.scalacheck.Gen
-import org.scalacheck.Prop._
+import weaver.scalacheck.Checkers
 
-object CharTreeTests extends verify.BasicTestSuite {
+object CharTreeTests extends weaver.SimpleIOSuite with Checkers {
+
+  implicit val showTermName: Show[TermName] = Show.fromToString
+  implicit val showTermIdx: Show[TermIdx]   = Show.fromToString
 
   val MostCommonEnglishBigrams =
     ("th,en,ng,he,ed,of,in,to,al,er,it,de,an,ou,se," +
@@ -28,13 +32,13 @@ object CharTreeTests extends verify.BasicTestSuite {
     dataset = words.distinct.zipWithIndex.map { case (n, idx) =>
       TermName(n) -> TermIdx(idx)
     }
-  } yield (CharTree.build(dataset), dataset)
-
-  val seed = scala.util.Random.nextLong()
+  } yield dataset
 
   test("CharTree build and retrieval") {
 
-    forAll(gen) { case ((chartree, dataset)) =>
+    forall(gen) { dataset =>
+      val chartree = CharTree.build(dataset)
+
       val resolutions = dataset.map { case (tn, tidx) =>
         (tidx, chartree.find(tn))
       }
@@ -43,7 +47,7 @@ object CharTreeTests extends verify.BasicTestSuite {
         result.contains(expected)
       }
 
-      notFound.isEmpty
-    }.check()
+      expect(notFound.isEmpty)
+    }
   }
 }

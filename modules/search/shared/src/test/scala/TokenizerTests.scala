@@ -1,39 +1,39 @@
 package subatomic
 package search
 
-object TokenizerTests extends verify.BasicTestSuite {
+object TokenizerTests extends weaver.FunSuite {
 
   val tokens = DefaultTokenizer
 
   test("handles spaces") {
-    assert(
+    expect(
       tokens("lorem ipsum dolor amet") ==
         Vector("lorem", "ipsum", "dolor", "amet")
     )
   }
 
   test("handles punctuation") {
-    assert(
+    expect(
       tokens("lorem,ipsum-dolor;amet") ==
         Vector("lorem", "ipsum", "dolor", "amet")
     )
   }
 
   test("handles empty string") {
-    assert(tokens("") == Vector.empty)
+    expect(tokens("") == Vector.empty)
   }
 
   test("handles one single token") {
-    assert(tokens("loremipsumdoloramet") == Vector("loremipsumdoloramet"))
+    expect(tokens("loremipsumdoloramet") == Vector("loremipsumdoloramet"))
   }
 
   test("ignores stopwords") {
     val tokenized = tokens(Stopwords.list.mkString(" "))
-    assert(tokenized == Vector.empty)
+    expect(tokenized == Vector.empty)
   }
 
   test("handles possessive") {
-    assert(
+    expect(
       tokens("subatomic's Scala's") == Vector("subatomic'", "scala'")
     )
   }

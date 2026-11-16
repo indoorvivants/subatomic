@@ -2,9 +2,9 @@ package subatomic
 package search
 
 import org.scalacheck.Gen
-import org.scalacheck.Prop._
+import weaver.scalacheck.Checkers
 
-object SearchSuite extends verify.BasicTestSuite {
+object SearchSuite extends weaver.SimpleIOSuite with Checkers {
 
   val content = Vector(
     "/"            -> "lorem ipsum dolor amet lorem",
@@ -40,8 +40,8 @@ object SearchSuite extends verify.BasicTestSuite {
       .getOrElse(-10000.0)
   }
 
-  test("search by one word") {
-    assert(
+  pureTest("search by one word") {
+    expect(
       foundUrls("lorem") ==
         Set(
           "/",
@@ -50,8 +50,8 @@ object SearchSuite extends verify.BasicTestSuite {
     )
   }
 
-  test("search by two words") {
-    assert(
+  pureTest("search by two words") {
+    expect(
       foundUrls("ipsum amet") ==
         Set(
           "/",
@@ -60,17 +60,17 @@ object SearchSuite extends verify.BasicTestSuite {
     )
   }
 
-  test("ranking") {
-    assert(
+  pureTest("ranking") {
+    expect(
       ranking("amet", "/") > ranking("amet", "/hello")
     )
   }
 
   test("results are always in the correct order") {
-    forAll(queryGen) { query =>
+    forall(queryGen) { query =>
       val results = search.string(query)
 
-      results.entries.sortBy(-1 * _._2) == results.entries
-    }.check()
+      expect(results.entries.sortBy(-1 * _._2) == results.entries)
+    }
   }
 }

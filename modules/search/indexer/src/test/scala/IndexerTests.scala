@@ -1,7 +1,7 @@
 package subatomic
 package search
 
-object IndexerSuite extends verify.BasicTestSuite {
+object IndexerSuite extends weaver.FunSuite {
 
   val content = Vector(
     "/" ->
@@ -26,7 +26,7 @@ object IndexerSuite extends verify.BasicTestSuite {
     }
 
   test("all documents have entry in the index") {
-    assert(
+    expect(
       idx.documentsMapping.values.map(_.url).toSet ==
         content
           .map(_._1)
@@ -36,7 +36,7 @@ object IndexerSuite extends verify.BasicTestSuite {
   test("all words have entry in the index") {
     val allWords = Set("lorem", "ipsum", "dolor", "amet")
 
-    assert(
+    expect(
       idx.termMapping.keySet.map(_.value) ==
         allWords
     )
@@ -46,10 +46,12 @@ object IndexerSuite extends verify.BasicTestSuite {
     def getMapping(term: String) =
       idx.termsInDocuments(idx.termMapping(TermName(term)))
 
-    assert(getMapping("lorem").nonEmpty)
-    assert(getMapping("ipsum").nonEmpty)
-    assert(getMapping("dolor").nonEmpty)
-    assert(getMapping("amet").nonEmpty)
+    expect.all(
+      getMapping("lorem").nonEmpty,
+      getMapping("ipsum").nonEmpty,
+      getMapping("dolor").nonEmpty,
+      getMapping("amet").nonEmpty
+    )
   }
 
   test("in document frequency is correctly calculated") {
@@ -62,15 +64,17 @@ object IndexerSuite extends verify.BasicTestSuite {
       idx.termsInDocuments(termIdx)(docIdx).frequencyInDocument.value
     }
 
-    assert(getInDocumentFrequency("lorem", "/") == 2)
-    assert(getInDocumentFrequency("ipsum", "/") == 1)
-    assert(getInDocumentFrequency("dolor", "/") == 1)
-    assert(getInDocumentFrequency("amet", "/") == 1)
-    assert(getInDocumentFrequency("lorem", "/hello") == 1)
-    assert(getInDocumentFrequency("dolor", "/hello") == 1)
-    assert(getInDocumentFrequency("amet", "/hello/world") == 2)
-    assert(getInDocumentFrequency("ipsum", "/hello/world") == 1)
-    assert(getInDocumentFrequency("dolor", "/hello/world") == 1)
+    expect.all(
+      getInDocumentFrequency("lorem", "/") == 2,
+      getInDocumentFrequency("ipsum", "/") == 1,
+      getInDocumentFrequency("dolor", "/") == 1,
+      getInDocumentFrequency("amet", "/") == 1,
+      getInDocumentFrequency("lorem", "/hello") == 1,
+      getInDocumentFrequency("dolor", "/hello") == 1,
+      getInDocumentFrequency("amet", "/hello/world") == 2,
+      getInDocumentFrequency("ipsum", "/hello/world") == 1,
+      getInDocumentFrequency("dolor", "/hello/world") == 1
+    )
   }
 
   test("document index is correct") {
@@ -87,7 +91,7 @@ object IndexerSuite extends verify.BasicTestSuite {
       }
     }
 
-    assert(
+    expect(
       getDocumentTerms("/") ==
         Map(
           "lorem" -> 2,
@@ -95,16 +99,15 @@ object IndexerSuite extends verify.BasicTestSuite {
           "dolor" -> 1,
           "amet"  -> 1
         )
-    )
-
-    assert(
+    ) &&
+    expect(
       getDocumentTerms("/hello") ==
         Map(
           "lorem" -> 1,
           "dolor" -> 1
         )
-    )
-    assert(
+    ) &&
+    expect(
       getDocumentTerms("/hello/world") ==
         Map(
           "ipsum" -> 1,

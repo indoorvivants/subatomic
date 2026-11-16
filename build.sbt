@@ -10,8 +10,8 @@ val Ver = new {
   val laminar               = "16.0.0"
   val upickle               = "4.4.3"
   val fansi                 = "0.5.1"
+  val scalacheck            = "1.20.0"
   val weaver                = "0.13.1"
-  val verify                = "1.0.0"
   val geny                  = "1.1.1"
   val scalaXml              = "2.1.0"
   val detective             = "0.1.0"
@@ -229,7 +229,7 @@ lazy val searchIndex =
       disableScalafixForScala3,
       scalajsOverrides
     )
-    .settings(munitTestSettings)
+    .settings(testSettings)
     .settings(buildInfoSettings)
     .settings(cacheSettings)
 
@@ -247,7 +247,7 @@ lazy val searchRetrieve =
       disableScalafixForScala3,
       scalajsOverrides
     )
-    .settings(munitTestSettings)
+    .settings(testSettings)
     .settings(buildInfoSettings)
     .settings(cacheSettings)
 
@@ -266,7 +266,7 @@ lazy val searchShared =
       disableScalafixForScala3,
       scalajsOverrides
     )
-    .settings(munitTestSettings)
+    .settings(testSettings)
     .settings(buildInfoSettings)
     .enablePlugins(BuildInfoPlugin)
     .settings(
@@ -379,27 +379,15 @@ lazy val plugin = projectMatrix
   .enablePlugins(ScriptedPlugin, SbtPlugin)
   .settings(cacheSettings)
 
-def ifNot[A](cond: Boolean, s: Seq[A]) = if (cond) Seq.empty else s
-
 lazy val testSettings =
   Seq(
-    libraryDependencies ++= ifNot(
-      virtualAxes.value.contains(VirtualAxis.native),
-      Seq(
-        "org.typelevel" %%% "weaver-cats"       % Ver.weaver % Test,
-        "org.typelevel" %%% "weaver-scalacheck" % Ver.weaver % Test
-      )
+    libraryDependencies ++= Seq(
+      "org.typelevel"  %%% "weaver-cats"       % Ver.weaver     % Test,
+      "org.typelevel"  %%% "weaver-scalacheck" % Ver.weaver     % Test,
+      "org.scalacheck" %%% "scalacheck"        % Ver.scalacheck % Test
     ),
     testFrameworks += new TestFramework("weaver.framework.CatsEffect")
   )
-
-lazy val munitTestSettings = Seq(
-  libraryDependencies += "com.eed3si9n.verify" %%% "verify" % Ver.verify % Test,
-  resolvers +=
-    "Sonatype S01 OSS Snapshots" at "https://s01.oss.sonatype.org/content/repositories/snapshots",
-  libraryDependencies += "org.scalacheck" %%% "scalacheck" % "1.20.0" % Test,
-  testFrameworks += new TestFramework("verify.runner.Framework")
-)
 
 lazy val skipPublish = Seq(
   publish / skip := true
