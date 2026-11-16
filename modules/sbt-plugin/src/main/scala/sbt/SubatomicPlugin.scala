@@ -102,12 +102,12 @@ object SubatomicPlugin extends AutoPlugin {
       }
     def allProjects: List[ProjectReference] =
       ReflectUtilities.allVals[Project](this).values.toList map { p =>
-        p: ProjectReference
+        LocalProject(p.id): ProjectReference
       }
-    ScopeFilter(inProjects(nonRoots: _*), inAnyConfiguration)
+    ScopeFilter(inProjects(nonRoots*), inAnyConfiguration)
   }
 
-  override def projectSettings: Seq[Def.Setting[_]] =
+  override def projectSettings: Seq[Def.Setting[?]] =
     List(
       subatomicInheritClasspath   := true,
       subatomicCoreDependency     := true,
@@ -129,13 +129,16 @@ object SubatomicPlugin extends AutoPlugin {
           case _ => Nil
         }
       },
-      resourceGenerators in Compile += Def.task {
+      Compile / resourceGenerators += Def.task {
+        val depRes    = (update / dependencyResolution).value
+        val updc      = (update / updateConfiguration).value
+        val uwconfig  = (update / unresolvedWarningConfiguration).value
+        val log       = streams.value.log
+        val converter = fileConverter.value
+        val classDir  = (Compile / classDirectory).value
+        val depsCp    = (Compile / dependencyClasspath).value
 
         def getJars(mid: ModuleID) = {
-
-          val depRes   = dependencyResolution.in(update).value
-          val updc     = updateConfiguration.in(update).value
-          val uwconfig = unresolvedWarningConfiguration.in(update).value
           val modDescr = depRes.wrapDependencyInModule(mid)
 
           depRes
@@ -143,17 +146,14 @@ object SubatomicPlugin extends AutoPlugin {
               modDescr,
               updc,
               uwconfig,
-              streams.value.log
+              log
             )
             .map(_.allFiles)
             .fold(uw => throw uw.resolveException, identity)
         }
 
         val out =
-          managedResourceDirectories
-            .in(Compile)
-            .value
-            .head / "subatomic.properties"
+          (Compile / managedResourceDirectories).value.head / "subatomic.properties"
 
         val classpath = {
           val mut = List.newBuilder[(String, File)]
@@ -163,13 +163,10 @@ object SubatomicPlugin extends AutoPlugin {
               mut ++= getJars(mid).map(gr -> _)
             case ClassesDocDependency(cls, gr) => mut ++= cls.map(gr -> _)
             case ThisProjectClasses(gr)        =>
-              mut += gr -> (Compile / classDirectory).value
+              mut += gr -> classDir
             case ThisProjectDependencies(gr) =>
-              mut ++= dependencyClasspath
-                .in(Compile)
-                .value
-                .iterator
-                .map(file => gr -> file.data)
+              mut ++= depsCp.iterator
+                .map(file => gr -> converter.toPath(file.data).toFile)
 
           }
 
@@ -233,7 +230,7 @@ object SubatomicPlugin extends AutoPlugin {
 
         IO.write(props, "subatomic properties", out)
 
-        List(out)
+        Seq(out)
       }
     )
 }

@@ -63,9 +63,11 @@ object SnippetExtensionTests extends weaver.FunSuite {
     val dir = os.temp.dir()
     os.write(dir / "code.scala", "line1\n  line2\n  line3\nline4")
 
-    val md = Markdown(List(SnippetExtension.create(dir).create()))
+    val md   = Markdown(List(SnippetExtension.create(dir).create()))
     val html = md
-      .renderToString(md.read("```scala\nEMBED:/code.scala:range=2-3;align\n```"))
+      .renderToString(
+        md.read("```scala\nEMBED:/code.scala:range=2-3;align\n```")
+      )
       .trim
 
     expect(html.contains("line2\nline3")) &&
@@ -77,7 +79,7 @@ object SnippetExtensionTests extends weaver.FunSuite {
     val dir = os.temp.dir()
     os.write(dir / "code.scala", "one\ntwo\nthree")
 
-    val md = Markdown(List(SnippetExtension.create(dir).create()))
+    val md   = Markdown(List(SnippetExtension.create(dir).create()))
     val html = md.renderToString(
       md.read(
         "Intro\n\n```scala\nEMBED:/code.scala:range=1\n```\n\n```scala\nEMBED:/code.scala:range=3-3\n```"
@@ -106,8 +108,8 @@ object SnippetExtensionTests extends weaver.FunSuite {
   }
 
   /** <root>/umbrella is a repo that contains <root>/umbrella/nested, another
-    * repo holding the embedded file. Each repo ignores its own contents so
-    * both working trees stay clean.
+    * repo holding the embedded file. Each repo ignores its own contents so both
+    * working trees stay clean.
     */
   private def nestedRepos(): os.Path = {
     val root   = os.temp.dir()
@@ -123,7 +125,9 @@ object SnippetExtensionTests extends weaver.FunSuite {
 
   private def renderEmbed(ext: SnippetExtension): String = {
     val md = Markdown(List(ext.create()))
-    md.renderToString(md.read("```scala\nEMBED:/umbrella/nested/code.scala\n```"))
+    md.renderToString(
+      md.read("```scala\nEMBED:/umbrella/nested/code.scala\n```")
+    )
   }
 
   test("permalink uses the outermost git repository by default") {

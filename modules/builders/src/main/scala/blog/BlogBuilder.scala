@@ -239,15 +239,12 @@ object Blog {
         embedSnippets: Boolean = true
     ) =
       Markdown(
-        parserExtensions =
-          siteConfig.markdownExtensions.toList.filter {
-            case _: SnippetExtension#Extension => embedSnippets
-            case _                             => true
-          } ++ diagramResolver
-            .map(d2 =>
-              D2Extension.create(d2.named(_), d2.immediate(_)).create()
-            )
-            .toList
+        parserExtensions = siteConfig.markdownExtensions.toList.filter {
+          case _: SnippetExtension#Extension => embedSnippets
+          case _                             => true
+        } ++ diagramResolver
+          .map(d2 => D2Extension.create(d2.named(_), d2.immediate(_)).create())
+          .toList
       )
 
     def discoverContent(

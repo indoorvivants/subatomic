@@ -20,14 +20,14 @@ import io.lemonlabs.uri.Uri
 import io.lemonlabs.uri.Url
 import io.lemonlabs.uri.UrlPath
 
-class Linker(content: Vector[(SitePath, _)], base: SitePath) {
+class Linker(content: Vector[(SitePath, ?)], base: SitePath) {
   private val mp = content.map(_._1).toSet;
 
-  def unsafe(f: (SiteRoot with SitePath => SitePath)): String = {
+  def unsafe(f: (SiteRoot & SitePath => SitePath)): String = {
     f(SiteRoot).prepend(base).toString
   }
 
-  def resolve(f: (SiteRoot with SitePath => SitePath)): String = {
+  def resolve(f: (SiteRoot & SitePath => SitePath)): String = {
     val rawLocation = f(SiteRoot)
     if (mp(rawLocation)) rawLocation.prepend(base).toString
     else
@@ -37,7 +37,7 @@ class Linker(content: Vector[(SitePath, _)], base: SitePath) {
 
   }
 
-  def resolvePath(f: (SiteRoot with SitePath => SitePath)): SitePath = {
+  def resolvePath(f: (SiteRoot & SitePath => SitePath)): SitePath = {
     val rawLocation = f(SiteRoot)
     if (mp(rawLocation)) rawLocation.prepend(base)
     else
@@ -47,7 +47,7 @@ class Linker(content: Vector[(SitePath, _)], base: SitePath) {
 
   }
 
-  def absoluteUrl(u: Url, f: (SiteRoot with SitePath => SitePath)): Url = {
+  def absoluteUrl(u: Url, f: (SiteRoot & SitePath => SitePath)): Url = {
     val path = f(SiteRoot).prepend(base)
     u.withPath(UrlPath(path.segments))
   }

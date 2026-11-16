@@ -30,8 +30,8 @@ import com.vladsch.flexmark.util.ast.NodeTracker
 import com.vladsch.flexmark.util.data.MutableDataHolder
 import com.vladsch.flexmark.util.sequence.BasedSequence
 
-/** Replaces fenced code blocks of the form `EMBED:/path/to/file[:options]`
-  * with the contents of that file, resolved relative to `root`.
+/** Replaces fenced code blocks of the form `EMBED:/path/to/file[:options]` with
+  * the contents of that file, resolved relative to `root`.
   *
   * @param root
   *   directory that `EMBED:` paths are resolved against
@@ -39,9 +39,9 @@ import com.vladsch.flexmark.util.sequence.BasedSequence
   *   directories (relative to `root`) that must never be treated as the git
   *   repository of an embedded file, even if they contain `.git`. The first
   *   directory with `.git` on the way from `root` to the file is used for the
-  *   GitHub permalink, so list umbrella checkouts here (e.g. a `monorepo`
-  *   that contains other repositories) to make the lookup continue to the
-  *   nested repository instead.
+  *   GitHub permalink, so list umbrella checkouts here (e.g. a `monorepo` that
+  *   contains other repositories) to make the lookup continue to the nested
+  *   repository instead.
   * @param logger
   *   where to report non-fatal issues, such as a dirty working tree
   */
@@ -57,8 +57,8 @@ class SnippetExtension(
 
   private val ignoredGitRootPaths = ignoredGitRoots.map(root / _)
 
-  /** Drops all cached file contents and git state. Call at the start of a
-    * build if the same extension instance is reused across builds.
+  /** Drops all cached file contents and git state. Call at the start of a build
+    * if the same extension instance is reused across builds.
     */
   def clearCache(): Unit = cache.clear()
 
@@ -135,7 +135,7 @@ class SnippetExtension(
               .mkString(System.lineSeparator())
 
           def embed(path: os.RelPath, options: List[Opt]): Unit = {
-            val fullPath = root / path
+            val fullPath                 = root / path
             val range: Option[Opt.Range] = options.collectFirst {
               case o: Opt.Range => o
             }

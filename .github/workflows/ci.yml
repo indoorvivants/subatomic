@@ -19,10 +19,17 @@ jobs:
         os: [ubuntu-22.04]
         java: [17]
         scalaPlatform: ["jvm", "js", "native"]
+        include:
+          # values of sbt's `platform` setting, used in project queries
+          - scalaPlatform: jvm
+            sbtPlatform: jvm
+          - scalaPlatform: js
+            sbtPlatform: sjs1
+          - scalaPlatform: native
+            sbtPlatform: native0.5
     runs-on: ${{ matrix.os }}
     env:
-      SCALA_PLATFORM: '${{matrix.scalaPlatform}}'
-      SBTN: 'sbt --client'
+      QUERY: '...@platform=${{ matrix.sbtPlatform }}'
     steps:
       - uses: actions/checkout@v4
       - uses: coursier/cache-action@v6
@@ -34,34 +41,20 @@ jobs:
 
       - uses: sbt/setup-sbt@v1
 
-      - name: SBT remote cache
-        id: remote-cache
-        uses: actions/cache@v3
-        with:
-          path: ./.remote-cache
-          key: ${{ runner.os }}-remote-cache
+      - name: Test
+        run: sbt "$QUERY/test"
 
-      - name: Pull cache 
-        run: $SBTN pullRemoteCache-$SCALA_PLATFORM || echo 'remote cache not found'
-
-      - name: Test 2.13
-        run: $SBTN "test-2_13-$SCALA_PLATFORM;codeQuality-2_13-$SCALA_PLATFORM"
-
-      - name: Test 3
-        run: $SBTN "test-3_3-$SCALA_PLATFORM;codeQuality-3_3-$SCALA_PLATFORM"
+      - name: Code quality
+        run: sbt "$QUERY/scalafmtCheckAll; $QUERY/scalafix --check; $QUERY/headerCheck"
 
       - name: SBT Plugin test
-        run: $SBTN pluginTests-2_12-jvm
+        run: sbt plugin/scripted
         if: matrix.scalaPlatform == 'jvm'
 
       - name: Check site build
-        run: $SBTN 'buildSite; buildBlog'
+        run: sbt 'buildSite; buildBlog'
         if: matrix.scalaPlatform == 'jvm'
 
-      - name: Push cache 
-        run: $SBTN pushRemoteCache-$SCALA_PLATFORM || echo 'Failed to push remote cache'
-        if: github.ref == 'refs/heads/master'
-        
   mergify-build-checkpoint:
     runs-on: ubuntu-latest
     needs: [build]

@@ -27,11 +27,11 @@ import java.util.ServiceLoader
 
 import scala.jdk.CollectionConverters._
 
+import _root_.mdoc.interfaces.DiagnosticSeverity
+import _root_.mdoc.{interfaces => mdi}
 import coursier._
 import coursier.core.MinimizedExclusions
 import coursier.parse.DependencyParser
-import _root_.mdoc.interfaces.DiagnosticSeverity
-import _root_.mdoc.{interfaces => mdi}
 
 case class MdocFile(
     path: os.Path,
@@ -274,7 +274,7 @@ class Mdoc(
   private lazy val mainCp: Seq[Path] =
     Fetch()
       .addDependencies(mdocDep)
-      .addDependencies(scala3Deps: _*)
+      .addDependencies(scala3Deps*)
       .run()
       .map(_.toPath())
 
@@ -285,7 +285,7 @@ class Mdoc(
         .addDependencies(
           deps.toSeq
             .map(DependencyParser.dependency(_, config.scalaBinaryVersion))
-            .map(_.left.map(new RuntimeException(_)).toTry.get): _*
+            .map(_.left.map(new RuntimeException(_)).toTry.get)*
         )
         .run()
         .map(_.toPath())

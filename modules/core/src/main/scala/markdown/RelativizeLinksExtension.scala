@@ -62,9 +62,9 @@ object RelativizeLinksExtension {
   }
 
   class ResolverFactory(base: os.RelPath) extends LinkResolverFactory {
-    override def getAfterDependents(): ju.Set[Class[_]] = null
+    override def getAfterDependents(): ju.Set[Class[?]] = null
 
-    override def getBeforeDependents(): ju.Set[Class[_]] = null
+    override def getBeforeDependents(): ju.Set[Class[?]] = null
 
     override def affectsGlobalScope(): Boolean = false
 
@@ -74,8 +74,8 @@ object RelativizeLinksExtension {
   }
 
   class Renderer extends NodeRenderer {
-    override def getNodeRenderingHandlers(): ju.Set[NodeRenderingHandler[_]] = {
-      val s = new ju.HashSet[NodeRenderingHandler[_]]
+    override def getNodeRenderingHandlers(): ju.Set[NodeRenderingHandler[?]] = {
+      val s = new ju.HashSet[NodeRenderingHandler[?]]
 
       val rend = new CustomNodeRenderer[Link] {
         override def render(

@@ -45,7 +45,7 @@ private[subatomic] case class Classpath(deps: List[Classpath.Item]) {
               .toTry
               .get
               .withMinimizedExclusions(MinimizedExclusions(d._2.map(wrap)))
-          ): _*
+          )*
       )
       .run()
       .map(_.getAbsolutePath())

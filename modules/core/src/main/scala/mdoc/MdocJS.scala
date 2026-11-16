@@ -80,7 +80,7 @@ class MdocJS(
       Classpath.dependencies(
         scala3Modules
           .map(m => s"org.scala-lang:$m:${config.scalaVersion}")
-          .toSeq: _*
+          .toSeq*
       )
     else Classpath.empty
 
@@ -137,7 +137,7 @@ class MdocJS(
     val tempDir = os.temp.dir()
 
     val dependenciesClasspath =
-      if (deps.nonEmpty) Classpath.dependencies(deps.toSeq: _*)
+      if (deps.nonEmpty) Classpath.dependencies(deps.toSeq*)
       else Classpath.empty
 
     val props = new Properties()
@@ -171,7 +171,7 @@ class MdocJS(
       .addDependencies(
         deps.toSeq
           .map(DependencyParser.dependency(_, config.scalaBinaryVersion))
-          .map(_.left.map(new RuntimeException(_)).toTry.get): _*
+          .map(_.left.map(new RuntimeException(_)).toTry.get)*
       )
       .run()
       .map(_.getAbsolutePath())
@@ -238,7 +238,7 @@ class MdocJS(
 
   private def cp(dep: Dependency*) = {
     (Fetch()
-      .addDependencies(dep: _*)
+      .addDependencies(dep*)
       .run()
       .map(_.getAbsolutePath()))
       .mkString(":")

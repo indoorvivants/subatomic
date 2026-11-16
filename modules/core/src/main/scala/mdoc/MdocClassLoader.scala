@@ -30,7 +30,7 @@ import java.net.URLClassLoader
   */
 private[subatomic] class MdocSharedClassLoader(host: ClassLoader)
     extends ClassLoader(ClassLoader.getPlatformClassLoader()) {
-  override def findClass(name: String): Class[_] = {
+  override def findClass(name: String): Class[?] = {
     if (MdocClassLoader.isShared(name)) host.loadClass(name)
     else throw new ClassNotFoundException(name)
   }
