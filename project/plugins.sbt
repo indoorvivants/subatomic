@@ -27,3 +27,5 @@ addSbtPlugin("org.scala-native" % "sbt-scala-native" % "0.4.17")
 addSbtPlugin("com.github.sbt" % "sbt-native-packager" % "1.11.4")
 
 addSbtPlugin("com.indoorvivants" % "sbt-commandmatrix" % "0.0.5")
+
+addSbtPlugin("com.indoorvivants" % "sbt-doc-view" % "0.2.0+4-959cb301-SNAPSHOT")

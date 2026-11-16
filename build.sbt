@@ -16,6 +16,7 @@ val Ver = new {
   val scalaXml              = "2.1.0"
   val detective             = "0.1.0"
   val yank                  = "0.0.1"
+  val mdoc                  = "2.9.2"
 
   val Scala = new {
     val `2_12` = "2.12.20"
@@ -89,7 +90,8 @@ lazy val core = projectMatrix
 
     },
     libraryDependencies ++= Seq(
-      "com.lihaoyi" %% "os-lib" % Ver.osLib,
+      "org.scalameta" % "mdoc-interfaces" % Ver.mdoc,
+      "com.lihaoyi"  %% "os-lib"          % Ver.osLib,
       "org.scala-lang.modules" %% "scala-collection-compat" % Ver.scalaCollectionCompat,
       "io.lemonlabs" %% "scala-uri" % Ver.scalaUri
     )
@@ -418,7 +420,8 @@ lazy val buildInfoSettings = {
       version,
       scalaVersion,
       scalaBinaryVersion,
-      platform
+      platform,
+      BuildInfoKey("mdocVersion" -> Ver.mdoc)
     )
   )
 }

@@ -82,6 +82,24 @@ object MdocTests extends weaver.IOSuite with MdocTestHarness {
         expect(result == expected)
     }
   }
+
+  test("mdoc fails on compilation errors") { (res, log) =>
+    val content =
+      """
+    |```scala mdoc
+    |val x: Int = "hello"
+    |```""".stripMargin
+
+    res
+      .process(content, log = log)(_ => failure("mdoc should've failed"))
+      .attempt
+      .map {
+        case Left(err: SubatomicError) =>
+          expect(err.getMessage.contains("Mdoc failed to process"))
+        case other =>
+          failure(s"Expected SubatomicError, got $other")
+      }
+  }
 }
 
 trait MdocTestHarness { self: weaver.IOSuite =>

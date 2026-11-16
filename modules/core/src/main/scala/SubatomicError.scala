@@ -87,4 +87,14 @@ object SubatomicError {
    |
    | Not sure I can provide better error than that :(
    """.trim.stripMargin)
+
+  def mdocEvaluationError(
+      file: String,
+      errors: Seq[String]
+  ) =
+    SubatomicError(s"""
+   | Mdoc failed to process $file
+   |
+   | ${errors.mkString("\n")}
+   """.trim.stripMargin)
 }
