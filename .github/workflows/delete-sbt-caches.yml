@@ -1,0 +1,73 @@
+name: Delete sbt caches
+
+# Manual only: Actions -> "Delete sbt caches" -> Run workflow
+on:
+  workflow_dispatch:
+    inputs:
+      key-contains:
+        description: "Delete GitHub Actions caches whose key contains this text"
+        required: true
+        default: "sbt"
+        type: string
+      dry-run:
+        description: "Only list the caches that would be deleted"
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  actions: write
+
+jobs:
+  delete:
+    name: Delete caches matching '${{ inputs.key-contains }}'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete matching caches
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          # Inputs are passed through the environment rather than interpolated
+          # into the script, so they can't inject shell code
+          KEY_CONTAINS: ${{ inputs.key-contains }}
+          DRY_RUN: ${{ inputs.dry-run }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${KEY_CONTAINS// }" ]; then
+            echo "::error::key-contains must not be empty, it would match every cache"
+            exit 1
+          fi
+
+          gh cache list --limit 1000 --json id,key,ref,sizeInBytes \
+            | jq -r --arg needle "$KEY_CONTAINS" '
+                .[]
+                | select(.key | contains($needle))
+                | [.id, .key, .ref, ((.sizeInBytes / 1048576 | floor | tostring) + " MB")]
+                | @tsv' \
+            > matches.tsv
+
+          if [ "$DRY_RUN" = "true" ]; then action="Would delete"; else action="Deleted"; fi
+
+          {
+            echo "### $action caches with \`$KEY_CONTAINS\` in their key"
+            echo
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [ ! -s matches.tsv ]; then
+            echo "No caches found" | tee -a "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          {
+            echo "| Key | Ref | Size |"
+            echo "| --- | --- | --- |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          while IFS=$'\t' read -r id key ref size; do
+            if [ "$DRY_RUN" != "true" ]; then
+              gh cache delete "$id"
+            fi
+            echo "$action $key ($ref, $size)"
+            echo "| \`$key\` | $ref | $size |" >> "$GITHUB_STEP_SUMMARY"
+          done < matches.tsv
