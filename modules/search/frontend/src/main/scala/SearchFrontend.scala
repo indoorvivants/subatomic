@@ -24,11 +24,11 @@ import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
 
-import com.raquo.laminar.api.L.*
+import com.raquo.laminar.api.L._
 import org.scalajs.dom
-import upickle.default.*
+import upickle.default._
 
-import SearchIndex.*
+import SearchIndex._
 
 private[search] enum IndexState {
   case NotLoaded
@@ -97,7 +97,7 @@ class SearchFrontend private (indexUrl: Option[String]) {
 
   private val outcome: Signal[Outcome] =
     query.signal.combineWith(indexState.signal).map {
-      case (q, _) if q.trim.isEmpty     => Outcome.Idle
+      case (q, _) if q.trim.isEmpty      => Outcome.Idle
       case (q, IndexState.Ready(search)) =>
         val entries = search.string(q.trim).entries.map(_._1)
         Outcome.Found(entries.take(MaxResults), entries.size)
@@ -118,13 +118,13 @@ class SearchFrontend private (indexUrl: Option[String]) {
   }
 
   private val inputElement = input(
-    idAttr       := InputId,
-    typ          := "search",
-    cls          := "sb-search-input",
-    placeholder  := "Search...",
-    autoComplete := "off",
-    aria.label   := "Search",
-    aria.controls := ResultsId,
+    idAttr           := InputId,
+    typ              := "search",
+    cls              := "sb-search-input",
+    placeholder      := "Search...",
+    autoComplete     := "off",
+    aria.label       := "Search",
+    aria.controls    := ResultsId,
     aria.describedBy := StatusId,
     onFocus --> { _ => reopen() },
     onClick --> { _ => reopen() },
@@ -186,9 +186,9 @@ class SearchFrontend private (indexUrl: Option[String]) {
     role      := "status",
     styleAttr := VisuallyHidden,
     child.text <-- outcome.map {
-      case Outcome.Idle        => ""
-      case Outcome.Pending     => "Loading search index"
-      case Outcome.Unavailable => "Search is unavailable"
+      case Outcome.Idle                => ""
+      case Outcome.Pending             => "Loading search index"
+      case Outcome.Unavailable         => "Search is unavailable"
       case Outcome.Found(shown, total) =>
         if (total == 0) "No results"
         else if (total == 1) "1 result"

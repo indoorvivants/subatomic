@@ -93,7 +93,7 @@ trait HtmlPage {
         )
       ),
       body(
-        cls     := "sb-body",
+        cls := "sb-body",
         Header,
         tag("main")(
           cls := "sb-main-container",

@@ -203,11 +203,10 @@ object BuilderSteps {
   def searchContainer(linker: Linker) = {
     import scalatags.Text.all._
     div(
-      id                      := "sb-search-container",
+      id                     := "sb-search-container",
       attr("data-index-url") := linker.unsafe(_ => SearchIndexPath)
     )
   }
-
 
   case class SearchableDocument(
       title: String,
