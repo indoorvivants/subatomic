@@ -16846,10 +16846,10 @@ $p.FJ = (function() {
     this$1.E().ou();
   }
 });
-$p.hideResults = (function() {
+$p.sayHello = (function() {
   this.FJ();
 });
-$p.sayHello = (function() {
+$p.hideResults = (function() {
   this.FJ();
 });
 var $d_Lsubatomic_search_SearchFrontend$ = new $TypeData().i($c_Lsubatomic_search_SearchFrontend$, "subatomic.search.SearchFrontend$", ({
